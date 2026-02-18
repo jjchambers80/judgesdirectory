@@ -289,8 +289,12 @@ function expandToCsvRecords(
       continue;
     }
 
-    // Appellate judges: single record, no county expansion
-    if (isAppellate) {
+    // Appellate judges OR County Court judges: single record, no county expansion
+    // - Appellate judges serve the whole court, not individual counties
+    // - County Court judges serve ONE county, not all counties in the circuit
+    //   (if Claude didn't extract the specific county, we leave it blank)
+    const isCountyCourt = courtType === "County Court";
+    if (isAppellate || isCountyCourt) {
       records.push({
         "Judge Name": normalizedName,
         "Court Type": courtType,
@@ -302,8 +306,8 @@ function expandToCsvRecords(
       continue;
     }
 
-    // For trial-court judges without a specific county,
-    // expand to one record per county in the court entry
+    // Circuit Court judges without a specific county:
+    // expand to one record per county in the circuit (they serve the whole circuit)
     if (entry.counties.length > 0) {
       for (const county of entry.counties) {
         records.push({
