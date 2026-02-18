@@ -13,28 +13,31 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const { verified } = body;
+  const { action } = body;
 
-  if (typeof verified !== "boolean") {
+  const validActions = ["verify", "unverify"];
+  if (!validActions.includes(action)) {
     return NextResponse.json(
       {
         error: "Validation failed",
-        details: [{ field: "verified", message: "verified must be a boolean" }],
+        details: [{ field: "action", message: "action must be 'verify' or 'unverify'" }],
       },
       { status: 400 },
     );
   }
 
+  const newStatus = action === "verify" ? "VERIFIED" : "UNVERIFIED";
+
   const judge = await prisma.judge.update({
     where: { id },
-    data: { verified },
+    data: { status: newStatus },
   });
 
   return NextResponse.json({
     judge: {
       id: judge.id,
       fullName: judge.fullName,
-      verified: judge.verified,
+      status: judge.status,
       updatedAt: judge.updatedAt.toISOString(),
     },
   });

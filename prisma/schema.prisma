@@ -54,26 +54,60 @@ model Court {
   @@map("courts")
 }
 
+enum ImportBatchStatus {
+  PENDING
+  PROCESSING
+  COMPLETE
+  ROLLED_BACK
+}
+
+enum JudgeStatus {
+  UNVERIFIED
+  VERIFIED
+  REJECTED
+}
+
+model ImportBatch {
+  id           String            @id @default(uuid())
+  fileName     String
+  totalRows    Int
+  successCount Int               @default(0)
+  skipCount    Int               @default(0)
+  errorCount   Int               @default(0)
+  status       ImportBatchStatus @default(PENDING)
+  judges       Judge[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("import_batches")
+}
+
 model Judge {
-  id                   String    @id @default(uuid())
+  id                   String       @id @default(uuid())
   courtId              String
-  court                Court     @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  court                Court        @relation(fields: [courtId], references: [id], onDelete: Cascade)
   fullName             String
   slug                 String
   termStart            DateTime?
   termEnd              DateTime?
   selectionMethod      String?
   appointingAuthority  String?
-  education            String?   @db.Text
-  priorExperience      String?   @db.Text
+  education            String?      @db.Text
+  priorExperience      String?      @db.Text
   politicalAffiliation String?
   sourceUrl            String?
-  verified             Boolean   @default(false)
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  status               JudgeStatus  @default(UNVERIFIED)
+  importBatchId        String?
+  importBatch          ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 
   @@unique([courtId, slug])
   @@index([courtId])
   @@index([fullName])
+  @@index([importBatchId])
+  @@index([status])
   @@map("judges")
 }

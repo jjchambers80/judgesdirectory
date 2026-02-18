@@ -11,7 +11,7 @@ export async function generateSitemaps() {
   const stateCount = await prisma.state.count();
   const countyCount = await prisma.county.count();
   const courtCount = await prisma.court.count();
-  const judgeCount = await prisma.judge.count({ where: { verified: true } });
+  const judgeCount = await prisma.judge.count({ where: { status: "VERIFIED" } });
 
   // Total URLs: 1 (index) + states + counties + courts + judges
   const totalUrls = 1 + stateCount + countyCount + courtCount + judgeCount;
@@ -48,7 +48,7 @@ export default async function sitemap({
             orderBy: { type: "asc" },
             include: {
               judges: {
-                where: { verified: true },
+                where: { status: "VERIFIED" },
                 orderBy: { fullName: "asc" },
                 select: { slug: true, updatedAt: true },
               },
