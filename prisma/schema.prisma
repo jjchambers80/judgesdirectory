@@ -1,0 +1,79 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model State {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  slug         String   @unique
+  abbreviation String   @unique @db.VarChar(2)
+  fipsCode     String?  @unique @db.VarChar(2)
+  counties     County[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("states")
+}
+
+model County {
+  id        String   @id @default(uuid())
+  stateId   String
+  state     State    @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String
+  fipsCode  String?  @unique @db.VarChar(5)
+  courts    Court[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([stateId, slug])
+  @@index([stateId])
+  @@map("counties")
+}
+
+model Court {
+  id        String   @id @default(uuid())
+  countyId  String
+  county    County   @relation(fields: [countyId], references: [id], onDelete: Cascade)
+  type      String
+  slug      String
+  judges    Judge[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([countyId, slug])
+  @@index([countyId])
+  @@map("courts")
+}
+
+model Judge {
+  id                   String    @id @default(uuid())
+  courtId              String
+  court                Court     @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  fullName             String
+  slug                 String
+  termStart            DateTime?
+  termEnd              DateTime?
+  selectionMethod      String?
+  appointingAuthority  String?
+  education            String?   @db.Text
+  priorExperience      String?   @db.Text
+  politicalAffiliation String?
+  sourceUrl            String?
+  verified             Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@unique([courtId, slug])
+  @@index([courtId])
+  @@index([fullName])
+  @@map("judges")
+}
