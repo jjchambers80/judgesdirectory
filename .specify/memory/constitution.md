@@ -1,20 +1,19 @@
 <!--
   Sync Impact Report
   ==================
-  Version change: N/A → 1.0.0 (initial ratification)
-  Modified principles: N/A (initial)
+  Version change: 1.0.0 → 1.1.0 (MINOR — new principle added)
+  Modified principles: None renamed or redefined
   Added sections:
-    - Core Principles (5 principles)
-    - Technology Stack & Infrastructure
-    - Development Workflow & Quality Gates
-    - Governance
-  Removed sections: N/A (initial)
+    - Principle VI. Accessibility & WCAG Compliance (new)
+    - Development Workflow: accessibility quality gate added
+  Removed sections: None
   Templates requiring updates:
-    - .specify/templates/plan-template.md ✅ compatible (Constitution Check
-      section will be populated from these principles at plan time)
-    - .specify/templates/spec-template.md ✅ compatible (no changes needed)
-    - .specify/templates/tasks-template.md ✅ compatible (phased delivery
-      aligns with Progressive Launch principle)
+    - .specify/templates/plan-template.md ✅ compatible (Constitution
+      Check section will pick up Principle VI at plan time)
+    - .specify/templates/spec-template.md ✅ compatible (specs will
+      reference VI in requirements as needed)
+    - .specify/templates/tasks-template.md ✅ compatible (accessibility
+      tasks fit existing phased structure)
   Follow-up TODOs: None
 -->
 
@@ -96,6 +95,44 @@
 - Rationale: A focused MVP shipped on time with accurate data is
   more valuable than a feature-rich product that never launches.
 
+### VI. Accessibility & WCAG Compliance
+
+- All public-facing pages MUST conform to WCAG 2.1 Level AA
+  success criteria.
+- Semantic HTML MUST be used for all page structure: headings
+  (`h1`–`h6`) in logical order, `nav` for navigation, `main` for
+  primary content, `footer` for site footer, lists for grouped
+  items.
+- All interactive elements (links, buttons, form controls) MUST be
+  fully operable via keyboard alone with a visible focus indicator.
+- Color MUST NOT be the sole means of conveying information.
+  Text color contrast MUST meet a minimum ratio of 4.5:1 for
+  normal text and 3:1 for large text (≥18pt or ≥14pt bold) per
+  WCAG 2.1 SC 1.4.3.
+- All form inputs MUST have associated `<label>` elements or
+  `aria-label`/`aria-labelledby` attributes. Validation errors
+  MUST be programmatically associated with their fields.
+- All images and meaningful icons MUST have descriptive `alt` text
+  or an equivalent accessible name. Decorative images MUST use
+  `alt=""` or `aria-hidden="true"`.
+- Pages MUST remain usable and readable when zoomed to 200% and
+  MUST reflow content without horizontal scrolling at viewport
+  widths down to 320px (WCAG 2.1 SC 1.4.10 Reflow).
+- Motion and animation MUST respect `prefers-reduced-motion`.
+  Transitions MUST be suppressed or shortened when the user has
+  enabled reduced-motion preferences.
+- ARIA attributes MUST only be used to supplement native HTML
+  semantics, never as a substitute for correct element choice
+  (e.g., use `<button>` instead of `<div role="button">`).
+- Skip-navigation links MUST be provided to allow keyboard users
+  to bypass repeated header/navigation content.
+- Page `<title>` elements and heading hierarchy MUST accurately
+  describe page content for screen reader users.
+- Rationale: A publicly funded judicial directory MUST be usable
+  by all citizens including those using assistive technologies.
+  WCAG 2.1 AA is the recognized legal standard (ADA, Section 508)
+  and ensures the widest possible audience has equal access.
+
 ## Technology Stack & Infrastructure
 
 - **Framework**: Next.js (SSR for all public pages)
@@ -123,8 +160,14 @@
 - SEO compliance MUST be validated on every page change: structured
   data present, sitemap updated, canonical URL correct, SSR
   rendering verified.
+- Accessibility compliance MUST be validated on every UI change:
+  Lighthouse accessibility score MUST be ≥ 90, keyboard navigation
+  MUST be verified, and color contrast MUST meet WCAG 2.1 AA
+  ratios. Axe or equivalent automated a11y checks SHOULD be run
+  as part of PR review.
 - Ad placement zones (header, sidebar, in-content) MUST NOT
-  interfere with content readability or SEO performance.
+  interfere with content readability, SEO performance, or
+  accessibility.
 - Deployment to production MUST be gated on successful build and
   preview verification on Vercel.
 
@@ -148,4 +191,4 @@
 - Runtime development guidance is maintained in project
   documentation and MUST align with this constitution.
 
-**Version**: 1.0.0 | **Ratified**: 2026-02-17 | **Last Amended**: 2026-02-17
+**Version**: 1.1.0 | **Ratified**: 2026-02-17 | **Last Amended**: 2026-02-18
