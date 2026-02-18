@@ -7,7 +7,7 @@ interface JudgeRecord {
   id: string;
   fullName: string;
   slug: string;
-  verified: boolean;
+  status: "UNVERIFIED" | "VERIFIED" | "REJECTED";
   court: {
     id: string;
     type: string;
@@ -37,7 +37,7 @@ export default function AdminJudgesPage() {
     totalPages: 0,
   });
   const [search, setSearch] = useState("");
-  const [verifiedFilter, setVerifiedFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   const fetchJudges = useCallback(
@@ -47,7 +47,7 @@ export default function AdminJudgesPage() {
       params.set("page", String(page));
       params.set("limit", "50");
       if (search) params.set("search", search);
-      if (verifiedFilter) params.set("verified", verifiedFilter);
+      if (statusFilter) params.set("status", statusFilter);
 
       const res = await fetch(`/api/admin/judges?${params}`);
       const data = await res.json();
@@ -55,18 +55,19 @@ export default function AdminJudgesPage() {
       setPagination(data.pagination);
       setLoading(false);
     },
-    [search, verifiedFilter],
+    [search, statusFilter],
   );
 
   useEffect(() => {
     fetchJudges(1);
   }, [fetchJudges]);
 
-  const handleVerify = async (id: string, currentlyVerified: boolean) => {
+  const handleVerify = async (id: string, currentStatus: string) => {
+    const action = currentStatus === "VERIFIED" ? "unverify" : "verify";
     await fetch(`/api/admin/judges/${id}/verify`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ verified: !currentlyVerified }),
+      body: JSON.stringify({ action }),
     });
     fetchJudges(pagination.page);
   };
@@ -117,8 +118,9 @@ export default function AdminJudgesPage() {
           }}
         />
         <select
-          value={verifiedFilter}
-          onChange={(e) => setVerifiedFilter(e.target.value)}
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          aria-label="Filter by status"
           style={{
             padding: "0.5rem 0.75rem",
             border: "1px solid var(--color-input-border)",
@@ -126,8 +128,9 @@ export default function AdminJudgesPage() {
           }}
         >
           <option value="">All Status</option>
-          <option value="true">Verified</option>
-          <option value="false">Unverified</option>
+          <option value="VERIFIED">Verified</option>
+          <option value="UNVERIFIED">Unverified</option>
+          <option value="REJECTED">Rejected</option>
         </select>
       </div>
 
@@ -189,15 +192,25 @@ export default function AdminJudgesPage() {
                         borderRadius: "9999px",
                         fontSize: "0.75rem",
                         fontWeight: 600,
-                        background: judge.verified
-                          ? "var(--color-badge-success-bg)"
-                          : "var(--color-badge-warning-bg)",
-                        color: judge.verified
-                          ? "var(--color-badge-success-text)"
-                          : "var(--color-badge-warning-text)",
+                        background:
+                          judge.status === "VERIFIED"
+                            ? "var(--color-badge-success-bg)"
+                            : judge.status === "REJECTED"
+                              ? "var(--color-error-bg)"
+                              : "var(--color-badge-warning-bg)",
+                        color:
+                          judge.status === "VERIFIED"
+                            ? "var(--color-badge-success-text)"
+                            : judge.status === "REJECTED"
+                              ? "var(--color-error-text)"
+                              : "var(--color-badge-warning-text)",
                       }}
                     >
-                      {judge.verified ? "Verified" : "Unverified"}
+                      {judge.status === "VERIFIED"
+                        ? "Verified"
+                        : judge.status === "REJECTED"
+                          ? "Rejected"
+                          : "Unverified"}
                     </span>
                   </td>
                   <td style={{ padding: "0.75rem 0.5rem" }}>
@@ -209,7 +222,7 @@ export default function AdminJudgesPage() {
                       }}
                     >
                       <button
-                        onClick={() => handleVerify(judge.id, judge.verified)}
+                        onClick={() => handleVerify(judge.id, judge.status)}
                         style={{
                           padding: "0.25rem 0.5rem",
                           border: "1px solid var(--color-input-border)",
@@ -219,7 +232,7 @@ export default function AdminJudgesPage() {
                           fontSize: "0.75rem",
                         }}
                       >
-                        {judge.verified ? "Unverify" : "Verify"}
+                        {judge.status === "VERIFIED" ? "Unverify" : "Verify"}
                       </button>
                       <button
                         onClick={() => handleDelete(judge.id, judge.fullName)}

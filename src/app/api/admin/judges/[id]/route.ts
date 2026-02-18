@@ -76,7 +76,7 @@ export async function PUT(
       id: judge.id,
       fullName: judge.fullName,
       slug: judge.slug,
-      verified: judge.verified,
+      status: judge.status,
       updatedAt: judge.updatedAt.toISOString(),
     },
   });

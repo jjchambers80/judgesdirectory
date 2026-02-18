@@ -14,13 +14,7 @@ export async function GET(request: NextRequest) {
   const stateId = searchParams.get("stateId") || undefined;
   const countyId = searchParams.get("countyId") || undefined;
   const courtId = searchParams.get("courtId") || undefined;
-  const verifiedParam = searchParams.get("verified");
-  const verified =
-    verifiedParam === "true"
-      ? true
-      : verifiedParam === "false"
-        ? false
-        : undefined;
+  const status = searchParams.get("status") || undefined;
 
   const where: Record<string, unknown> = {};
 
@@ -34,8 +28,8 @@ export async function GET(request: NextRequest) {
   } else if (stateId) {
     where.court = { county: { stateId } };
   }
-  if (verified !== undefined) {
-    where.verified = verified;
+  if (status) {
+    where.status = status;
   }
 
   const [judges, total] = await Promise.all([
@@ -64,7 +58,7 @@ export async function GET(request: NextRequest) {
       id: j.id,
       fullName: j.fullName,
       slug: j.slug,
-      verified: j.verified,
+      status: j.status,
       court: {
         id: j.court.id,
         type: j.court.type,
@@ -159,7 +153,6 @@ export async function POST(request: NextRequest) {
       priorExperience: priorExperience || null,
       politicalAffiliation: politicalAffiliation || null,
       sourceUrl: sourceUrl.trim(),
-      verified: false,
     },
   });
 
@@ -170,7 +163,7 @@ export async function POST(request: NextRequest) {
         fullName: judge.fullName,
         slug: judge.slug,
         courtId: judge.courtId,
-        verified: judge.verified,
+        status: judge.status,
         createdAt: judge.createdAt.toISOString(),
         updatedAt: judge.updatedAt.toISOString(),
       },

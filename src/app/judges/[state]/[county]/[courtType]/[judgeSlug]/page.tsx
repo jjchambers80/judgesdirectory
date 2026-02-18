@@ -39,7 +39,7 @@ async function getJudge(
     where: { courtId_slug: { courtId: court.id, slug: judgeSlug } },
   });
   // Only show verified judges on public pages
-  if (!judge || !judge.verified) return null;
+  if (!judge || judge.status !== "VERIFIED") return null;
 
   return { state, county, court, judge };
 }

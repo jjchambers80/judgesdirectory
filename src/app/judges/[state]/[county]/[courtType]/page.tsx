@@ -62,7 +62,7 @@ export default async function JudgeListPage({ params }: PageProps) {
   if (!court) notFound();
 
   const judges = await prisma.judge.findMany({
-    where: { courtId: court.id, verified: true },
+    where: { courtId: court.id, status: "VERIFIED" },
     orderBy: { fullName: "asc" },
   });
 
