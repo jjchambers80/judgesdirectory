@@ -18,13 +18,10 @@ export function middleware(request: NextRequest) {
 
   if (!skipNormalization) {
     const lowercased = pathname.toLowerCase();
-    const withTrailingSlash = lowercased.endsWith("/")
-      ? lowercased
-      : `${lowercased}/`;
 
-    if (pathname !== withTrailingSlash) {
+    if (pathname !== lowercased) {
       const url = request.nextUrl.clone();
-      url.pathname = withTrailingSlash;
+      url.pathname = lowercased;
       return NextResponse.redirect(url, 308);
     }
   }
