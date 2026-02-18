@@ -18,6 +18,7 @@ State (Florida)
 ### Relevant Existing Fields
 
 **Court.type** — free-text string. Canonical values for Florida:
+
 - `"Supreme Court"`
 - `"District Court of Appeal"`
 - `"Circuit Court"`
@@ -43,22 +44,22 @@ Static configuration file defining the curated URL list and Florida's court stru
 ```typescript
 interface FloridaCourtsConfig {
   supremeCourt: {
-    url: string;             // "https://supremecourt.flcourts.gov/Justices"
+    url: string; // "https://supremecourt.flcourts.gov/Justices"
     courtType: "Supreme Court";
   };
   districtCourts: Array<{
-    district: number;        // 1-6
-    name: string;            // "1st District Court of Appeal"
-    url: string;             // "https://1dca.flcourts.gov/Judges"
+    district: number; // 1-6
+    name: string; // "1st District Court of Appeal"
+    url: string; // "https://1dca.flcourts.gov/Judges"
     courtType: "District Court of Appeal";
-    circuits: number[];      // [1, 2, 3, 8, 14]
-    counties: string[];      // resolved from circuits
+    circuits: number[]; // [1, 2, 3, 8, 14]
+    counties: string[]; // resolved from circuits
   }>;
   circuitCourts: Array<{
-    circuit: number;         // 1-20
-    url: string;             // circuit-specific judge roster URL
+    circuit: number; // 1-20
+    url: string; // circuit-specific judge roster URL
     courtType: "Circuit Court";
-    counties: string[];      // ["Escambia", "Okaloosa", "Santa Rosa", "Walton"]
+    counties: string[]; // ["Escambia", "Okaloosa", "Santa Rosa", "Walton"]
   }>;
 }
 ```
@@ -69,14 +70,17 @@ Runtime state for resumable execution.
 
 ```typescript
 interface Checkpoint {
-  startedAt: string;         // ISO timestamp
-  lastUpdated: string;       // ISO timestamp
-  completedUrls: string[];   // URLs successfully processed
-  results: Record<string, {
-    url: string;
-    judgesFound: number;
-    errors: string[];
-  }>;
+  startedAt: string; // ISO timestamp
+  lastUpdated: string; // ISO timestamp
+  completedUrls: string[]; // URLs successfully processed
+  results: Record<
+    string,
+    {
+      url: string;
+      judgesFound: number;
+      errors: string[];
+    }
+  >;
   totalJudges: number;
 }
 ```
@@ -85,14 +89,14 @@ interface Checkpoint {
 
 One CSV file per run, directly compatible with the existing import pipeline.
 
-| CSV Column | Maps to Judge Field | Example |
-|-----------|-------------------|---------|
-| `Judge Name` | `fullName` | "Jane Smith" |
-| `Court Type` | Court.type (for lookup/creation) | "Circuit Court" |
-| `County` | County.name (for lookup) | "Miami-Dade" |
-| `State` | State.abbreviation (for validation) | "FL" |
-| `Source URL` | `sourceUrl` | "https://jud11.flcourts.org/..." |
-| `Selection Method` | `selectionMethod` | "Elected" |
+| CSV Column         | Maps to Judge Field                 | Example                          |
+| ------------------ | ----------------------------------- | -------------------------------- |
+| `Judge Name`       | `fullName`                          | "Jane Smith"                     |
+| `Court Type`       | Court.type (for lookup/creation)    | "Circuit Court"                  |
+| `County`           | County.name (for lookup)            | "Miami-Dade"                     |
+| `State`            | State.abbreviation (for validation) | "FL"                             |
+| `Source URL`       | `sourceUrl`                         | "https://jud11.flcourts.org/..." |
+| `Selection Method` | `selectionMethod`                   | "Elected"                        |
 
 ### Quality Report (Markdown)
 

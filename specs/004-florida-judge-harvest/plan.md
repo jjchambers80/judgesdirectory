@@ -21,16 +21,16 @@ Build a CLI extraction tool that fetches Florida judicial branch web pages from 
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| I. Data Accuracy & Source Attribution | **PASS** | FR-004 requires source URL for every record. All judges enter as UNVERIFIED — manual verification workflow from Phase 2 applies. |
-| II. SEO-First Architecture | **N/A** | This feature is a CLI tool, not a public-facing page. No routing/URL/rendering changes. |
-| III. Legal Safety & Neutrality | **PASS** | Extracts only publicly available government records. No editorial content, ratings, or opinions generated. |
-| IV. Progressive Launch & Phased Delivery | **PASS with justification** | This is a Data Ingestion phase tool (Phase 2 continuation). Semi-automated CSV *preparation* — import still uses the existing manual pipeline. "Automated ingestion" (post-MVP per constitution) refers to server-side scheduled pipelines, not admin-run CLI tools. |
-| V. Simplicity & MVP Discipline | **PASS with justification** | Adds 4 new dependencies (Anthropic SDK, Zod, Cheerio, Turndown — all justified in research.md). CLI tool is the simplest approach to bulk data preparation. No new services, no server-side automation, no user-facing features added. See Complexity Tracking. |
-| VI. Accessibility & WCAG Compliance | **N/A** | CLI tool — no UI/public-facing pages affected. |
+| Principle                                | Status                      | Notes                                                                                                                                                                                                                                                                |
+| ---------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I. Data Accuracy & Source Attribution    | **PASS**                    | FR-004 requires source URL for every record. All judges enter as UNVERIFIED — manual verification workflow from Phase 2 applies.                                                                                                                                     |
+| II. SEO-First Architecture               | **N/A**                     | This feature is a CLI tool, not a public-facing page. No routing/URL/rendering changes.                                                                                                                                                                              |
+| III. Legal Safety & Neutrality           | **PASS**                    | Extracts only publicly available government records. No editorial content, ratings, or opinions generated.                                                                                                                                                           |
+| IV. Progressive Launch & Phased Delivery | **PASS with justification** | This is a Data Ingestion phase tool (Phase 2 continuation). Semi-automated CSV _preparation_ — import still uses the existing manual pipeline. "Automated ingestion" (post-MVP per constitution) refers to server-side scheduled pipelines, not admin-run CLI tools. |
+| V. Simplicity & MVP Discipline           | **PASS with justification** | Adds 4 new dependencies (Anthropic SDK, Zod, Cheerio, Turndown — all justified in research.md). CLI tool is the simplest approach to bulk data preparation. No new services, no server-side automation, no user-facing features added. See Complexity Tracking.      |
+| VI. Accessibility & WCAG Compliance      | **N/A**                     | CLI tool — no UI/public-facing pages affected.                                                                                                                                                                                                                       |
 
 **Gate result: PASS** — No violations. Two principles require justification (documented above); both are within constitution bounds.
 
@@ -81,6 +81,6 @@ src/                         # Existing app (unchanged)
 
 ## Complexity Tracking
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
+| Violation                           | Why Needed                                                     | Simpler Alternative Rejected Because                                                                                                                                 |
+| ----------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | New dependency: `@anthropic-ai/sdk` | Claude API access for HTML→structured data extraction (FR-002) | Manual copy-paste from websites is the only alternative — defeats the purpose of the feature. The SDK is a single, well-maintained package with no transitive bloat. |

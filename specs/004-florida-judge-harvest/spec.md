@@ -13,7 +13,7 @@
 - Q: Which LLM provider should the extraction script use? → A: Anthropic Claude — excellent at structured extraction with large context window for full-page HTML.
 - Q: What canonical court type names should be used in the database? → A: Full formal names — "Supreme Court", "District Court of Appeal", "Circuit Court", "County Court".
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 — AI-Assisted Extraction of Florida Judge Rosters (Priority: P1) 🎯 MVP
 
@@ -74,7 +74,7 @@ After extraction, the admin reviews a quality report that highlights potential i
 - **EC-005**: A county has no judges listed on the official website (e.g., vacancy) — the county is included in the output with zero judges and noted in the quality report.
 - **EC-006**: Admin runs extraction multiple times — output CSVs have timestamped filenames to avoid overwriting; the existing import pipeline's duplicate detection handles re-imports.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -95,12 +95,12 @@ After extraction, the admin reviews a quality report that highlights potential i
 
 ### Key Entities
 
-- **ExtractionRun**: Represents a single execution of the harvest script. Attributes: timestamp, source state, pages fetched, judges extracted, errors encountered, output file path. *(Tracked in log files, not in the database — this is an offline CLI tool.)*
+- **ExtractionRun**: Represents a single execution of the harvest script. Attributes: timestamp, source state, pages fetched, judges extracted, errors encountered, output file path. _(Tracked in log files, not in the database — this is an offline CLI tool.)_
 - **SourcePage**: A URL on the Florida Courts website that contains judge roster data. Attributes: URL, court level (Supreme/DCA/Circuit/County), associated counties.
 - **Judge** (existing): The extraction output feeds directly into the existing Judge model via CSV import. No schema changes needed.
 - **Court** (existing): Courts are seeded or auto-created during import. No schema changes needed.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

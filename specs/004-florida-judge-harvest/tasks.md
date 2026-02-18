@@ -17,8 +17,8 @@
 
 **Purpose**: Install dependencies and create project directory structure
 
-- [ ] T001 Install npm dependencies: `@anthropic-ai/sdk`, `zod`, `cheerio`, `turndown`, and `@types/turndown` (dev)
-- [ ] T002 Create `scripts/harvest/` directory structure and add `scripts/harvest/output/` to `.gitignore`
+- [x] T001 Install npm dependencies: `@anthropic-ai/sdk`, `zod`, `cheerio`, `turndown`, and `@types/turndown` (dev)
+- [x] T002 Create `scripts/harvest/` directory structure and add `scripts/harvest/output/` to `.gitignore`
 
 ---
 
@@ -28,9 +28,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Create `scripts/harvest/config.ts` — parse CLI flags (`--resume`, `--reset`, `--seed-courts-only`, `--dry-run`, `--output-dir`), validate env vars (`ANTHROPIC_API_KEY`, `DATABASE_URL`), resolve output directory, export shared TypeScript interfaces (`FloridaCourtsConfig`, `Checkpoint`, `CliFlags`, `JudgeRecord`)
-- [ ] T004 [P] Create `scripts/harvest/florida-courts.json` — complete curated URL configuration with Supreme Court (1 URL), 6 District Courts of Appeal (URLs + circuit-to-county mappings), and 20 Circuit Courts (URLs + county lists for all 67 Florida counties)
-- [ ] T005 [P] Create `scripts/harvest/normalizer.ts` — `normalizeJudgeName()` (strip "Hon."/"Judge"/"Justice"/"Chief" prefixes, handle "Last, First" → "First Last", preserve suffixes Jr./Sr./III), `canonicalizeCourtType()` (map variations like "Circuit Ct." to canonical "Circuit Court"), and re-export `normalizeCountyName()` from `src/lib/csv.ts`
+- [x] T003 Create `scripts/harvest/config.ts` — parse CLI flags (`--resume`, `--reset`, `--seed-courts-only`, `--dry-run`, `--output-dir`), validate env vars (`ANTHROPIC_API_KEY`, `DATABASE_URL`), resolve output directory, export shared TypeScript interfaces (`FloridaCourtsConfig`, `Checkpoint`, `CliFlags`, `JudgeRecord`)
+- [x] T004 [P] Create `scripts/harvest/florida-courts.json` — complete curated URL configuration with Supreme Court (1 URL), 6 District Courts of Appeal (URLs + circuit-to-county mappings), and 20 Circuit Courts (URLs + county lists for all 67 Florida counties)
+- [x] T005 [P] Create `scripts/harvest/normalizer.ts` — `normalizeJudgeName()` (strip "Hon."/"Judge"/"Justice"/"Chief" prefixes, handle "Last, First" → "First Last", preserve suffixes Jr./Sr./III), `canonicalizeCourtType()` (map variations like "Circuit Ct." to canonical "Circuit Court"), and re-export `normalizeCountyName()` from `src/lib/csv.ts`
 
 **Checkpoint**: Foundation ready — user story implementation can now begin
 
@@ -44,8 +44,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T006 [US2] Create `scripts/harvest/court-seeder.ts` — read `florida-courts.json`, use Prisma client to seed: 1 Supreme Court (Leon County), 6 District Courts of Appeal (one per DCA, associated to all counties in their district), 20 Circuit Courts (one per circuit, associated to all counties in the circuit), and 67 County Courts (one per county). Skip courts that already exist. Log created vs skipped counts.
-- [ ] T007 [US2] Create initial `scripts/harvest/index.ts` — CLI entry point that imports `config.ts` for flag parsing, routes `--seed-courts-only` to `court-seeder.ts`, and exits. Include basic console logging for start/complete messages.
+- [x] T006 [US2] Create `scripts/harvest/court-seeder.ts` — read `florida-courts.json`, use Prisma client to seed: 1 Supreme Court (Leon County), 6 District Courts of Appeal (one per DCA, associated to all counties in their district), 20 Circuit Courts (one per circuit, associated to all counties in the circuit), and 67 County Courts (one per county). Skip courts that already exist. Log created vs skipped counts.
+- [x] T007 [US2] Create initial `scripts/harvest/index.ts` — CLI entry point that imports `config.ts` for flag parsing, routes `--seed-courts-only` to `court-seeder.ts`, and exits. Include basic console logging for start/complete messages.
 
 **Checkpoint**: Florida court structure seeded — admin panel shows courts for all 67 counties
 
@@ -59,12 +59,12 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [P] [US1] Create `scripts/harvest/fetcher.ts` — `fetchPage(url: string)` with native Node `fetch`, 1-second minimum delay between requests (FR-009), 3 retries with linear backoff on failure, `User-Agent: JudgesDirectory/1.0` header. Include `cleanHtml(html: string)` that uses `cheerio` to strip `<script>`, `<style>`, `<nav>`, `<footer>`, `<header>` tags, then `turndown` to convert remaining HTML to Markdown for token reduction. Return `{ markdown: string, htmlSize: number, markdownSize: number }`.
-- [ ] T009 [P] [US1] Create `scripts/harvest/checkpoint.ts` — `loadCheckpoint(outputDir)`, `saveCheckpoint(outputDir, data)`, `resetCheckpoint(outputDir)`. Use atomic writes via `.tmp` file + `fs.renameSync`. Checkpoint stores: `startedAt`, `lastUpdated`, `completedUrls[]`, per-URL results (`judgesFound`, `errors`), `totalJudges` count. File location: `{outputDir}/checkpoints/harvest-checkpoint.json`.
-- [ ] T010 [US1] Create `scripts/harvest/extractor.ts` — initialize Anthropic client from `ANTHROPIC_API_KEY`, define Zod schemas (`JudgeRecord`, `ExtractionResult` per contracts/cli-contract.md), implement `extractJudges(markdown: string, courtConfig: object)` using `messages.parse()` with `claude-sonnet-4-5-20250929` model and structured output. System prompt instructs "First Last" normalization, no fabrication, null for uncertain fields. Return typed `ExtractionResult`.
-- [ ] T011 [US1] Add CSV writing to `scripts/harvest/index.ts` — after extraction loop completes, use `papaparse.unparse()` to write all collected judge records to `{outputDir}/florida-judges-{timestamp}.csv` with columns: `Judge Name`, `Court Type`, `County`, `State` (always "FL"), `Source URL`, `Selection Method`. Timestamp format: `YYYY-MM-DDTHH-MM-SS`.
-- [ ] T012 [US1] Implement full extraction pipeline in `scripts/harvest/index.ts` — for each URL in `florida-courts.json`: load/check checkpoint → skip if already completed → `fetchPage()` → `extractJudges()` → `normalizeJudgeName()` + `canonicalizeCourtType()` on each result → expand multi-county circuits (one record per county for circuit/county judges) → save checkpoint → after all URLs complete, write CSV. Handle interruption gracefully (checkpoint saved on each URL completion).
-- [ ] T013 [US1] Add `--dry-run`, `--resume`, `--reset`, and `--output-dir` flag handling in `scripts/harvest/index.ts` — `--dry-run`: fetch and clean HTML but skip Claude API calls (log HTML sizes); `--resume` (default): load checkpoint and skip completed URLs; `--reset`: delete checkpoint before starting; `--output-dir`: override default `scripts/harvest/output` path.
+- [x] T008 [P] [US1] Create `scripts/harvest/fetcher.ts` — `fetchPage(url: string)` with native Node `fetch`, 1-second minimum delay between requests (FR-009), 3 retries with linear backoff on failure, `User-Agent: JudgesDirectory/1.0` header. Include `cleanHtml(html: string)` that uses `cheerio` to strip `<script>`, `<style>`, `<nav>`, `<footer>`, `<header>` tags, then `turndown` to convert remaining HTML to Markdown for token reduction. Return `{ markdown: string, htmlSize: number, markdownSize: number }`.
+- [x] T009 [P] [US1] Create `scripts/harvest/checkpoint.ts` — `loadCheckpoint(outputDir)`, `saveCheckpoint(outputDir, data)`, `resetCheckpoint(outputDir)`. Use atomic writes via `.tmp` file + `fs.renameSync`. Checkpoint stores: `startedAt`, `lastUpdated`, `completedUrls[]`, per-URL results (`judgesFound`, `errors`), `totalJudges` count. File location: `{outputDir}/checkpoints/harvest-checkpoint.json`.
+- [x] T010 [US1] Create `scripts/harvest/extractor.ts` — initialize Anthropic client from `ANTHROPIC_API_KEY`, define Zod schemas (`JudgeRecord`, `ExtractionResult` per contracts/cli-contract.md), implement `extractJudges(markdown: string, courtConfig: object)` using `messages.parse()` with `claude-sonnet-4-5-20250929` model and structured output. System prompt instructs "First Last" normalization, no fabrication, null for uncertain fields. Return typed `ExtractionResult`.
+- [x] T011 [US1] Add CSV writing to `scripts/harvest/index.ts` — after extraction loop completes, use `papaparse.unparse()` to write all collected judge records to `{outputDir}/florida-judges-{timestamp}.csv` with columns: `Judge Name`, `Court Type`, `County`, `State` (always "FL"), `Source URL`, `Selection Method`. Timestamp format: `YYYY-MM-DDTHH-MM-SS`.
+- [x] T012 [US1] Implement full extraction pipeline in `scripts/harvest/index.ts` — for each URL in `florida-courts.json`: load/check checkpoint → skip if already completed → `fetchPage()` → `extractJudges()` → `normalizeJudgeName()` + `canonicalizeCourtType()` on each result → expand multi-county circuits (one record per county for circuit/county judges) → save checkpoint → after all URLs complete, write CSV. Handle interruption gracefully (checkpoint saved on each URL completion).
+- [x] T013 [US1] Add `--dry-run`, `--resume`, `--reset`, and `--output-dir` flag handling in `scripts/harvest/index.ts` — `--dry-run`: fetch and clean HTML but skip Claude API calls (log HTML sizes); `--resume` (default): load checkpoint and skip completed URLs; `--reset`: delete checkpoint before starting; `--output-dir`: override default `scripts/harvest/output` path.
 
 **Checkpoint**: Extraction pipeline produces a valid CSV with 500+ Florida judges — importable via admin panel
 
@@ -78,9 +78,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T014 [P] [US3] Create `scripts/harvest/deduplicator.ts` — `deduplicateJudges(records: JudgeRecord[])` using dedup key: `lowercase(fullName) + courtType + normalizeCountyName(county)`. Return `{ unique: JudgeRecord[], duplicates: Array<{ record: JudgeRecord, duplicateOf: JudgeRecord }> }`. When duplicates found, keep the record with more populated fields; log both source URLs.
-- [ ] T015 [P] [US3] Create `scripts/harvest/reporter.ts` — `generateReport(stats)` producing a Markdown quality report (per contracts/cli-contract.md format): run timestamp, pages fetched/successful/failed, total judges extracted, duplicates removed, final judge count, court type breakdown table, counties with zero judges, failed pages table. Write to `{outputDir}/florida-report-{timestamp}.md` and print summary to stdout.
-- [ ] T016 [US3] Integrate deduplication and reporting into `scripts/harvest/index.ts` — after extraction loop and before CSV write: run `deduplicateJudges()` on all collected records, then write deduplicated records to CSV. After CSV write: collect pipeline statistics and call `generateReport()`. Update console output to show dedup counts.
+- [x] T014 [P] [US3] Create `scripts/harvest/deduplicator.ts` — `deduplicateJudges(records: JudgeRecord[])` using dedup key: `lowercase(fullName) + courtType + normalizeCountyName(county)`. Return `{ unique: JudgeRecord[], duplicates: Array<{ record: JudgeRecord, duplicateOf: JudgeRecord }> }`. When duplicates found, keep the record with more populated fields; log both source URLs.
+- [x] T015 [P] [US3] Create `scripts/harvest/reporter.ts` — `generateReport(stats)` producing a Markdown quality report (per contracts/cli-contract.md format): run timestamp, pages fetched/successful/failed, total judges extracted, duplicates removed, final judge count, court type breakdown table, counties with zero judges, failed pages table. Write to `{outputDir}/florida-report-{timestamp}.md` and print summary to stdout.
+- [x] T016 [US3] Integrate deduplication and reporting into `scripts/harvest/index.ts` — after extraction loop and before CSV write: run `deduplicateJudges()` on all collected records, then write deduplicated records to CSV. After CSV write: collect pipeline statistics and call `generateReport()`. Update console output to show dedup counts.
 
 **Checkpoint**: Extraction produces deduplicated CSV + quality report — all 3 user stories functional
 
@@ -90,9 +90,9 @@
 
 **Purpose**: Logging, edge case handling, and end-to-end validation
 
-- [ ] T017 [P] Add timestamped file-based logging in `scripts/harvest/index.ts` — write all console log/warn/error events to `{outputDir}/florida-harvest-{timestamp}.log` in `[ISO timestamp] LEVEL message` format (per contracts/cli-contract.md). Include robots.txt warning logging when `fetcher.ts` encounters restricted paths (log WARN but proceed per research.md Decision 7).
-- [ ] T018 [P] Add `.gitignore` entry for `scripts/harvest/output/` and create a `scripts/harvest/output/.gitkeep` placeholder so the directory exists in the repo but generated files are excluded
-- [ ] T019 Run `quickstart.md` end-to-end validation — execute all 4 quickstart steps (seed courts → dry run → full extraction → review & import) and verify outputs match expected behavior documented in `specs/004-florida-judge-harvest/quickstart.md`
+- [x] T017 [P] Add timestamped file-based logging in `scripts/harvest/index.ts` — write all console log/warn/error events to `{outputDir}/florida-harvest-{timestamp}.log` in `[ISO timestamp] LEVEL message` format (per contracts/cli-contract.md). Include robots.txt warning logging when `fetcher.ts` encounters restricted paths (log WARN but proceed per research.md Decision 7).
+- [x] T018 [P] Add `.gitignore` entry for `scripts/harvest/output/` and create a `scripts/harvest/output/.gitkeep` placeholder so the directory exists in the repo but generated files are excluded
+- [x] T019 Run `quickstart.md` end-to-end validation — execute all 4 quickstart steps (seed courts → dry run → full extraction → review & import) and verify outputs match expected behavior documented in `specs/004-florida-judge-harvest/quickstart.md`
 
 ---
 
@@ -123,6 +123,7 @@
 ### Parallel Opportunities
 
 **Phase 2** — T004 and T005 can run in parallel (different files, no dependencies):
+
 ```
 T003 (config.ts)
 ├── T004 [P] (florida-courts.json)
@@ -130,6 +131,7 @@ T003 (config.ts)
 ```
 
 **Phase 4** — T008 and T009 can run in parallel (different files):
+
 ```
 T008 [P] (fetcher.ts)
 T009 [P] (checkpoint.ts)
@@ -140,6 +142,7 @@ T009 [P] (checkpoint.ts)
 ```
 
 **Phase 5** — T014 and T015 can run in parallel (different files):
+
 ```
 T014 [P] (deduplicator.ts)
 T015 [P] (reporter.ts)
@@ -147,6 +150,7 @@ T015 [P] (reporter.ts)
 ```
 
 **Phase 6** — T017 and T018 can run in parallel (different concerns):
+
 ```
 T017 [P] (logging)
 T018 [P] (.gitignore)
@@ -176,27 +180,27 @@ T018 [P] (.gitignore)
 
 ### File Creation Order
 
-| Task | File | New/Modified |
-|------|------|-------------|
-| T001 | `package.json` | Modified (add deps) |
-| T002 | `scripts/harvest/` | New directory |
-| T003 | `scripts/harvest/config.ts` | New |
-| T004 | `scripts/harvest/florida-courts.json` | New |
-| T005 | `scripts/harvest/normalizer.ts` | New |
-| T006 | `scripts/harvest/court-seeder.ts` | New |
-| T007 | `scripts/harvest/index.ts` | New |
-| T008 | `scripts/harvest/fetcher.ts` | New |
-| T009 | `scripts/harvest/checkpoint.ts` | New |
-| T010 | `scripts/harvest/extractor.ts` | New |
-| T011 | `scripts/harvest/index.ts` | Modified |
-| T012 | `scripts/harvest/index.ts` | Modified |
-| T013 | `scripts/harvest/index.ts` | Modified |
-| T014 | `scripts/harvest/deduplicator.ts` | New |
-| T015 | `scripts/harvest/reporter.ts` | New |
-| T016 | `scripts/harvest/index.ts` | Modified |
-| T017 | `scripts/harvest/index.ts` | Modified |
-| T018 | `.gitignore` | Modified |
-| T019 | — (validation) | — |
+| Task | File                                  | New/Modified        |
+| ---- | ------------------------------------- | ------------------- |
+| T001 | `package.json`                        | Modified (add deps) |
+| T002 | `scripts/harvest/`                    | New directory       |
+| T003 | `scripts/harvest/config.ts`           | New                 |
+| T004 | `scripts/harvest/florida-courts.json` | New                 |
+| T005 | `scripts/harvest/normalizer.ts`       | New                 |
+| T006 | `scripts/harvest/court-seeder.ts`     | New                 |
+| T007 | `scripts/harvest/index.ts`            | New                 |
+| T008 | `scripts/harvest/fetcher.ts`          | New                 |
+| T009 | `scripts/harvest/checkpoint.ts`       | New                 |
+| T010 | `scripts/harvest/extractor.ts`        | New                 |
+| T011 | `scripts/harvest/index.ts`            | Modified            |
+| T012 | `scripts/harvest/index.ts`            | Modified            |
+| T013 | `scripts/harvest/index.ts`            | Modified            |
+| T014 | `scripts/harvest/deduplicator.ts`     | New                 |
+| T015 | `scripts/harvest/reporter.ts`         | New                 |
+| T016 | `scripts/harvest/index.ts`            | Modified            |
+| T017 | `scripts/harvest/index.ts`            | Modified            |
+| T018 | `.gitignore`                          | Modified            |
+| T019 | — (validation)                        | —                   |
 
 ---
 

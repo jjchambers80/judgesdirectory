@@ -37,4 +37,4 @@
   - Rate limit delays (1-second minimum between requests — standard polite crawling)
   - Florida judge count estimate (~950-1,000 — documented in Assumptions)
   - Script execution model (CLI tool, not server-side — documented in Assumptions)
-- **Minor note on FR-001/FR-002**: These mention "CLI script" and "LLM" which are light implementation hints, but they describe the *tool category* (what), not the specific technology (how). Accepted as within spec guidelines since the feature is literally about building a CLI extraction tool.
+- **Minor note on FR-001/FR-002**: These mention "CLI script" and "LLM" which are light implementation hints, but they describe the _tool category_ (what), not the specific technology (how). Accepted as within spec guidelines since the feature is literally about building a CLI extraction tool.

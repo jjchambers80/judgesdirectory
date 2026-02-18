@@ -36,3 +36,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .history/
+
+# harvest script output (generated CSVs, logs, checkpoints)
+scripts/harvest/output/

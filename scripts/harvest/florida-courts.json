@@ -1,0 +1,265 @@
+{
+  "state": "Florida",
+  "abbreviation": "FL",
+  "supremeCourt": {
+    "url": "https://supremecourt.flcourts.gov/Justices",
+    "courtType": "Supreme Court"
+  },
+  "districtCourts": [
+    {
+      "district": 1,
+      "name": "1st District Court of Appeal",
+      "url": "https://1dca.flcourts.gov/Judges",
+      "courtType": "District Court of Appeal",
+      "circuits": [1, 2, 3, 8, 14],
+      "counties": [
+        "Escambia",
+        "Okaloosa",
+        "Santa Rosa",
+        "Walton",
+        "Franklin",
+        "Gadsden",
+        "Jefferson",
+        "Leon",
+        "Liberty",
+        "Wakulla",
+        "Columbia",
+        "Dixie",
+        "Hamilton",
+        "Lafayette",
+        "Madison",
+        "Suwannee",
+        "Taylor",
+        "Alachua",
+        "Baker",
+        "Bradford",
+        "Gilchrist",
+        "Levy",
+        "Union",
+        "Bay",
+        "Calhoun",
+        "Gulf",
+        "Holmes",
+        "Jackson",
+        "Washington"
+      ]
+    },
+    {
+      "district": 2,
+      "name": "2nd District Court of Appeal",
+      "url": "https://2dca.flcourts.gov/Judges",
+      "courtType": "District Court of Appeal",
+      "circuits": [6, 12, 13],
+      "counties": [
+        "Pasco",
+        "Pinellas",
+        "DeSoto",
+        "Manatee",
+        "Sarasota",
+        "Hillsborough"
+      ]
+    },
+    {
+      "district": 3,
+      "name": "3rd District Court of Appeal",
+      "url": "https://3dca.flcourts.gov/Judges",
+      "courtType": "District Court of Appeal",
+      "circuits": [11, 16],
+      "counties": ["Miami-Dade", "Monroe"]
+    },
+    {
+      "district": 4,
+      "name": "4th District Court of Appeal",
+      "url": "https://4dca.flcourts.gov/Judges",
+      "courtType": "District Court of Appeal",
+      "circuits": [15, 17, 19],
+      "counties": [
+        "Palm Beach",
+        "Broward",
+        "Indian River",
+        "Martin",
+        "Okeechobee",
+        "St. Lucie"
+      ]
+    },
+    {
+      "district": 5,
+      "name": "5th District Court of Appeal",
+      "url": "https://5dca.flcourts.gov/Judges",
+      "courtType": "District Court of Appeal",
+      "circuits": [4, 5, 7, 18],
+      "counties": [
+        "Clay",
+        "Duval",
+        "Nassau",
+        "Citrus",
+        "Hernando",
+        "Lake",
+        "Marion",
+        "Sumter",
+        "Flagler",
+        "Putnam",
+        "St. Johns",
+        "Volusia",
+        "Brevard",
+        "Seminole"
+      ]
+    },
+    {
+      "district": 6,
+      "name": "6th District Court of Appeal",
+      "url": "https://6dca.flcourts.gov/Judges",
+      "courtType": "District Court of Appeal",
+      "circuits": [9, 10, 20],
+      "counties": [
+        "Orange",
+        "Osceola",
+        "Hardee",
+        "Highlands",
+        "Polk",
+        "Charlotte",
+        "Collier",
+        "Glades",
+        "Hendry",
+        "Lee"
+      ]
+    }
+  ],
+  "circuitCourts": [
+    {
+      "circuit": 1,
+      "url": "https://www.firstjudicialcircuit.org/legal-professionals/judges",
+      "courtType": "Circuit Court",
+      "counties": ["Escambia", "Okaloosa", "Santa Rosa", "Walton"]
+    },
+    {
+      "circuit": 2,
+      "url": "https://2ndcircuit.leoncountyfl.gov/circuitJudges.php",
+      "courtType": "Circuit Court",
+      "counties": [
+        "Franklin",
+        "Gadsden",
+        "Jefferson",
+        "Leon",
+        "Liberty",
+        "Wakulla"
+      ]
+    },
+    {
+      "circuit": 3,
+      "url": "https://thirdcircuitfl.org/judges-page/",
+      "courtType": "Circuit Court",
+      "counties": [
+        "Columbia",
+        "Dixie",
+        "Hamilton",
+        "Lafayette",
+        "Madison",
+        "Suwannee",
+        "Taylor"
+      ]
+    },
+    {
+      "circuit": 4,
+      "url": "https://www.jud4.org/circuit-and-county-judges-of-the-fourth-judicial-circuit",
+      "courtType": "Circuit Court",
+      "counties": ["Clay", "Duval", "Nassau"]
+    },
+    {
+      "circuit": 5,
+      "url": "https://www.circuit5.org/courts-judges/",
+      "courtType": "Circuit Court",
+      "counties": ["Citrus", "Hernando", "Lake", "Marion", "Sumter"]
+    },
+    {
+      "circuit": 6,
+      "url": "https://www.jud6.org/judges.htm",
+      "courtType": "Circuit Court",
+      "counties": ["Pasco", "Pinellas"]
+    },
+    {
+      "circuit": 7,
+      "url": "https://www.circuit7.org/about-the-court/judges",
+      "courtType": "Circuit Court",
+      "counties": ["Flagler", "Putnam", "St. Johns", "Volusia"]
+    },
+    {
+      "circuit": 8,
+      "url": "https://circuit8.org/circuit-judges/",
+      "courtType": "Circuit Court",
+      "counties": ["Alachua", "Baker", "Bradford", "Gilchrist", "Levy", "Union"]
+    },
+    {
+      "circuit": 9,
+      "url": "https://www.ninthcircuit.org/about/judges",
+      "courtType": "Circuit Court",
+      "counties": ["Orange", "Osceola"]
+    },
+    {
+      "circuit": 10,
+      "url": "https://www.jud10.flcourts.org/Judges",
+      "courtType": "Circuit Court",
+      "counties": ["Hardee", "Highlands", "Polk"]
+    },
+    {
+      "circuit": 11,
+      "url": "https://www.jud11.flcourts.org/About-the-Court/Judges/Judicial-Directory",
+      "courtType": "Circuit Court",
+      "counties": ["Miami-Dade"]
+    },
+    {
+      "circuit": 12,
+      "url": "https://www.jud12.flcourts.org/About/Judges",
+      "courtType": "Circuit Court",
+      "counties": ["DeSoto", "Manatee", "Sarasota"]
+    },
+    {
+      "circuit": 13,
+      "url": "https://www.fljud13.org/JudicialDirectory.aspx",
+      "courtType": "Circuit Court",
+      "counties": ["Hillsborough"]
+    },
+    {
+      "circuit": 14,
+      "url": "https://www.jud14.flcourts.org/Judges",
+      "courtType": "Circuit Court",
+      "counties": ["Bay", "Calhoun", "Gulf", "Holmes", "Jackson", "Washington"]
+    },
+    {
+      "circuit": 15,
+      "url": "https://www.15thcircuit.com/judges",
+      "courtType": "Circuit Court",
+      "counties": ["Palm Beach"]
+    },
+    {
+      "circuit": 16,
+      "url": "https://keyscourts.net/judges-of-the-16th-circuit/",
+      "courtType": "Circuit Court",
+      "counties": ["Monroe"]
+    },
+    {
+      "circuit": 17,
+      "url": "https://www.17th.flcourts.org/judges",
+      "courtType": "Circuit Court",
+      "counties": ["Broward"]
+    },
+    {
+      "circuit": 18,
+      "url": "https://flcourts18.org/directory/",
+      "courtType": "Circuit Court",
+      "counties": ["Brevard", "Seminole"]
+    },
+    {
+      "circuit": 19,
+      "url": "https://www.circuit19.org/judges",
+      "courtType": "Circuit Court",
+      "counties": ["Indian River", "Martin", "Okeechobee", "St. Lucie"]
+    },
+    {
+      "circuit": 20,
+      "url": "https://www.ca.cjis20.org/About-The-Court/judiciary.aspx",
+      "courtType": "Circuit Court",
+      "counties": ["Charlotte", "Collier", "Glades", "Hendry", "Lee"]
+    }
+  ]
+}

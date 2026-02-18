@@ -31,6 +31,7 @@ npx ts-node scripts/harvest/index.ts --seed-courts-only
 ```
 
 **Expected output**:
+
 ```
 Seeding Florida court structure...
   Created 67 County Courts
@@ -59,6 +60,7 @@ npx ts-node scripts/harvest/index.ts
 ```
 
 **Expected output**:
+
 ```
 Starting Florida judge harvest...
 [1/28] Fetching: supremecourt.flcourts.gov/Justices — 200 OK (42KB → 8KB)
@@ -106,10 +108,10 @@ npx ts-node scripts/harvest/index.ts --reset
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| `ANTHROPIC_API_KEY not set` | `export ANTHROPIC_API_KEY="sk-ant-..."` |
-| `Rate limited after retries` | Wait 60s, re-run (auto-resumes) |
-| Court URL returns 403/503 | Check if the site is down; the URL may need updating in `florida-courts.json` |
+| Problem                            | Solution                                                                                            |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY not set`        | `export ANTHROPIC_API_KEY="sk-ant-..."`                                                             |
+| `Rate limited after retries`       | Wait 60s, re-run (auto-resumes)                                                                     |
+| Court URL returns 403/503          | Check if the site is down; the URL may need updating in `florida-courts.json`                       |
 | CSV import shows county mismatches | Compare CSV county names against `normalizeCountyName()` output; update extraction prompt if needed |
-| `0 judges extracted` from a page | The page structure may have changed — check the HTML, update the cleaning logic in `fetcher.ts` |
+| `0 judges extracted` from a page   | The page structure may have changed — check the HTML, update the cleaning logic in `fetcher.ts`     |

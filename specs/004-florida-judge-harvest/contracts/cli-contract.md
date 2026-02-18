@@ -27,20 +27,20 @@ npx ts-node scripts/harvest/index.ts --dry-run
 
 ### CLI Flags
 
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--resume` | boolean | `true` | Resume from last checkpoint (default behavior) |
-| `--reset` | boolean | `false` | Delete checkpoint and start fresh |
-| `--seed-courts-only` | boolean | `false` | Only seed Florida court structure, skip extraction |
-| `--dry-run` | boolean | `false` | Fetch HTML and clean it but skip Claude API calls |
-| `--output-dir` | string | `scripts/harvest/output` | Directory for CSV, logs, and checkpoints |
+| Flag                 | Type    | Default                  | Description                                        |
+| -------------------- | ------- | ------------------------ | -------------------------------------------------- |
+| `--resume`           | boolean | `true`                   | Resume from last checkpoint (default behavior)     |
+| `--reset`            | boolean | `false`                  | Delete checkpoint and start fresh                  |
+| `--seed-courts-only` | boolean | `false`                  | Only seed Florida court structure, skip extraction |
+| `--dry-run`          | boolean | `false`                  | Fetch HTML and clean it but skip Claude API calls  |
+| `--output-dir`       | string  | `scripts/harvest/output` | Directory for CSV, logs, and checkpoints           |
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | Yes (unless `--seed-courts-only` or `--dry-run`) | Anthropic API key for Claude |
-| `DATABASE_URL` | Yes (for `--seed-courts-only`) | PostgreSQL connection string (shared with main app) |
+| Variable            | Required                                         | Description                                         |
+| ------------------- | ------------------------------------------------ | --------------------------------------------------- |
+| `ANTHROPIC_API_KEY` | Yes (unless `--seed-courts-only` or `--dry-run`) | Anthropic API key for Claude                        |
+| `DATABASE_URL`      | Yes (for `--seed-courts-only`)                   | PostgreSQL connection string (shared with main app) |
 
 ## Input: Curated URL Configuration
 
@@ -80,16 +80,17 @@ File: `scripts/harvest/florida-courts.json`
 
 **Format**: RFC 4180 CSV with header row. Compatible with the existing `/admin/import/` pipeline.
 
-| Column | Type | Required | Description |
-|--------|------|----------|-------------|
-| `Judge Name` | string | Yes | Normalized "First Last" format |
-| `Court Type` | string | Yes | One of: Supreme Court, District Court of Appeal, Circuit Court, County Court |
-| `County` | string | Yes | County name matching DB (e.g., "Miami-Dade") |
-| `State` | string | Yes | Always "FL" |
-| `Source URL` | string | Yes | URL of the page where judge was found |
-| `Selection Method` | string | No | "Elected", "Appointed", or empty |
+| Column             | Type   | Required | Description                                                                  |
+| ------------------ | ------ | -------- | ---------------------------------------------------------------------------- |
+| `Judge Name`       | string | Yes      | Normalized "First Last" format                                               |
+| `Court Type`       | string | Yes      | One of: Supreme Court, District Court of Appeal, Circuit Court, County Court |
+| `County`           | string | Yes      | County name matching DB (e.g., "Miami-Dade")                                 |
+| `State`            | string | Yes      | Always "FL"                                                                  |
+| `Source URL`       | string | Yes      | URL of the page where judge was found                                        |
+| `Selection Method` | string | No       | "Elected", "Appointed", or empty                                             |
 
 **Example rows**:
+
 ```csv
 Judge Name,Court Type,County,State,Source URL,Selection Method
 "Carlos Muñiz","Supreme Court","Leon","FL","https://supremecourt.flcourts.gov/Justices","Appointed"
@@ -106,6 +107,7 @@ Judge Name,Court Type,County,State,Source URL,Selection Method
 # Florida Judge Harvest Report — 2026-02-18T14:30:00
 
 ## Summary
+
 - Pages fetched: 28
 - Pages successful: 26
 - Pages failed: 2
@@ -114,21 +116,24 @@ Judge Name,Court Type,County,State,Source URL,Selection Method
 - Final judge count: 1,027
 
 ## Court Type Breakdown
-| Court Type | Count |
-|-----------|-------|
-| Supreme Court | 7 |
-| District Court of Appeal | 71 |
-| Circuit Court | 612 |
-| County Court | 337 |
+
+| Court Type               | Count |
+| ------------------------ | ----- |
+| Supreme Court            | 7     |
+| District Court of Appeal | 71    |
+| Circuit Court            | 612   |
+| County Court             | 337   |
 
 ## Counties with Zero Judges
+
 - Lafayette (3rd Circuit)
 - Liberty (2nd Circuit)
 
 ## Failed Pages
-| URL | Error |
-|-----|-------|
-| https://... | HTTP 503 after 3 retries |
+
+| URL         | Error                         |
+| ----------- | ----------------------------- |
+| https://... | HTTP 503 after 3 retries      |
 | https://... | No parseable judge data found |
 ```
 
@@ -172,8 +177,16 @@ Rules:
 ```typescript
 const JudgeRecord = z.object({
   name: z.string().describe("Full name in 'First Last' format"),
-  courtType: z.enum(["Supreme Court", "District Court of Appeal", "Circuit Court", "County Court"]),
-  county: z.string().nullable().describe("County name or null if statewide/multi-county"),
+  courtType: z.enum([
+    "Supreme Court",
+    "District Court of Appeal",
+    "Circuit Court",
+    "County Court",
+  ]),
+  county: z
+    .string()
+    .nullable()
+    .describe("County name or null if statewide/multi-county"),
   division: z.string().nullable().describe("Division or section if listed"),
   selectionMethod: z.enum(["Elected", "Appointed"]).nullable(),
 });
