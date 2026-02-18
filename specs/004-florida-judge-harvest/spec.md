@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "Semi-automated AI-assisted extraction of Florida judge data into the database"
 
+## Clarifications
+
+### Session 2026-02-18
+
+- Q: How should the script discover Florida court roster URLs — curated list, auto-crawl from root, or hybrid? → A: Curated URL list — maintain a static config of known Florida court roster page URLs.
+- Q: Which LLM provider should the extraction script use? → A: Anthropic Claude — excellent at structured extraction with large context window for full-page HTML.
+- Q: What canonical court type names should be used in the database? → A: Full formal names — "Supreme Court", "District Court of Appeal", "Circuit Court", "County Court".
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — AI-Assisted Extraction of Florida Judge Rosters (Priority: P1) 🎯 MVP
@@ -27,7 +35,7 @@ An admin triggers a script that fetches Florida's official judicial branch web p
 
 ### User Story 2 — Bulk Court Seeding for Florida (Priority: P1)
 
-Before judge records can be imported, Florida's court structure must exist in the database. An admin uses a script or the existing bulk court creation tool to seed Florida's court types (Supreme Court, District Court of Appeal, Circuit Court, County Court) across the appropriate counties.
+Before judge records can be imported, Florida's court structure must exist in the database. An admin uses a script or the existing bulk court creation tool to seed Florida's court types using canonical names: "Supreme Court", "District Court of Appeal", "Circuit Court", "County Court" across the appropriate counties.
 
 **Why this priority**: The CSV import pipeline auto-creates courts when they don't exist (FR-006 from Phase 2), but having the court structure pre-seeded ensures cleaner data and avoids naming inconsistencies during import. This is a prerequisite for clean judge import.
 
@@ -53,7 +61,7 @@ After extraction, the admin reviews a quality report that highlights potential i
 
 1. **Given** an extraction that finds the same judge name on two different pages, **When** the quality report is generated, **Then** the duplicate is flagged with both source URLs and only one record is included in the final CSV.
 2. **Given** a page that returns no parseable judge data, **When** extraction completes, **Then** the quality report lists the URL as "no data extracted" with the HTTP status and any error.
-3. **Given** court type names vary across pages (e.g., "Circuit Court" vs "Circuit Ct."), **When** the quality report is generated, **Then** inconsistent names are normalized to a canonical form.
+3. **Given** court type names vary across pages (e.g., "Circuit Court" vs "Circuit Ct."), **When** the quality report is generated, **Then** inconsistent names are normalized to the canonical forms: "Supreme Court", "District Court of Appeal", "Circuit Court", "County Court".
 
 ---
 
@@ -70,8 +78,8 @@ After extraction, the admin reviews a quality report that highlights potential i
 
 ### Functional Requirements
 
-- **FR-001**: System MUST provide a CLI script that fetches Florida judicial branch web pages and extracts judge roster data into CSV format.
-- **FR-002**: Script MUST use an LLM to parse unstructured HTML content into structured judge records.
+- **FR-001**: System MUST provide a CLI script that fetches Florida judicial branch web pages from a curated, static URL configuration and extracts judge roster data into CSV format. The URL list covers flcourts.gov (Supreme Court, DCAs) and each of the 20 circuit court websites.
+- **FR-002**: Script MUST use Anthropic Claude to parse unstructured HTML content into structured judge records.
 - **FR-003**: Script MUST produce CSV files compatible with the existing admin import pipeline — columns: Judge Name, Court Type, County, State, Source URL, and optionally Selection Method.
 - **FR-004**: Script MUST include the source URL for every extracted judge record, linking to the specific government page the data was found on, per Constitution Principle I (Data Accuracy & Source Attribution).
 - **FR-005**: Script MUST normalize judge names to "First Last" format, stripping honorifics (Hon., Judge, Justice) and handling "Last, First" formats.
@@ -79,10 +87,10 @@ After extraction, the admin reviews a quality report that highlights potential i
 - **FR-007**: Script MUST produce a quality report summarizing: total pages fetched, total judges extracted, duplicates removed, pages with errors, counties with zero judges.
 - **FR-008**: Script MUST support resumable execution — checkpoint progress so that interruptions (network failure, API quota) don't require a full restart.
 - **FR-009**: Script MUST respect rate limits on both the source website (minimum 1-second delay between requests) and the LLM API.
-- **FR-010**: Script MUST seed Florida's court structure (Circuit Court, County Court per county; District Courts of Appeal per district; Supreme Court) either as a separate step or integrated into the extraction flow.
+- **FR-010**: Script MUST seed Florida's court structure using canonical names: "Supreme Court", "District Court of Appeal", "Circuit Court", "County Court" — per county for Circuit/County Courts, per district for DCAs, and one statewide Supreme Court. This may be a separate step or integrated into the extraction flow.
 - **FR-011**: Script MUST handle Florida's specific court hierarchy: 1 Supreme Court, 6 District Courts of Appeal (with defined county groupings), 20 Circuit Courts (with defined county groupings), and 67 County Courts.
 - **FR-012**: Script MUST log all activity to a timestamped log file for audit and debugging.
-- **FR-013**: Script MUST store its configuration (LLM API key, source URLs, output directory) via environment variables or a config file — no hardcoded secrets.
+- **FR-013**: Script MUST store its configuration (Anthropic API key via `ANTHROPIC_API_KEY`, source URLs, output directory) via environment variables or a config file — no hardcoded secrets.
 - **FR-014**: Generated CSV filenames MUST include a timestamp to prevent overwriting previous extractions.
 
 ### Key Entities
@@ -106,7 +114,7 @@ After extraction, the admin reviews a quality report that highlights potential i
 ### Assumptions
 
 - Florida is the first pilot state. The script is purpose-built for Florida's judicial branch website structure; adapting to other states is a separate future effort.
-- The admin has access to an OpenAI or Anthropic API key with sufficient quota for the extraction (estimated ~100-200 LLM calls for full Florida extraction).
+- The admin has access to an Anthropic API key with sufficient quota for the extraction (estimated ~100-200 Claude calls for full Florida extraction).
 - The Florida Courts website (flcourts.gov and related circuit court sites) is publicly accessible without authentication.
 - The script runs locally on the admin's machine as a CLI tool — it is not a server-side feature or admin panel page.
 - The existing Phase 2 CSV import pipeline, verification workflow, and duplicate detection are all working correctly and will be used as-is.
