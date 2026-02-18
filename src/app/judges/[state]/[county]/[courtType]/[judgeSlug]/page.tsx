@@ -110,26 +110,33 @@ export default async function JudgeProfilePage({ params }: PageProps) {
     <>
       <JsonLd data={jsonLd} />
       <nav
-        style={{ marginBottom: "1rem", fontSize: "0.875rem", color: "#6b7280" }}
+        style={{
+          marginBottom: "1rem",
+          fontSize: "0.875rem",
+          color: "var(--color-text-muted)",
+        }}
       >
-        <Link href="/judges/" style={{ color: "#2563eb" }}>
+        <Link href="/judges/" style={{ color: "var(--color-link)" }}>
           States
         </Link>
         {" › "}
-        <Link href={`/judges/${state.slug}/`} style={{ color: "#2563eb" }}>
+        <Link
+          href={`/judges/${state.slug}/`}
+          style={{ color: "var(--color-link)" }}
+        >
           {state.name}
         </Link>
         {" › "}
         <Link
           href={`/judges/${state.slug}/${county.slug}/`}
-          style={{ color: "#2563eb" }}
+          style={{ color: "var(--color-link)" }}
         >
           {county.name}
         </Link>
         {" › "}
         <Link
           href={`/judges/${state.slug}/${county.slug}/${court.slug}/`}
-          style={{ color: "#2563eb" }}
+          style={{ color: "var(--color-link)" }}
         >
           {court.type}
         </Link>
@@ -139,7 +146,11 @@ export default async function JudgeProfilePage({ params }: PageProps) {
 
       <h1>{judge.fullName}</h1>
       <p
-        style={{ color: "#6b7280", fontSize: "0.875rem", marginBottom: "2rem" }}
+        style={{
+          color: "var(--color-text-muted)",
+          fontSize: "0.875rem",
+          marginBottom: "2rem",
+        }}
       >
         {court.type} — {county.name}, {state.name}
       </p>
@@ -152,31 +163,39 @@ export default async function JudgeProfilePage({ params }: PageProps) {
           marginBottom: "2rem",
         }}
       >
-        <dt style={{ fontWeight: 600, color: "#374151" }}>Court</dt>
+        <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
+          Court
+        </dt>
         <dd style={{ margin: 0 }}>{court.type}</dd>
 
-        <dt style={{ fontWeight: 600, color: "#374151" }}>Location</dt>
+        <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
+          Location
+        </dt>
         <dd style={{ margin: 0 }}>
           {county.name}, {state.name}
         </dd>
 
         {judge.termStart && (
           <>
-            <dt style={{ fontWeight: 600, color: "#374151" }}>Term Start</dt>
+            <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
+              Term Start
+            </dt>
             <dd style={{ margin: 0 }}>{formatDate(judge.termStart)}</dd>
           </>
         )}
 
         {judge.termEnd && (
           <>
-            <dt style={{ fontWeight: 600, color: "#374151" }}>Term End</dt>
+            <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
+              Term End
+            </dt>
             <dd style={{ margin: 0 }}>{formatDate(judge.termEnd)}</dd>
           </>
         )}
 
         {judge.selectionMethod && (
           <>
-            <dt style={{ fontWeight: 600, color: "#374151" }}>
+            <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
               Selection Method
             </dt>
             <dd style={{ margin: 0 }}>{judge.selectionMethod}</dd>
@@ -185,7 +204,7 @@ export default async function JudgeProfilePage({ params }: PageProps) {
 
         {judge.appointingAuthority && (
           <>
-            <dt style={{ fontWeight: 600, color: "#374151" }}>
+            <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
               Appointing Authority
             </dt>
             <dd style={{ margin: 0 }}>{judge.appointingAuthority}</dd>
@@ -194,7 +213,7 @@ export default async function JudgeProfilePage({ params }: PageProps) {
 
         {judge.politicalAffiliation && (
           <>
-            <dt style={{ fontWeight: 600, color: "#374151" }}>
+            <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
               Political Affiliation
             </dt>
             <dd style={{ margin: 0 }}>{judge.politicalAffiliation}</dd>
@@ -203,7 +222,9 @@ export default async function JudgeProfilePage({ params }: PageProps) {
 
         {judge.education && (
           <>
-            <dt style={{ fontWeight: 600, color: "#374151" }}>Education</dt>
+            <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
+              Education
+            </dt>
             <dd style={{ margin: 0, whiteSpace: "pre-line" }}>
               {judge.education}
             </dd>
@@ -212,7 +233,7 @@ export default async function JudgeProfilePage({ params }: PageProps) {
 
         {judge.priorExperience && (
           <>
-            <dt style={{ fontWeight: 600, color: "#374151" }}>
+            <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
               Prior Experience
             </dt>
             <dd style={{ margin: 0, whiteSpace: "pre-line" }}>
@@ -226,7 +247,7 @@ export default async function JudgeProfilePage({ params }: PageProps) {
         <p
           style={{
             fontSize: "0.875rem",
-            color: "#6b7280",
+            color: "var(--color-text-muted)",
             marginBottom: "2rem",
           }}
         >
@@ -235,7 +256,7 @@ export default async function JudgeProfilePage({ params }: PageProps) {
             href={judge.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: "#2563eb", textDecoration: "underline" }}
+            style={{ color: "var(--color-link)", textDecoration: "underline" }}
           >
             {judge.sourceUrl}
           </a>

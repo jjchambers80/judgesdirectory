@@ -92,8 +92,8 @@ export default function AdminJudgesPage() {
           href="/admin/judges/new/"
           style={{
             padding: "0.5rem 1rem",
-            background: "#2563eb",
-            color: "white",
+            background: "var(--color-btn-primary)",
+            color: "var(--color-btn-primary-text)",
             borderRadius: "0.375rem",
             textDecoration: "none",
             fontSize: "0.875rem",
@@ -111,7 +111,7 @@ export default function AdminJudgesPage() {
           onChange={(e) => setSearch(e.target.value)}
           style={{
             padding: "0.5rem 0.75rem",
-            border: "1px solid #d1d5db",
+            border: "1px solid var(--color-input-border)",
             borderRadius: "0.375rem",
             flex: 1,
           }}
@@ -121,7 +121,7 @@ export default function AdminJudgesPage() {
           onChange={(e) => setVerifiedFilter(e.target.value)}
           style={{
             padding: "0.5rem 0.75rem",
-            border: "1px solid #d1d5db",
+            border: "1px solid var(--color-input-border)",
             borderRadius: "0.375rem",
           }}
         >
@@ -134,9 +134,12 @@ export default function AdminJudgesPage() {
       {loading ? (
         <p>Loading...</p>
       ) : judges.length === 0 ? (
-        <p style={{ color: "#6b7280" }}>
+        <p style={{ color: "var(--color-text-muted)" }}>
           No judges found.{" "}
-          <Link href="/admin/judges/new/" style={{ color: "#2563eb" }}>
+          <Link
+            href="/admin/judges/new/"
+            style={{ color: "var(--color-link)" }}
+          >
             Create the first judge record
           </Link>
           .
@@ -146,7 +149,10 @@ export default function AdminJudgesPage() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr
-                style={{ borderBottom: "2px solid #e5e7eb", textAlign: "left" }}
+                style={{
+                  borderBottom: "2px solid var(--color-border)",
+                  textAlign: "left",
+                }}
               >
                 <th style={{ padding: "0.75rem 0.5rem" }}>Name</th>
                 <th style={{ padding: "0.75rem 0.5rem" }}>Court</th>
@@ -159,7 +165,7 @@ export default function AdminJudgesPage() {
               {judges.map((judge) => (
                 <tr
                   key={judge.id}
-                  style={{ borderBottom: "1px solid #e5e7eb" }}
+                  style={{ borderBottom: "1px solid var(--color-border)" }}
                 >
                   <td style={{ padding: "0.75rem 0.5rem" }}>
                     <strong>{judge.fullName}</strong>
@@ -171,7 +177,7 @@ export default function AdminJudgesPage() {
                     style={{
                       padding: "0.75rem 0.5rem",
                       fontSize: "0.875rem",
-                      color: "#6b7280",
+                      color: "var(--color-text-muted)",
                     }}
                   >
                     {judge.court.county.name}, {judge.court.county.state.name}
@@ -183,8 +189,12 @@ export default function AdminJudgesPage() {
                         borderRadius: "9999px",
                         fontSize: "0.75rem",
                         fontWeight: 600,
-                        background: judge.verified ? "#dcfce7" : "#fef3c7",
-                        color: judge.verified ? "#166534" : "#92400e",
+                        background: judge.verified
+                          ? "var(--color-badge-success-bg)"
+                          : "var(--color-badge-warning-bg)",
+                        color: judge.verified
+                          ? "var(--color-badge-success-text)"
+                          : "var(--color-badge-warning-text)",
                       }}
                     >
                       {judge.verified ? "Verified" : "Unverified"}
@@ -202,9 +212,9 @@ export default function AdminJudgesPage() {
                         onClick={() => handleVerify(judge.id, judge.verified)}
                         style={{
                           padding: "0.25rem 0.5rem",
-                          border: "1px solid #d1d5db",
+                          border: "1px solid var(--color-input-border)",
                           borderRadius: "0.25rem",
-                          background: "white",
+                          background: "var(--color-bg-primary)",
                           cursor: "pointer",
                           fontSize: "0.75rem",
                         }}
@@ -215,10 +225,10 @@ export default function AdminJudgesPage() {
                         onClick={() => handleDelete(judge.id, judge.fullName)}
                         style={{
                           padding: "0.25rem 0.5rem",
-                          border: "1px solid #fca5a5",
+                          border: "1px solid var(--color-input-border-error)",
                           borderRadius: "0.25rem",
-                          background: "#fee2e2",
-                          color: "#991b1b",
+                          background: "var(--color-error-bg)",
+                          color: "var(--color-error-text)",
                           cursor: "pointer",
                           fontSize: "0.75rem",
                         }}
@@ -240,7 +250,9 @@ export default function AdminJudgesPage() {
               marginTop: "1rem",
             }}
           >
-            <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+            <span
+              style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}
+            >
               Showing {(pagination.page - 1) * pagination.limit + 1}–
               {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
               of {pagination.total}
@@ -251,7 +263,7 @@ export default function AdminJudgesPage() {
                 disabled={pagination.page <= 1}
                 style={{
                   padding: "0.5rem 1rem",
-                  border: "1px solid #d1d5db",
+                  border: "1px solid var(--color-input-border)",
                   borderRadius: "0.375rem",
                   cursor: pagination.page <= 1 ? "not-allowed" : "pointer",
                   opacity: pagination.page <= 1 ? 0.5 : 1,
@@ -264,7 +276,7 @@ export default function AdminJudgesPage() {
                 disabled={pagination.page >= pagination.totalPages}
                 style={{
                   padding: "0.5rem 1rem",
-                  border: "1px solid #d1d5db",
+                  border: "1px solid var(--color-input-border)",
                   borderRadius: "0.375rem",
                   cursor:
                     pagination.page >= pagination.totalPages

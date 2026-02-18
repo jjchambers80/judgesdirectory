@@ -80,19 +80,26 @@ export default async function JudgeListPage({ params }: PageProps) {
     <>
       <JsonLd data={jsonLd} />
       <nav
-        style={{ marginBottom: "1rem", fontSize: "0.875rem", color: "#6b7280" }}
+        style={{
+          marginBottom: "1rem",
+          fontSize: "0.875rem",
+          color: "var(--color-text-muted)",
+        }}
       >
-        <Link href="/judges/" style={{ color: "#2563eb" }}>
+        <Link href="/judges/" style={{ color: "var(--color-link)" }}>
           States
         </Link>
         {" › "}
-        <Link href={`/judges/${state.slug}/`} style={{ color: "#2563eb" }}>
+        <Link
+          href={`/judges/${state.slug}/`}
+          style={{ color: "var(--color-link)" }}
+        >
           {state.name}
         </Link>
         {" › "}
         <Link
           href={`/judges/${state.slug}/${county.slug}/`}
-          style={{ color: "#2563eb" }}
+          style={{ color: "var(--color-link)" }}
         >
           {county.name}
         </Link>
@@ -103,14 +110,14 @@ export default async function JudgeListPage({ params }: PageProps) {
         {court.type} Judges in {county.name}, {state.name}
       </h1>
       {judges.length === 0 ? (
-        <p style={{ color: "#6b7280", marginTop: "1rem" }}>
+        <p style={{ color: "var(--color-text-muted)", marginTop: "1rem" }}>
           No verified judge records available for {court.type} in {county.name}{" "}
           yet. Judge data will be added as part of our ongoing data collection
           effort.
         </p>
       ) : (
         <>
-          <p style={{ color: "#6b7280", marginBottom: "2rem" }}>
+          <p style={{ color: "var(--color-text-muted)", marginBottom: "2rem" }}>
             {judges.length} verified {judges.length === 1 ? "judge" : "judges"}{" "}
             in {court.type}, {county.name}.
           </p>
@@ -128,7 +135,7 @@ export default async function JudgeListPage({ params }: PageProps) {
                 style={{
                   display: "block",
                   padding: "1.25rem",
-                  border: "1px solid #e5e7eb",
+                  border: "1px solid var(--color-border)",
                   borderRadius: "0.375rem",
                   textDecoration: "none",
                   color: "inherit",
@@ -140,7 +147,7 @@ export default async function JudgeListPage({ params }: PageProps) {
                     style={{
                       marginTop: "0.25rem",
                       fontSize: "0.875rem",
-                      color: "#6b7280",
+                      color: "var(--color-text-muted)",
                     }}
                   >
                     Term ends:{" "}

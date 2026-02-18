@@ -1,0 +1,115 @@
+/* ============================================================
+   Theme Variables — CSS Custom Properties
+   Selectors: :root (light default), [data-theme="dark"]
+   No-JS fallback: @media (prefers-color-scheme: dark)
+   ============================================================ */
+
+/* --- Light Theme (default) --- */
+:root,
+[data-theme="light"] {
+  /* Core */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9fafb;
+  --color-text-primary: #374151;
+  --color-text-secondary: #4b5563;
+  --color-text-muted: #6b7280;
+  --color-link: #2563eb;
+  --color-border: #e5e7eb;
+  --color-surface: #ffffff;
+
+  /* Disclaimer */
+  --color-disclaimer-bg: #fffbeb;
+  --color-disclaimer-border: #fef3c7;
+  --color-disclaimer-text: #92400e;
+
+  /* Admin / Form */
+  --color-input-border: #d1d5db;
+  --color-input-border-error: #fca5a5;
+  --color-badge-success-bg: #dcfce7;
+  --color-badge-success-text: #166534;
+  --color-badge-warning-bg: #fef3c7;
+  --color-badge-warning-text: #92400e;
+  --color-error-bg: #fee2e2;
+  --color-error-text: #991b1b;
+  --color-btn-primary: #2563eb;
+  --color-btn-primary-disabled: #93c5fd;
+  --color-btn-primary-text: #ffffff;
+
+  /* Toggle */
+  --color-toggle-hover: rgba(0, 0, 0, 0.06);
+}
+
+/* --- Dark Theme --- */
+[data-theme="dark"] {
+  /* Core */
+  --color-bg-primary: #111827;
+  --color-bg-secondary: #1f2937;
+  --color-text-primary: #f3f4f6;
+  --color-text-secondary: #d1d5db;
+  --color-text-muted: #9ca3af;
+  --color-link: #60a5fa;
+  --color-border: #374151;
+  --color-surface: #1f2937;
+
+  /* Disclaimer */
+  --color-disclaimer-bg: #451a03;
+  --color-disclaimer-border: #78350f;
+  --color-disclaimer-text: #fde68a;
+
+  /* Admin / Form */
+  --color-input-border: #4b5563;
+  --color-input-border-error: #f87171;
+  --color-badge-success-bg: #14532d;
+  --color-badge-success-text: #86efac;
+  --color-badge-warning-bg: #451a03;
+  --color-badge-warning-text: #fde68a;
+  --color-error-bg: #450a0a;
+  --color-error-text: #fca5a5;
+  --color-btn-primary: #3b82f6;
+  --color-btn-primary-disabled: #1e40af;
+  --color-btn-primary-text: #ffffff;
+
+  /* Toggle */
+  --color-toggle-hover: rgba(255, 255, 255, 0.1);
+}
+
+/* --- No-JS Fallback: OS dark preference when no data-theme is set --- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg-primary: #111827;
+    --color-bg-secondary: #1f2937;
+    --color-text-primary: #f3f4f6;
+    --color-text-secondary: #d1d5db;
+    --color-text-muted: #9ca3af;
+    --color-link: #60a5fa;
+    --color-border: #374151;
+    --color-surface: #1f2937;
+
+    --color-disclaimer-bg: #451a03;
+    --color-disclaimer-border: #78350f;
+    --color-disclaimer-text: #fde68a;
+
+    --color-input-border: #4b5563;
+    --color-input-border-error: #f87171;
+    --color-badge-success-bg: #14532d;
+    --color-badge-success-text: #86efac;
+    --color-badge-warning-bg: #451a03;
+    --color-badge-warning-text: #fde68a;
+    --color-error-bg: #450a0a;
+    --color-error-text: #fca5a5;
+    --color-btn-primary: #3b82f6;
+    --color-btn-primary-disabled: #1e40af;
+    --color-btn-primary-text: #ffffff;
+
+    --color-toggle-hover: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* --- Body base styles --- */
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}

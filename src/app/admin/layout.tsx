@@ -17,17 +17,20 @@ export default function AdminLayout({
           gap: "1.5rem",
           padding: "0.75rem 0",
           marginBottom: "2rem",
-          borderBottom: "2px solid #2563eb",
+          borderBottom: "2px solid var(--color-link)",
           fontSize: "0.875rem",
         }}
       >
-        <Link href="/admin/" style={{ color: "#2563eb", fontWeight: 600 }}>
+        <Link
+          href="/admin/"
+          style={{ color: "var(--color-link)", fontWeight: 600 }}
+        >
           Dashboard
         </Link>
-        <Link href="/admin/judges/" style={{ color: "#2563eb" }}>
+        <Link href="/admin/judges/" style={{ color: "var(--color-link)" }}>
           Judges
         </Link>
-        <Link href="/admin/judges/new/" style={{ color: "#2563eb" }}>
+        <Link href="/admin/judges/new/" style={{ color: "var(--color-link)" }}>
           + Add Judge
         </Link>
       </nav>

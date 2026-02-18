@@ -4,7 +4,7 @@ export default function AdminDashboard() {
   return (
     <div>
       <h1>Admin Dashboard</h1>
-      <p style={{ color: "#6b7280", marginBottom: "2rem" }}>
+      <p style={{ color: "var(--color-text-muted)", marginBottom: "2rem" }}>
         Manage judge records for judgesdirectory.org
       </p>
       <div style={{ display: "flex", gap: "1rem" }}>
@@ -13,7 +13,7 @@ export default function AdminDashboard() {
           style={{
             display: "block",
             padding: "2rem",
-            border: "1px solid #e5e7eb",
+            border: "1px solid var(--color-border)",
             borderRadius: "0.5rem",
             textDecoration: "none",
             color: "inherit",
@@ -23,7 +23,7 @@ export default function AdminDashboard() {
           <strong>Judge Records</strong>
           <p
             style={{
-              color: "#6b7280",
+              color: "var(--color-text-muted)",
               marginTop: "0.5rem",
               fontSize: "0.875rem",
             }}

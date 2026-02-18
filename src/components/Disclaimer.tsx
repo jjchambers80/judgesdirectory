@@ -10,9 +10,10 @@ export default function Disclaimer() {
       style={{
         padding: "1rem",
         marginTop: "2rem",
-        borderTop: "1px solid #e5e7eb",
+        borderTop: "1px solid var(--color-disclaimer-border)",
         fontSize: "0.875rem",
-        color: "#6b7280",
+        color: "var(--color-disclaimer-text)",
+        backgroundColor: "var(--color-disclaimer-bg)",
       }}
     >
       <p>

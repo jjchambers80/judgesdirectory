@@ -32,7 +32,7 @@ export default function StateGrid({ states }: StateGridProps) {
           style={{
             display: "block",
             padding: "1.5rem",
-            border: "1px solid #e5e7eb",
+            border: "1px solid var(--color-border)",
             borderRadius: "0.5rem",
             textDecoration: "none",
             color: "inherit",
@@ -50,7 +50,7 @@ export default function StateGrid({ states }: StateGridProps) {
             <span
               style={{
                 fontSize: "0.875rem",
-                color: "#6b7280",
+                color: "var(--color-text-muted)",
                 fontWeight: 600,
               }}
             >
@@ -61,7 +61,7 @@ export default function StateGrid({ states }: StateGridProps) {
             style={{
               marginTop: "0.5rem",
               fontSize: "0.875rem",
-              color: "#6b7280",
+              color: "var(--color-text-muted)",
             }}
           >
             {state._count.counties}{" "}

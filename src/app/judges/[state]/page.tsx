@@ -60,16 +60,20 @@ export default async function CountyListPage({ params }: PageProps) {
     <>
       <JsonLd data={jsonLd} />
       <nav
-        style={{ marginBottom: "1rem", fontSize: "0.875rem", color: "#6b7280" }}
+        style={{
+          marginBottom: "1rem",
+          fontSize: "0.875rem",
+          color: "var(--color-text-muted)",
+        }}
       >
-        <Link href="/judges/" style={{ color: "#2563eb" }}>
+        <Link href="/judges/" style={{ color: "var(--color-link)" }}>
           States
         </Link>
         {" › "}
         <span>{state.name}</span>
       </nav>
       <h1>Judges in {state.name} — County Directory</h1>
-      <p style={{ color: "#6b7280", marginBottom: "2rem" }}>
+      <p style={{ color: "var(--color-text-muted)", marginBottom: "2rem" }}>
         {counties.length} {counties.length === 1 ? "county" : "counties"} in{" "}
         {state.name}. Select a county to view court types.
       </p>
@@ -87,7 +91,7 @@ export default async function CountyListPage({ params }: PageProps) {
             style={{
               display: "block",
               padding: "1rem 1.25rem",
-              border: "1px solid #e5e7eb",
+              border: "1px solid var(--color-border)",
               borderRadius: "0.375rem",
               textDecoration: "none",
               color: "inherit",
@@ -99,7 +103,7 @@ export default async function CountyListPage({ params }: PageProps) {
                 style={{
                   marginLeft: "0.5rem",
                   fontSize: "0.875rem",
-                  color: "#6b7280",
+                  color: "var(--color-text-muted)",
                 }}
               >
                 ({county._count.courts}{" "}

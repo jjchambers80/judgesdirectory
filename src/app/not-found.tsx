@@ -10,7 +10,7 @@ export default function NotFound() {
         style={{
           display: "inline-block",
           marginTop: "1rem",
-          color: "#2563eb",
+          color: "var(--color-link)",
           textDecoration: "underline",
         }}
       >

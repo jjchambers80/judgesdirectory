@@ -150,7 +150,7 @@ export default function AdminJudgeNewPage() {
     display: "block",
     width: "100%",
     padding: "0.5rem 0.75rem",
-    border: `1px solid ${fieldError(field) ? "#fca5a5" : "#d1d5db"}`,
+    border: `1px solid ${fieldError(field) ? "var(--color-input-border-error)" : "var(--color-input-border)"}`,
     borderRadius: "0.375rem",
     marginTop: "0.25rem",
     boxSizing: "border-box" as const,
@@ -164,8 +164,8 @@ export default function AdminJudgeNewPage() {
         <div
           style={{
             padding: "1rem",
-            background: "#dcfce7",
-            color: "#166534",
+            background: "var(--color-badge-success-bg)",
+            color: "var(--color-badge-success-text)",
             borderRadius: "0.375rem",
             marginBottom: "1rem",
           }}
@@ -178,8 +178,8 @@ export default function AdminJudgeNewPage() {
         <div
           style={{
             padding: "1rem",
-            background: "#fee2e2",
-            color: "#991b1b",
+            background: "var(--color-error-bg)",
+            color: "var(--color-error-text)",
             borderRadius: "0.375rem",
             marginBottom: "1rem",
           }}
@@ -197,7 +197,7 @@ export default function AdminJudgeNewPage() {
         {/* Location Selection */}
         <fieldset
           style={{
-            border: "1px solid #e5e7eb",
+            border: "1px solid var(--color-border)",
             padding: "1rem",
             borderRadius: "0.375rem",
             marginBottom: "1.5rem",
@@ -283,9 +283,9 @@ export default function AdminJudgeNewPage() {
                 disabled={!selectedCountyId}
                 style={{
                   padding: "0.5rem 0.75rem",
-                  border: "1px solid #d1d5db",
+                  border: "1px solid var(--color-input-border)",
                   borderRadius: "0.375rem",
-                  background: "white",
+                  background: "var(--color-bg-primary)",
                   cursor: selectedCountyId ? "pointer" : "not-allowed",
                   whiteSpace: "nowrap",
                   fontSize: "0.875rem",
@@ -310,8 +310,8 @@ export default function AdminJudgeNewPage() {
                   onClick={handleCreateCourt}
                   style={{
                     padding: "0.5rem 1rem",
-                    background: "#2563eb",
-                    color: "white",
+                    background: "var(--color-btn-primary)",
+                    color: "var(--color-btn-primary-text)",
                     border: "none",
                     borderRadius: "0.375rem",
                     cursor: "pointer",
@@ -328,7 +328,7 @@ export default function AdminJudgeNewPage() {
         {/* Judge Information */}
         <fieldset
           style={{
-            border: "1px solid #e5e7eb",
+            border: "1px solid var(--color-border)",
             padding: "1rem",
             borderRadius: "0.375rem",
             marginBottom: "1.5rem",
@@ -357,7 +357,7 @@ export default function AdminJudgeNewPage() {
             {fieldError("fullName") && (
               <p
                 style={{
-                  color: "#dc2626",
+                  color: "var(--color-error-text)",
                   fontSize: "0.75rem",
                   marginTop: "0.25rem",
                 }}
@@ -507,7 +507,7 @@ export default function AdminJudgeNewPage() {
         {/* Source */}
         <fieldset
           style={{
-            border: "1px solid #e5e7eb",
+            border: "1px solid var(--color-border)",
             padding: "1rem",
             borderRadius: "0.375rem",
             marginBottom: "1.5rem",
@@ -536,7 +536,7 @@ export default function AdminJudgeNewPage() {
             {fieldError("sourceUrl") && (
               <p
                 style={{
-                  color: "#dc2626",
+                  color: "var(--color-error-text)",
                   fontSize: "0.75rem",
                   marginTop: "0.25rem",
                 }}
@@ -547,7 +547,7 @@ export default function AdminJudgeNewPage() {
             <p
               style={{
                 fontSize: "0.75rem",
-                color: "#6b7280",
+                color: "var(--color-text-muted)",
                 marginTop: "0.25rem",
               }}
             >
@@ -562,8 +562,10 @@ export default function AdminJudgeNewPage() {
           disabled={submitting}
           style={{
             padding: "0.75rem 2rem",
-            background: submitting ? "#93c5fd" : "#2563eb",
-            color: "white",
+            background: submitting
+              ? "var(--color-btn-primary-disabled)"
+              : "var(--color-btn-primary)",
+            color: "var(--color-btn-primary-text)",
             border: "none",
             borderRadius: "0.375rem",
             cursor: submitting ? "not-allowed" : "pointer",
