@@ -36,14 +36,17 @@ export default function AdminLayout({
         <Link href="/admin/import/" style={{ color: "var(--color-link)" }}>
           Import
         </Link>
-        <Link href="/admin/verification/" style={{ color: "var(--color-link)" }}>
+        <Link
+          href="/admin/verification/"
+          style={{ color: "var(--color-link)" }}
+        >
           Verification
         </Link>
         <Link href="/admin/courts/" style={{ color: "var(--color-link)" }}>
           Courts
         </Link>
         <Link href="/admin/dashboard/" style={{ color: "var(--color-link)" }}>
-          Dashboard
+          Progress
         </Link>
       </nav>
       {children}

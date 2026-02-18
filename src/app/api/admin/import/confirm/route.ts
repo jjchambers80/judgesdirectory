@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { acquireImportLock, isImporting } from "@/lib/import-lock";
 import { generateSlug } from "@/lib/slugify";
-import { parseCsv, CsvParseError } from "@/lib/csv";
+import { parseCsv, CsvParseError, normalizeCountyName } from "@/lib/csv";
 
 /**
  * POST /api/admin/import/confirm
@@ -21,13 +21,19 @@ export async function POST(request: NextRequest) {
   }
 
   // Validate required mapped fields
-  if (!columnMapping.fullName && !Object.values(columnMapping).includes("fullName")) {
+  if (
+    !columnMapping.fullName &&
+    !Object.values(columnMapping).includes("fullName")
+  ) {
     return NextResponse.json(
       { error: "Column mapping must include fullName" },
       { status: 422 },
     );
   }
-  if (!columnMapping.sourceUrl && !Object.values(columnMapping).includes("sourceUrl")) {
+  if (
+    !columnMapping.sourceUrl &&
+    !Object.values(columnMapping).includes("sourceUrl")
+  ) {
     return NextResponse.json(
       { error: "Column mapping must include sourceUrl" },
       { status: 422 },
@@ -94,6 +100,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "State not found" }, { status: 422 });
     }
 
+    // Build set of acceptable state name variants for CSV cross-check
+    const stateAliases = new Set([
+      state.name.toLowerCase(),
+      state.slug.toLowerCase(),
+      state.abbreviation.toLowerCase(),
+    ]);
+
     // Get the uploaded file from the request (re-uploaded with confirm)
     // The frontend re-sends the file data along with the confirm request
     const { csvData } = body;
@@ -127,9 +140,9 @@ export async function POST(request: NextRequest) {
       throw err;
     }
 
-    // Build county lookup
+    // Build county lookup — index by normalized name for flexible matching
     const countyByName = new Map(
-      state.counties.map((c) => [c.name.toLowerCase(), c]),
+      state.counties.map((c) => [normalizeCountyName(c.name), c]),
     );
 
     // Build existing judges set for duplicate detection
@@ -141,9 +154,7 @@ export async function POST(request: NextRequest) {
     });
 
     const existingSet = new Set(
-      existingJudges.map(
-        (j) => `${j.fullName.toLowerCase()}:${j.courtId}`,
-      ),
+      existingJudges.map((j) => `${j.fullName.toLowerCase()}:${j.courtId}`),
     );
 
     // Apply column mapping to build the actual mapping
@@ -181,6 +192,16 @@ export async function POST(request: NextRequest) {
 
       // Validate
       const rowErrors: string[] = [];
+
+      // Validate state matches dropdown selection (if State column is present)
+      if (mapped.stateName && mapped.stateName.length > 0) {
+        if (!stateAliases.has(mapped.stateName.toLowerCase())) {
+          rowErrors.push(
+            `State "${mapped.stateName}" does not match selected state "${state.name}"`,
+          );
+        }
+      }
+
       if (!mapped.fullName || mapped.fullName.length === 0) {
         rowErrors.push("fullName is required");
       }
@@ -194,9 +215,9 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Resolve county
+      // Resolve county (case-insensitive, strips suffixes like "County", "Parish")
       const countyName = mapped.countyName || "";
-      const county = countyByName.get(countyName.toLowerCase());
+      const county = countyByName.get(normalizeCountyName(countyName));
 
       if (!county) {
         errorCount++;
@@ -224,9 +245,7 @@ export async function POST(request: NextRequest) {
 
       if (!courtId) {
         // Check existing courts
-        const existingCourt = county.courts.find(
-          (c) => c.slug === courtSlug,
-        );
+        const existingCourt = county.courts.find((c) => c.slug === courtSlug);
         if (existingCourt) {
           courtId = existingCourt.id;
         } else {

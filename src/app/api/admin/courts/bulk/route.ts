@@ -13,10 +13,7 @@ export async function POST(request: NextRequest) {
 
   // Validate stateId
   if (!stateId || typeof stateId !== "string") {
-    return NextResponse.json(
-      { error: "stateId is required" },
-      { status: 422 },
-    );
+    return NextResponse.json({ error: "stateId is required" }, { status: 422 });
   }
 
   // Validate courtTypes

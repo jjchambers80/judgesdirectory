@@ -27,10 +27,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!stateSlug) {
-    return NextResponse.json(
-      { error: "State is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "State is required" }, { status: 400 });
   }
 
   // Validate file size (FR-001)
@@ -45,10 +42,7 @@ export async function POST(request: NextRequest) {
   try {
     csvText = await file.text();
   } catch {
-    return NextResponse.json(
-      { error: "Could not read file" },
-      { status: 422 },
-    );
+    return NextResponse.json({ error: "Could not read file" }, { status: 422 });
   }
 
   try {

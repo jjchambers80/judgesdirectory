@@ -69,7 +69,11 @@ export default function ImportSummary({
       {result.summary.duplicatesSkipped.length > 0 && (
         <details style={{ marginBottom: "1rem" }}>
           <summary
-            style={{ cursor: "pointer", fontWeight: 600, marginBottom: "0.5rem" }}
+            style={{
+              cursor: "pointer",
+              fontWeight: 600,
+              marginBottom: "0.5rem",
+            }}
           >
             Duplicates Skipped ({result.summary.duplicatesSkipped.length})
           </summary>
@@ -111,7 +115,11 @@ export default function ImportSummary({
       {result.summary.errorsDetail.length > 0 && (
         <details style={{ marginBottom: "1rem" }}>
           <summary
-            style={{ cursor: "pointer", fontWeight: 600, marginBottom: "0.5rem" }}
+            style={{
+              cursor: "pointer",
+              fontWeight: 600,
+              marginBottom: "0.5rem",
+            }}
           >
             Errors ({result.summary.errorsDetail.length})
           </summary>

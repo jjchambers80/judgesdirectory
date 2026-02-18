@@ -8,7 +8,10 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const limit = Math.min(
     VERIFICATION_PAGE_SIZE,
-    Math.max(1, parseInt(searchParams.get("limit") || String(VERIFICATION_PAGE_SIZE), 10)),
+    Math.max(
+      1,
+      parseInt(searchParams.get("limit") || String(VERIFICATION_PAGE_SIZE), 10),
+    ),
   );
   const stateId = searchParams.get("stateId") || undefined;
   const countyId = searchParams.get("countyId") || undefined;

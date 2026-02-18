@@ -20,7 +20,9 @@ export async function PATCH(
     return NextResponse.json(
       {
         error: "Validation failed",
-        details: [{ field: "action", message: "action must be 'verify' or 'unverify'" }],
+        details: [
+          { field: "action", message: "action must be 'verify' or 'unverify'" },
+        ],
       },
       { status: 400 },
     );

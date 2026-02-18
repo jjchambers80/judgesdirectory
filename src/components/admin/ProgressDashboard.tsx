@@ -44,11 +44,17 @@ export default function ProgressDashboard() {
   }, []);
 
   if (loading) {
-    return <p style={{ color: "var(--color-text-muted)" }}>Loading dashboard…</p>;
+    return (
+      <p style={{ color: "var(--color-text-muted)" }}>Loading dashboard…</p>
+    );
   }
 
   if (!data) {
-    return <p style={{ color: "var(--color-error-text)" }}>Failed to load dashboard data.</p>;
+    return (
+      <p style={{ color: "var(--color-error-text)" }}>
+        Failed to load dashboard data.
+      </p>
+    );
   }
 
   const { totals, target, byState, recentBatches, milestoneReached } = data;
@@ -71,8 +77,8 @@ export default function ProgressDashboard() {
             fontSize: "1.1rem",
           }}
         >
-          🎉 Milestone reached! {totals.imported.toLocaleString()} judges imported
-          — target of {target.toLocaleString()} met!
+          🎉 Milestone reached! {totals.imported.toLocaleString()} judges
+          imported — target of {target.toLocaleString()} met!
         </div>
       )}
 
@@ -87,7 +93,8 @@ export default function ProgressDashboard() {
           }}
         >
           <span>
-            Progress: {totals.imported.toLocaleString()} / {target.toLocaleString()}
+            Progress: {totals.imported.toLocaleString()} /{" "}
+            {target.toLocaleString()}
           </span>
           <span style={{ fontWeight: 600 }}>{progressPct}%</span>
         </div>

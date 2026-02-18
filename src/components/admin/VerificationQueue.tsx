@@ -152,7 +152,9 @@ export default function VerificationQueue({
             .filter((r: { error?: string }) => r.error)
             .map((r: { id: string; error: string }) => `${r.id}: ${r.error}`)
             .join("\n");
-          alert(`${data.succeeded} succeeded, ${data.failed} failed:\n${failedItems}`);
+          alert(
+            `${data.succeeded} succeeded, ${data.failed} failed:\n${failedItems}`,
+          );
         }
         fetchQueue(pagination.page);
       } else {
@@ -459,8 +461,7 @@ export default function VerificationQueue({
                           </button>
                         </>
                       )}
-                      {(j.status === "VERIFIED" ||
-                        j.status === "REJECTED") && (
+                      {(j.status === "VERIFIED" || j.status === "REJECTED") && (
                         <button
                           onClick={() => handleAction(j.id, "unverify")}
                           disabled={actionLoading === j.id}

@@ -6,13 +6,17 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const pilotStatesParam = searchParams.get("pilotStates") || "";
   const pilotSlugs = pilotStatesParam
-    ? pilotStatesParam.split(",").map((s) => s.trim()).filter(Boolean)
+    ? pilotStatesParam
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
     : [];
 
   // Build state filter if pilot states are specified
-  const stateFilter = pilotSlugs.length > 0
-    ? { court: { county: { state: { slug: { in: pilotSlugs } } } } }
-    : {};
+  const stateFilter =
+    pilotSlugs.length > 0
+      ? { court: { county: { state: { slug: { in: pilotSlugs } } } } }
+      : {};
 
   const [imported, verified, unverified, rejected] = await Promise.all([
     prisma.judge.count({ where: { ...stateFilter } }),
@@ -87,9 +91,7 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  const percentComplete = Number(
-    ((imported / PILOT_TARGET) * 100).toFixed(1),
-  );
+  const percentComplete = Number(((imported / PILOT_TARGET) * 100).toFixed(1));
 
   return NextResponse.json({
     target: PILOT_TARGET,

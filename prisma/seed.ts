@@ -68,6 +68,28 @@ function slugify(name: string): string {
     .slice(0, 100);
 }
 
+// Strip geographic suffixes so county names are just the proper name
+// e.g. "Harris County" → "Harris", "Orleans Parish" → "Orleans"
+const COUNTY_SUFFIXES = [
+  " City and Borough",
+  " Census Area",
+  " Municipality",
+  " Borough",
+  " Parish",
+  " County",
+  " city",
+  " City",
+];
+
+function stripCountySuffix(name: string): string {
+  for (const suffix of COUNTY_SUFFIXES) {
+    if (name.endsWith(suffix)) {
+      return name.slice(0, -suffix.length);
+    }
+  }
+  return name;
+}
+
 // County data by state FIPS code
 // Source: US Census Bureau FIPS county codes
 // Format: { stateFips: [{ name, fipsCode }] }
@@ -360,11 +382,12 @@ async function main() {
       .map((county) => {
         const stateId = stateMap.get(county.stateFips);
         if (!stateId) return null;
+        const cleanName = stripCountySuffix(county.name);
         return prisma.county.create({
           data: {
             stateId,
-            name: county.name,
-            slug: slugify(county.name),
+            name: cleanName,
+            slug: slugify(cleanName),
             fipsCode: county.countyFips,
           },
         });

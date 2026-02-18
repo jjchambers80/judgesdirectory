@@ -123,7 +123,9 @@ export default function AdminImportPage() {
 
   const handleRollback = async (batchId: string) => {
     if (
-      !confirm("Are you sure you want to rollback this import? All imported judge records will be deleted.")
+      !confirm(
+        "Are you sure you want to rollback this import? All imported judge records will be deleted.",
+      )
     )
       return;
 
@@ -179,6 +181,7 @@ export default function AdminImportPage() {
               border: "1px solid var(--color-input-border)",
               borderRadius: "0.375rem",
               background: "var(--color-bg-primary)",
+              color: "var(--color-text-primary)",
               cursor: "pointer",
               fontSize: "0.875rem",
             }}
@@ -300,8 +303,8 @@ export default function AdminImportPage() {
                 marginBottom: "1rem",
               }}
             >
-              {uploadResult.courtsToCreate.length} court(s) will be
-              auto-created during import.
+              {uploadResult.courtsToCreate.length} court(s) will be auto-created
+              during import.
             </div>
           )}
 
@@ -440,6 +443,7 @@ export default function AdminImportPage() {
                 border: "1px solid var(--color-input-border)",
                 borderRadius: "0.375rem",
                 background: "var(--color-bg-primary)",
+                color: "var(--color-text-primary)",
                 cursor: "pointer",
               }}
             >
@@ -471,9 +475,7 @@ export default function AdminImportPage() {
       <div style={{ marginTop: "2rem" }}>
         <h2 style={{ marginBottom: "1rem" }}>Import History</h2>
         {batches.length === 0 ? (
-          <p style={{ color: "var(--color-text-muted)" }}>
-            No imports yet.
-          </p>
+          <p style={{ color: "var(--color-text-muted)" }}>No imports yet.</p>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -597,7 +599,13 @@ function MiniStat({
         textAlign: "center",
       }}
     >
-      <div style={{ fontSize: "1.25rem", fontWeight: 700, color: color || "inherit" }}>
+      <div
+        style={{
+          fontSize: "1.25rem",
+          fontWeight: 700,
+          color: color || "inherit",
+        }}
+      >
         {value.toLocaleString()}
       </div>
       <div

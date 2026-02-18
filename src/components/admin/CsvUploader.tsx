@@ -52,7 +52,9 @@ export default function CsvUploader({
     setFileName(file.name);
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      setError(`File exceeds 5 MB limit (${(file.size / 1024 / 1024).toFixed(1)} MB)`);
+      setError(
+        `File exceeds 5 MB limit (${(file.size / 1024 / 1024).toFixed(1)} MB)`,
+      );
       return;
     }
 

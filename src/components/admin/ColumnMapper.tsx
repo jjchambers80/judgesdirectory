@@ -29,7 +29,8 @@ export default function ColumnMapper({
   initialMapping,
   onMappingChange,
 }: ColumnMapperProps) {
-  const [mapping, setMapping] = useState<Record<string, string>>(initialMapping);
+  const [mapping, setMapping] =
+    useState<Record<string, string>>(initialMapping);
 
   const handleChange = (csvColumn: string, targetField: string) => {
     const updated = { ...mapping };

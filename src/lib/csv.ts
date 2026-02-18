@@ -52,33 +52,63 @@ export interface CsvParseResult {
 const HEADER_MAP: Record<string, TargetField> = {
   "judge name": "fullName",
   "full name": "fullName",
-  "fullname": "fullName",
+  fullname: "fullName",
   name: "fullName",
   "court type": "courtType",
-  "courttype": "courtType",
+  courttype: "courtType",
   court: "courtType",
   county: "countyName",
   "county name": "countyName",
-  "countyname": "countyName",
+  countyname: "countyName",
   state: "stateName",
   "state name": "stateName",
-  "statename": "stateName",
+  statename: "stateName",
   "source url": "sourceUrl",
-  "sourceurl": "sourceUrl",
+  sourceurl: "sourceUrl",
   source: "sourceUrl",
   url: "sourceUrl",
   "selection method": "selectionMethod",
-  "selectionmethod": "selectionMethod",
+  selectionmethod: "selectionMethod",
   "appointing authority": "appointingAuthority",
-  "appointingauthority": "appointingAuthority",
+  appointingauthority: "appointingAuthority",
   education: "education",
   "prior experience": "priorExperience",
-  "priorexperience": "priorExperience",
+  priorexperience: "priorExperience",
   experience: "priorExperience",
   "political affiliation": "politicalAffiliation",
-  "politicalaffiliation": "politicalAffiliation",
+  politicalaffiliation: "politicalAffiliation",
   party: "politicalAffiliation",
 };
+
+/**
+ * Geographic suffixes to strip from county names for flexible matching.
+ * Ordered longest-first to avoid partial matches.
+ */
+const COUNTY_SUFFIXES = [
+  " city and borough",
+  " census area",
+  " municipality",
+  " borough",
+  " parish",
+  " county",
+  " city",
+];
+
+/**
+ * Normalize a county name for matching:
+ * - lowercase
+ * - trim whitespace
+ * - strip geographic suffixes ("County", "Parish", etc.)
+ */
+export function normalizeCountyName(name: string): string {
+  const normalized = name.toLowerCase().trim();
+  for (const suffix of COUNTY_SUFFIXES) {
+    if (normalized.endsWith(suffix)) {
+      return normalized.slice(0, -suffix.length);
+    }
+  }
+  return normalized;
+}
 
 function autoMapColumns(headers: string[]): Record<string, string> {
   const mapping: Record<string, string> = {};
@@ -150,7 +180,6 @@ export async function parseCsv(
     where: { slug: stateSlug },
     include: {
       counties: {
-        select: { id: true, name: true, slug: true },
         include: {
           courts: { select: { id: true, type: true, slug: true } },
         },
@@ -162,9 +191,16 @@ export async function parseCsv(
     throw new CsvParseError(`State "${stateSlug}" not found`, 422);
   }
 
-  // Build lookup maps
+  // Build set of acceptable state name variants for CSV cross-check
+  const stateAliases = new Set([
+    state.name.toLowerCase(),
+    state.slug.toLowerCase(),
+    state.abbreviation.toLowerCase(),
+  ]);
+
+  // Build lookup maps — index by normalized name for flexible matching
   const countyByName = new Map(
-    state.counties.map((c) => [c.name.toLowerCase(), c]),
+    state.counties.map((c) => [normalizeCountyName(c.name), c]),
   );
 
   // Build existing judges set for duplicate detection
@@ -176,9 +212,7 @@ export async function parseCsv(
   });
 
   const existingSet = new Set(
-    existingJudges.map(
-      (j) => `${j.fullName.toLowerCase()}:${j.courtId}`,
-    ),
+    existingJudges.map((j) => `${j.fullName.toLowerCase()}:${j.courtId}`),
   );
 
   // Track duplicates within the CSV itself
@@ -210,6 +244,15 @@ export async function parseCsv(
 
     const errors: string[] = [];
 
+    // Validate state matches dropdown selection (if State column is present)
+    if (mapped.stateName && mapped.stateName.length > 0) {
+      if (!stateAliases.has(mapped.stateName.toLowerCase())) {
+        errors.push(
+          `State "${mapped.stateName}" does not match selected state "${state.name}"`,
+        );
+      }
+    }
+
     // Validate required fields
     if (!mapped.fullName || mapped.fullName.length === 0) {
       errors.push("fullName is required");
@@ -238,9 +281,9 @@ export async function parseCsv(
       continue;
     }
 
-    // Resolve county
+    // Resolve county (case-insensitive, strips suffixes like "County", "Parish")
     const countyName = mapped.countyName || "";
-    const county = countyByName.get(countyName.toLowerCase());
+    const county = countyByName.get(normalizeCountyName(countyName));
 
     if (countyName && !county) {
       unmatchedCounties.add(countyName);
@@ -282,7 +325,10 @@ export async function parseCsv(
       continue;
     }
 
-    if (courtId && existingSet.has(`${mapped.fullName.toLowerCase()}:${courtId}`)) {
+    if (
+      courtId &&
+      existingSet.has(`${mapped.fullName.toLowerCase()}:${courtId}`)
+    ) {
       duplicateRows++;
       preview.push({
         row: i + 1,

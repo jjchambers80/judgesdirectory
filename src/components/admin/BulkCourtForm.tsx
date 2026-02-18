@@ -86,7 +86,11 @@ export default function BulkCourtForm({ states }: BulkCourtFormProps) {
         <div style={{ marginBottom: "1rem" }}>
           <label
             htmlFor="state-select"
-            style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600 }}
+            style={{
+              display: "block",
+              marginBottom: "0.5rem",
+              fontWeight: 600,
+            }}
           >
             State
           </label>
@@ -115,7 +119,11 @@ export default function BulkCourtForm({ states }: BulkCourtFormProps) {
         <div style={{ marginBottom: "1rem" }}>
           <label
             htmlFor="court-types"
-            style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600 }}
+            style={{
+              display: "block",
+              marginBottom: "0.5rem",
+              fontWeight: 600,
+            }}
           >
             Court Types (comma-separated)
           </label>

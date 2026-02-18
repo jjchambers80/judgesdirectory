@@ -48,12 +48,15 @@ Before importing judges, create courts for a pilot state:
 
 ### Step 2: Import Judges (US1)
 
-1. Prepare a CSV file with columns: `Judge Name`, `Court Type`, `County`, `Source URL`
+1. Prepare a CSV file with columns: `Judge Name`, `Court Type`, `County`, `State`, `Source URL`
 2. Navigate to `http://localhost:3000/admin/import/`
-3. Upload the CSV file
-4. Review the preview: valid rows, invalid rows, duplicates, courts to auto-create
-5. Adjust column mapping if needed
-6. Click "Confirm Import" → judge records are created as `UNVERIFIED`
+3. Select the target state from the dropdown
+4. Upload the CSV file
+5. Review the preview: valid rows, invalid rows, duplicates, courts to auto-create
+6. Adjust column mapping if needed
+7. Click "Confirm Import" → judge records are created as `UNVERIFIED`
+
+> **Note**: If your CSV includes a `State` column, the system validates that each row's state matches the selected dropdown state. Mismatches are flagged as errors in the preview.
 
 ### Step 3: Verify Judges (US2)
 
@@ -109,11 +112,11 @@ Before importing judges, create courts for a pilot state:
 ## CSV Format Example
 
 ```csv
-Judge Name,Court Type,County,Source URL,Term Start,Selection Method
-Jane Smith,District Court,Harris,https://txcourts.gov/judges/smith,2020-01-01,Elected
-John Doe,County Court,Dallas,https://txcourts.gov/judges/doe,2018-06-15,Appointed
+Judge Name,Court Type,County,State,Source URL,Selection Method
+Jane Smith,District Court,Harris,Texas,https://txcourts.gov/judges/smith,Elected
+John Doe,County Court,Dallas,Texas,https://txcourts.gov/judges/doe,Appointed
 ```
 
 **Required columns**: `Judge Name` (or mapped equivalent), `Source URL`
-**State**: Specified during import confirmation (not per-row)
-**Optional columns**: `Term Start`, `Term End`, `Selection Method`, `Appointing Authority`, `Education`, `Prior Experience`, `Political Affiliation`
+**State**: Selected via dropdown during import. If a `State` column is present in the CSV, each row is validated against the dropdown selection (accepts full name, abbreviation, or slug).
+**Optional columns**: `State`, `Term Start`, `Term End`, `Selection Method`, `Appointing Authority`, `Education`, `Prior Experience`, `Political Affiliation`
