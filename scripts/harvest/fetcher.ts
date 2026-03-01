@@ -17,6 +17,7 @@ import TurndownService from "turndown";
 
 export interface FetchResult {
   markdown: string;
+  rawHtml: string;
   htmlSize: number;
   markdownSize: number;
 }
@@ -103,6 +104,7 @@ export async function fetchPage(url: string): Promise<FetchResult> {
 
       return {
         markdown,
+        rawHtml: html,
         htmlSize: Buffer.byteLength(html, "utf-8"),
         markdownSize: Buffer.byteLength(markdown, "utf-8"),
       };

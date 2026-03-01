@@ -15,6 +15,9 @@ export interface CliFlags {
   reset: boolean;
   seedCourtsOnly: boolean;
   dryRun: boolean;
+  skipBio: boolean;
+  ballotpedia: boolean;
+  ballotpediaMax: number | null;
   outputDir: string;
 }
 
@@ -71,7 +74,7 @@ export interface Checkpoint {
   totalJudges: number;
 }
 
-/** A single judge record ready for CSV output */
+/** A single judge record ready for CSV output (basic roster data) */
 export interface CsvJudgeRecord {
   "Judge Name": string;
   "Court Type": string;
@@ -81,9 +84,64 @@ export interface CsvJudgeRecord {
   "Selection Method": string;
 }
 
+/** Enriched judge record with full profile data */
+export interface EnrichedJudgeRecord {
+  // Identity
+  fullName: string;
+  photoUrl: string | null;
+
+  // Court Assignment
+  courtType: string;
+  county: string | null;
+  state: string;
+  division: string | null;
+  isChiefJudge: boolean;
+
+  // Term & Selection
+  termStart: string | null;
+  termEnd: string | null;
+  selectionMethod: string | null;
+  appointingAuthority: string | null;
+  appointmentDate: string | null;
+
+  // Biographical
+  birthDate: string | null;
+  education: string | null;
+  priorExperience: string | null;
+  politicalAffiliation: string | null;
+  barAdmissionDate: string | null;
+  barAdmissionState: string | null;
+
+  // Contact
+  courthouseAddress: string | null;
+  courthousePhone: string | null;
+
+  // Source Attribution
+  rosterUrl: string;
+  bioPageUrl: string | null;
+
+  // Data Quality
+  confidenceScore: number;
+  fieldsFromRoster: string[];
+  fieldsFromBio: string[];
+  fieldsFromExternal: string[];
+}
+
 // ---------------------------------------------------------------------------
 // Flag parsing
 // ---------------------------------------------------------------------------
+
+export interface CliFlags {
+  resume: boolean;
+  reset: boolean;
+  seedCourtsOnly: boolean;
+  dryRun: boolean;
+  skipBio: boolean;
+  ballotpedia: boolean;
+  ballotpediaMax: number | null;
+  useIdentity: boolean;
+  outputDir: string;
+}
 
 export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
   const flags: CliFlags = {
@@ -91,6 +149,10 @@ export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
     reset: false,
     seedCourtsOnly: false,
     dryRun: false,
+    skipBio: false,
+    ballotpedia: false,
+    ballotpediaMax: null,
+    useIdentity: true, // Default to identity-based dedup
     outputDir: path.resolve(process.cwd(), "scripts/harvest/output"),
   };
 
@@ -108,6 +170,27 @@ export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
         break;
       case "--resume":
         flags.resume = true;
+        break;
+      case "--skip-bio":
+        flags.skipBio = true;
+        break;
+      case "--ballotpedia":
+        flags.ballotpedia = true;
+        break;
+      case "--ballotpedia-max":
+        if (argv[i + 1] && !argv[i + 1].startsWith("--")) {
+          flags.ballotpedia = true;
+          flags.ballotpediaMax = parseInt(argv[++i], 10);
+        } else {
+          console.error("Error: --ballotpedia-max requires a number argument");
+          process.exit(1);
+        }
+        break;
+      case "--no-identity":
+        flags.useIdentity = false;
+        break;
+      case "--use-identity":
+        flags.useIdentity = true;
         break;
       case "--output-dir":
         if (argv[i + 1] && !argv[i + 1].startsWith("--")) {
@@ -144,11 +227,24 @@ export function validateEnv(flags: CliFlags): void {
     return;
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error(
-      'Error: ANTHROPIC_API_KEY is required. Set it via:\n  export ANTHROPIC_API_KEY="sk-ant-..."',
-    );
-    process.exit(1);
+  // Check for appropriate API key based on LLM provider
+  const provider = process.env.LLM_PROVIDER?.toLowerCase() || "openai";
+  
+  if (provider === "anthropic") {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error(
+        'Error: ANTHROPIC_API_KEY is required when LLM_PROVIDER=anthropic. Set it via:\n  export ANTHROPIC_API_KEY="sk-ant-..."',
+      );
+      process.exit(1);
+    }
+  } else {
+    // Default to OpenAI
+    if (!process.env.OPENAI_API_KEY) {
+      console.error(
+        'Error: OPENAI_API_KEY is required. Set it via:\n  export OPENAI_API_KEY="sk-..."',
+      );
+      process.exit(1);
+    }
   }
 }
 

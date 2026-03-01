@@ -64,7 +64,15 @@ enum ImportBatchStatus {
 enum JudgeStatus {
   UNVERIFIED
   VERIFIED
+  NEEDS_REVIEW
   REJECTED
+}
+
+enum SourceAuthority {
+  OFFICIAL_GOV      // Official government source (FJC, Congress.gov, state judiciary)
+  COURT_WEBSITE     // Individual court website
+  ELECTION_RECORDS  // Secretary of State / election data
+  SECONDARY         // News, bar associations, etc.
 }
 
 model ImportBatch {
@@ -90,17 +98,45 @@ model Judge {
   court                Court        @relation(fields: [courtId], references: [id], onDelete: Cascade)
   fullName             String
   slug                 String
+  
+  // Term & Selection
   termStart            DateTime?
   termEnd              DateTime?
   selectionMethod      String?
   appointingAuthority  String?
+  appointmentDate      DateTime?
+  
+  // Biographical
+  birthDate            DateTime?
+  photoUrl             String?
   education            String?      @db.Text
   priorExperience      String?      @db.Text
   politicalAffiliation String?
+  barAdmissionDate     DateTime?
+  barAdmissionState    String?
+  
+  // Court Assignment
+  isChiefJudge         Boolean      @default(false)
+  division             String?
+  
+  // Contact Information
+  courthouseAddress    String?      @db.Text
+  courthousePhone      String?
+  
+  // Source & Status
   sourceUrl            String?
+  sourceAuthority      SourceAuthority?
   status               JudgeStatus  @default(UNVERIFIED)
   importBatchId        String?
   importBatch          ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  
+  // Confidence & Verification
+  confidenceScore      Float?       // 0.0 - 1.0 overall confidence
+  autoVerified         Boolean      @default(false)
+  anomalyFlags         String[]     // Array of anomaly codes
+  reviewReason         String?      // Why queued for manual review
+  verifiedAt           DateTime?    // When verified (auto or manual)
+  lastHarvestAt        DateTime?    // Last time data was refreshed from source
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
 
