@@ -2,12 +2,19 @@
 
 This folder contains project documentation organized by category.
 
+## Project Roadmap
+
+See [plan/project-roadmap-1.md](../plan/project-roadmap-1.md) for the consolidated feature status and release plan.
+
 ## Structure
 
 ```text
 docs/
 ├── README.md              # This file
-├── business/               # Business analysis, ICP, monetization
+├── business/              # Business analysis, ICP, monetization
+├── design/                # Design system, Storybook, UI framework plans
+│   ├── storybook-plan.md
+│   └── shadcn-migration-plan.md
 ├── research/              # Technology evaluations and decision records
 │   └── web-scraping-tools.md
 ├── architecture/          # System design and technical documentation
