@@ -1,0 +1,9 @@
+{
+  "name": "webapp-testing",
+  "source": "anthropics-skills",
+  "description": "Toolkit for interacting with and testing local web applications using Playwright.",
+  "description_ja": "Test web applications",
+  "whenToUse": "To test local web applications, write native Python Playwright scripts.",
+  "categories": [],
+  "installedAt": "2026-03-01T04:31:06.331Z"
+}

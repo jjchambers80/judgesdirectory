@@ -1,0 +1,9 @@
+{
+  "name": "agent-browser",
+  "source": "compound-engineering",
+  "description": "Browser automation using Vercel's agent-browser CLI.",
+  "description_ja": "Agent Browser",
+  "whenToUse": "Vercel's headless browser automation CLI designed for AI agents. Uses ref-based selection (@e1, @e2) from accessibility snapshots.",
+  "categories": [],
+  "installedAt": "2026-03-01T04:31:59.287Z"
+}

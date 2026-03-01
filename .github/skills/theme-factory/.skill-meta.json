@@ -1,0 +1,9 @@
+{
+  "name": "theme-factory",
+  "source": "anthropics-skills",
+  "description": "Toolkit for styling artifacts with a theme.",
+  "description_ja": "Create and manage themes",
+  "whenToUse": "This skill provides a curated collection of professional font and color themes themes, each with carefully selected color palettes and font pairings. Once a theme is chosen, it can be applied to an...",
+  "categories": [],
+  "installedAt": "2026-03-01T04:30:45.876Z"
+}

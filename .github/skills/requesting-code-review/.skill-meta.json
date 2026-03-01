@@ -1,0 +1,9 @@
+{
+  "name": "requesting-code-review",
+  "source": "obra-superpowers",
+  "description": "Use when completing tasks, implementing major features, or before merging to verify work meets requirements",
+  "description_ja": "Requesting Code Review",
+  "whenToUse": "Dispatch superpowers:code-reviewer subagent to catch issues before they cascade.",
+  "categories": [],
+  "installedAt": "2026-03-01T06:15:13.815Z"
+}

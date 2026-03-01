@@ -1,0 +1,9 @@
+{
+  "name": "web-artifacts-builder",
+  "source": "anthropics-skills",
+  "description": "Suite of tools for creating elaborate, multi-component claude.ai HTML artifacts using modern frontend web technologies (React, Tailwind CSS, shadcn/ui).",
+  "description_ja": "Build web artifacts and components",
+  "whenToUse": "To build powerful frontend claude.ai artifacts, follow these steps: 1. Initialize the frontend repo using `scripts/init-artifact.sh`",
+  "categories": [],
+  "installedAt": "2026-03-01T04:31:08.360Z"
+}

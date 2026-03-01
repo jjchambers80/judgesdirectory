@@ -1,0 +1,8 @@
+{
+  "name": "ContentAnalysis",
+  "source": "pai-packs",
+  "description": "Content extraction and analysis — wisdom extraction from videos, podcasts, articles, and YouTube.",
+  "whenToUse": "Unified skill for content extraction and analysis workflows.",
+  "categories": [],
+  "installedAt": "2026-03-01T18:20:56.161Z"
+}
