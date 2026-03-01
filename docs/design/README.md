@@ -9,7 +9,7 @@ This folder contains design system documentation for judgesdirectory.org.
 
 - [storybook-plan.md](storybook-plan.md) — Plan for adding Storybook component documentation
 - [shadcn-migration-plan.md](shadcn-migration-plan.md) — Plan for migrating to shadcn/ui + Tailwind CSS
-- [color-tokens.md](color-tokens.md) — Blue palette and design tokens (WCAG AA compliant)
+- `color-tokens.md` — (Pending) New color palette and design tokens
 
 ## Current State
 
@@ -24,7 +24,7 @@ The application currently uses:
 
 1. **Storybook** — Interactive component documentation and playground
 2. **shadcn/ui + Tailwind** — Component library migration for consistency and maintainability
-3. **New color palette** — ✅ Documented in [color-tokens.md](color-tokens.md)
+3. **New color palette** — Updated design tokens (in progress)
 
 ## Migration Sequence
 
