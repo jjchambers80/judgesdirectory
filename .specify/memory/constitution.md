@@ -1,23 +1,38 @@
 <!--
   Sync Impact Report
   ==================
-  Version change: 1.0.0 → 1.1.0 (MINOR — new principle added)
-  Modified principles: None renamed or redefined
+  Version change: 1.1.0 → 1.2.0 (MINOR — new principle added,
+    two principles materially revised, tech stack expanded)
+
+  Modified principles:
+    - Principle IV: "Progressive Launch & Phased Delivery"
+      → "State-by-State Expansion & Phased Delivery" (updated to
+      reflect completed MVP and 8-phase roadmap)
+    - Principle V: "Simplicity & MVP Discipline"
+      → "Simplicity & Incremental Discipline" (reframed for
+      post-MVP scope control)
+
   Added sections:
-    - Principle VI. Accessibility & WCAG Compliance (new)
-    - Development Workflow: accessibility quality gate added
+    - Principle VII. Data Pipeline Integrity & Cost Discipline (new)
+    - Technology Stack: Harvesting Pipeline subsection (new)
+    - Technology Stack: Design System (planned) subsection (new)
+    - Development Workflow: harvesting quality gates added
+
   Removed sections: None
+
   Templates requiring updates:
     - .specify/templates/plan-template.md ✅ compatible (Constitution
-      Check section will pick up Principle VI at plan time)
+      Check section will pick up Principle VII at plan time)
     - .specify/templates/spec-template.md ✅ compatible (specs will
-      reference VI in requirements as needed)
-    - .specify/templates/tasks-template.md ✅ compatible (accessibility
+      reference VII in requirements as needed)
+    - .specify/templates/tasks-template.md ✅ compatible (pipeline
       tasks fit existing phased structure)
+    - .specify/templates/constitution-template.md ✅ no changes needed
+
   Follow-up TODOs: None
 -->
 
-# judgesdirectory.org National Judge Directory MVP Constitution
+# judgesdirectory.org National Judge Directory Constitution
 
 ## Core Principles
 
@@ -26,13 +41,18 @@
 - All judge profile data MUST originate from publicly available
   government records (state judicial branch websites, Secretary of
   State election records, official judicial biographies).
-- Every published data point MUST cite its official source.
-- Data MUST pass a manual verification workflow before publication.
-- Stale or unverifiable data MUST be flagged and withheld until
-  confirmed.
+- Every published data point MUST cite its official source URL.
+- Data MUST pass a verification workflow (manual review or
+  automated cross-reference with quality gate) before publication.
+- Only records with `status = VERIFIED` MUST appear on public
+  pages. Unverified, stale, or unverifiable data MUST be withheld.
+- Enrichment sources (e.g., Ballotpedia, state bar lookups) MUST
+  be stored with separate source URLs and MUST NOT replace
+  official government sources.
 - Rationale: The directory's credibility depends on factual
   correctness. Inaccurate judicial data creates legal and
-  reputational risk.
+  reputational risk. Provenance and verification are the primary
+  trust mechanisms.
 
 ### II. SEO-First Architecture
 
@@ -46,8 +66,14 @@
   public-facing pages to ensure crawlability.
 - Programmatic page titles MUST follow keyword templates (e.g.,
   "Judges in {County}", "{Judge Name} biography").
+- Pillar pages (curated, long-form jurisdiction overviews) MAY be
+  introduced for high-intent location queries when programmatic
+  pages would be thin. Both pillar and programmatic pages MUST
+  maintain consistent canonical URLs, structured data, and sitemap
+  coverage.
 - Rationale: Organic search traffic is the primary growth channel.
-  SEO architecture is the product's competitive moat.
+  SEO architecture is the product's competitive moat. Pillar pages
+  hedge against thin-content penalties during early state launches.
 
 ### III. Legal Safety & Neutrality (NON-NEGOTIABLE)
 
@@ -59,41 +85,53 @@
   the directory is for informational purposes only.
 - Features explicitly excluded (user ratings, reviews, public
   commenting, judicial scoring) MUST NOT be introduced until a
-  formal legal review is conducted post-MVP.
+  formal legal review is conducted.
+- Sponsored attorney placements MUST be clearly labeled as
+  "Sponsored" and MUST NOT imply judicial endorsement of any
+  legal services.
 - Rationale: Publishing information about sitting judges carries
   significant legal exposure. Strict neutrality and source
   attribution are the primary risk mitigations.
 
-### IV. Progressive Launch & Phased Delivery
+### IV. State-by-State Expansion & Phased Delivery
 
-- The project MUST be delivered in four distinct phases (Foundation,
-  Data Ingestion, Profile Optimization, Monetization) over 90–120
-  days.
-- Each phase MUST have measurable deliverables and MUST NOT begin
-  until its predecessor's deliverables are accepted.
-- Pilot launch MUST cover exactly 3 states with a minimum of 1,500
-  verified judge profiles before any expansion work begins.
-- Post-MVP expansion items (10-state rollout, automated ingestion,
-  election history, term alerts, analytics dashboard) MUST remain
-  out of scope during MVP delivery.
-- Rationale: Phased delivery reduces risk, enables early
-  validation, and prevents scope creep in a domain where data
-  quality compounds with scale.
+- The project MUST be delivered in sequential phases, each with
+  measurable deliverables that MUST be accepted before the next
+  phase begins.
+- The current roadmap comprises eight phases: Foundation, Theme
+  Toggle, Data Ingestion, Florida Judge Harvest (all completed),
+  State Expansion, Search & Discovery, Display Ads, and Attorney
+  Placements (planned).
+- Expansion to a new state MUST NOT begin until the following
+  quality gates are met:
+  1. Court structure is seeded and URL configuration is curated.
+  2. Harvesting pipeline produces records that pass Zod schema
+     validation.
+  3. Identity resolution and deduplication are stable (no
+     duplicate public pages).
+  4. Verification throughput is sufficient to clear the state's
+     queue within a defined timeline.
+  5. Coverage is sufficient for the majority of target
+     jurisdictions (or pillar pages are used to cover gaps).
+- Post-expansion items (public API, advanced analytics, civic
+  observation integration) MUST remain out of scope until the
+  core expansion phases are complete.
+- Rationale: State-by-state delivery reduces risk, enables early
+  validation per jurisdiction, and prevents scope creep in a
+  domain where data quality compounds with scale.
 
-### V. Simplicity & MVP Discipline
+### V. Simplicity & Incremental Discipline
 
-- The MVP feature set is fixed: state grid, county lists, court
-  breakdowns, judge profiles, name search, state/county/court
-  filters, SEO infrastructure, display ads, and manual attorney
-  placements.
-- Excluded features (user accounts, public API, advanced analytics,
-  civic observation integration) MUST NOT be added during MVP.
+- Each phase MUST have a defined scope. Features outside that
+  scope MUST NOT be added during the phase.
 - New dependencies or services MUST be justified against the
-  defined tech stack (Next.js, PostgreSQL, Prisma, Vercel, Google
-  Ad Manager) before adoption.
+  defined tech stack before adoption.
 - When in doubt, choose the simpler implementation. YAGNI applies.
-- Rationale: A focused MVP shipped on time with accurate data is
-  more valuable than a feature-rich product that never launches.
+- Field additions to the judge data model MUST demonstrate clear
+  user value or SEO benefit. Free-text fields SHOULD be
+  accompanied by a normalization plan to enable future aggregation.
+- Rationale: Disciplined scope control is essential at every stage.
+  Complexity deferred is complexity avoided.
 
 ### VI. Accessibility & WCAG Compliance
 
@@ -128,26 +166,89 @@
   to bypass repeated header/navigation content.
 - Page `<title>` elements and heading hierarchy MUST accurately
   describe page content for screen reader users.
-- Rationale: A publicly funded judicial directory MUST be usable
-  by all citizens including those using assistive technologies.
-  WCAG 2.1 AA is the recognized legal standard (ADA, Section 508)
-  and ensures the widest possible audience has equal access.
+- Rationale: A public judicial directory MUST be usable by all
+  citizens including those using assistive technologies. WCAG 2.1
+  AA is the recognized legal standard (ADA, Section 508) and
+  ensures the widest possible audience has equal access.
+
+### VII. Data Pipeline Integrity & Cost Discipline
+
+- The harvesting pipeline MUST follow the established stage order:
+  seed → fetch → extract → enrich → normalize → deduplicate →
+  output.
+- Deterministic extraction (CSS/XPath patterns for known site
+  structures) MUST be preferred over LLM extraction. LLM fallback
+  MUST only be used for pages without a deterministic pattern.
+- All extraction results MUST be validated against a Zod schema
+  before entering the pipeline. Records that fail validation MUST
+  be logged and excluded from output.
+- Identity resolution MUST assign a stable unique identifier to
+  each judge using the defined confidence hierarchy (bar number →
+  name + education → name + bar admission → name + appointment →
+  name + court + county fallback).
+- Deduplication MUST run before output. Duplicate records MUST be
+  merged, preserving the highest-confidence identity and all
+  source URLs.
+- Checkpoint and resume MUST be supported for all harvesting runs.
+  A failed run MUST be resumable without re-fetching successfully
+  processed pages.
+- The cheapest model that reliably returns valid JSON MUST be the
+  default for LLM extraction. Higher-cost models MUST only be used
+  when the default fails or when context length requires it.
+- Every harvesting run MUST produce a quality report documenting:
+  pages fetched (success/failure), judges extracted, duplicates
+  removed, field coverage percentages, and counties with zero
+  judges.
+- Rationale: The harvesting pipeline is the primary data supply
+  mechanism. Deterministic-first extraction minimizes cost,
+  identity resolution prevents duplicate public pages, and quality
+  reports provide the operational visibility needed to maintain
+  data accuracy at scale.
 
 ## Technology Stack & Infrastructure
+
+### Application
 
 - **Framework**: Next.js (SSR for all public pages)
 - **Database**: PostgreSQL with Prisma ORM
 - **Hosting**: Vercel (production deployment target)
 - **Ad Platform**: Google Ad Manager for programmatic display ads
-- **Data Entities**: State, County, Court, Judge — relationships
-  MUST follow the defined data model (state → county → court →
-  judge hierarchy).
+- **Data Entities**: State, County, Court, Judge, ImportBatch —
+  relationships MUST follow the defined data model (state → county
+  → court → judge hierarchy).
 - **Domain**: `https://judgesdirectory.org` — all routes MUST be
   served under this domain.
-- Schema changes MUST be managed via Prisma migrations and version-
-  controlled.
+
+### Harvesting Pipeline
+
+- **Runtime**: Node.js with TypeScript (strict mode)
+- **LLM Providers**: Multi-provider abstraction supporting OpenAI
+  and Anthropic. Default: OpenAI gpt-4o-mini for cost efficiency.
+- **Validation**: Zod schemas for all extraction results.
+- **Enrichment**: Bio page extraction, Ballotpedia integration,
+  Florida Bar lookup (planned).
+- **Identity**: Stable ID generation with confidence levels (high,
+  medium, low) and cross-source matching via Levenshtein distance.
+
+### Design System (Planned)
+
+- **CSS Framework**: Tailwind CSS (migration from inline styles)
+- **Component Library**: shadcn/ui (Radix primitives, copy/paste
+  ownership model)
+- **Documentation**: Storybook for component isolation and visual
+  testing
+- **Theme**: CSS custom properties in `theme-vars.css` bridged to
+  Tailwind via `darkMode: ["class", '[data-theme="dark"]']`
+
+### Infrastructure Rules
+
+- Schema changes MUST be managed via Prisma migrations and
+  version-controlled.
 - Environment configuration (API keys, database URLs) MUST NOT be
   committed to the repository.
+- State harvesting configurations MUST be stored as versioned JSON
+  files (e.g., `florida-courts.json`) in the `scripts/harvest/`
+  directory.
 
 ## Development Workflow & Quality Gates
 
@@ -165,6 +266,12 @@
   MUST be verified, and color contrast MUST meet WCAG 2.1 AA
   ratios. Axe or equivalent automated a11y checks SHOULD be run
   as part of PR review.
+- Harvesting pipeline changes MUST include a quality report
+  comparison (before/after) demonstrating no regression in field
+  coverage or extraction accuracy.
+- New state configurations MUST pass the state expansion quality
+  gates (Principle IV) before harvest output is imported into
+  production.
 - Ad placement zones (header, sidebar, in-content) MUST NOT
   interfere with content readability, SEO performance, or
   accessibility.
@@ -174,21 +281,24 @@
 ## Governance
 
 - This constitution supersedes all other process documents and
-  informal practices for the judgesdirectory.org MVP project.
+  informal practices for the judgesdirectory.org project.
 - All pull requests and code reviews MUST verify compliance with
   these principles. Non-compliance MUST be documented and resolved
   before merge.
 - Amendments to this constitution require:
   1. A written proposal describing the change and its rationale.
   2. Review and approval by the project lead.
-  3. A migration plan for any in-flight work affected by the change.
+  3. A migration plan for any in-flight work affected by the
+     change.
   4. An updated version number following semantic versioning:
      - MAJOR: Principle removal or incompatible redefinition.
      - MINOR: New principle or materially expanded guidance.
-     - PATCH: Clarifications, wording, or non-semantic refinements.
+     - PATCH: Clarifications, wording, or non-semantic
+       refinements.
 - Compliance reviews MUST occur at each phase gate (end of each
   project phase) to verify adherence.
 - Runtime development guidance is maintained in project
-  documentation and MUST align with this constitution.
+  documentation (`docs/`, `plan/`, `specs/`) and MUST align with
+  this constitution.
 
-**Version**: 1.1.0 | **Ratified**: 2026-02-17 | **Last Amended**: 2026-02-18
+**Version**: 1.2.0 | **Ratified**: 2026-02-17 | **Last Amended**: 2026-03-01
