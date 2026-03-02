@@ -22,6 +22,10 @@
    Uses @theme inline so Tailwind keeps var() references at runtime
    (required because the underlying variables change via data-theme). */
 @theme inline {
+  /* --- Font family (Roboto via next/font/google) --- */
+  --font-sans:
+    var(--font-roboto), "Roboto", ui-sans-serif, system-ui, sans-serif;
+
   /* --- shadcn/ui core semantic tokens --- */
   --color-background: var(--color-bg-primary);
   --color-foreground: var(--color-text-primary);
