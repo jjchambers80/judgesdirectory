@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
 
 interface JudgeRecord {
   id: string;
@@ -188,24 +189,12 @@ export default function VerificationQueue({
   return (
     <div>
       {/* Filters */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.75rem",
-          marginBottom: "1rem",
-          alignItems: "center",
-        }}
-      >
+      <div className="flex flex-wrap gap-3 mb-4 items-center">
         <select
           aria-label="Filter by status"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          style={{
-            padding: "0.375rem 0.5rem",
-            border: "1px solid var(--color-input-border)",
-            borderRadius: "0.375rem",
-          }}
+          className="px-2 py-1.5 border border-input rounded-md"
         >
           <option value="UNVERIFIED">Unverified</option>
           <option value="VERIFIED">Verified</option>
@@ -216,11 +205,7 @@ export default function VerificationQueue({
           aria-label="Filter by state"
           value={stateId}
           onChange={(e) => setStateId(e.target.value)}
-          style={{
-            padding: "0.375rem 0.5rem",
-            border: "1px solid var(--color-input-border)",
-            borderRadius: "0.375rem",
-          }}
+          className="px-2 py-1.5 border border-input rounded-md"
         >
           <option value="">All States</option>
           {states.map((s) => (
@@ -234,11 +219,7 @@ export default function VerificationQueue({
           aria-label="Filter by import batch"
           value={batchId}
           onChange={(e) => setBatchId(e.target.value)}
-          style={{
-            padding: "0.375rem 0.5rem",
-            border: "1px solid var(--color-input-border)",
-            borderRadius: "0.375rem",
-          }}
+          className="px-2 py-1.5 border border-input rounded-md"
         >
           <option value="">All Batches</option>
           {batches.map((b) => (
@@ -248,61 +229,38 @@ export default function VerificationQueue({
           ))}
         </select>
 
-        <span
-          style={{
-            fontSize: "0.8rem",
-            color: "var(--color-text-muted)",
-          }}
-        >
+        <span className="text-xs text-muted-foreground">
           {pagination.total} records
         </span>
       </div>
 
       {/* Batch Actions (US5) */}
       {selectedIds.size > 0 && (
-        <div
-          style={{
-            display: "flex",
-            gap: "0.5rem",
-            alignItems: "center",
-            marginBottom: "0.75rem",
-            padding: "0.5rem 0.75rem",
-            background: "var(--color-bg-secondary)",
-            borderRadius: "0.375rem",
-          }}
-        >
-          <span style={{ fontSize: "0.8rem", fontWeight: 600 }}>
+        <div className="flex gap-2 items-center mb-3 px-3 py-2 bg-secondary rounded-md">
+          <span className="text-sm font-semibold">
             {selectedIds.size} selected
           </span>
           <button
             onClick={() => handleBatchAction("verify")}
             disabled={batchActionLoading}
-            style={{
-              padding: "0.25rem 0.75rem",
-              background: "var(--color-badge-success-bg)",
-              color: "var(--color-badge-success-text)",
-              border: "none",
-              borderRadius: "0.25rem",
-              cursor: batchActionLoading ? "not-allowed" : "pointer",
-              fontSize: "0.75rem",
-              fontWeight: 600,
-            }}
+            className={cn(
+              "px-3 py-1 bg-badge-success-bg text-badge-success-text border-none rounded text-xs font-semibold",
+              batchActionLoading
+                ? "cursor-not-allowed opacity-50"
+                : "cursor-pointer",
+            )}
           >
             Verify Selected
           </button>
           <button
             onClick={() => handleBatchAction("reject")}
             disabled={batchActionLoading}
-            style={{
-              padding: "0.25rem 0.75rem",
-              background: "var(--color-error-bg)",
-              color: "var(--color-error-text)",
-              border: "none",
-              borderRadius: "0.25rem",
-              cursor: batchActionLoading ? "not-allowed" : "pointer",
-              fontSize: "0.75rem",
-              fontWeight: 600,
-            }}
+            className={cn(
+              "px-3 py-1 bg-error-bg text-error-text border-none rounded text-xs font-semibold",
+              batchActionLoading
+                ? "cursor-not-allowed opacity-50"
+                : "cursor-pointer",
+            )}
           >
             Reject Selected
           </button>
@@ -311,22 +269,17 @@ export default function VerificationQueue({
 
       {/* Table */}
       {loading ? (
-        <p style={{ color: "var(--color-text-muted)" }}>Loading…</p>
+        <p className="text-muted-foreground">Loading…</p>
       ) : judges.length === 0 ? (
-        <p style={{ color: "var(--color-text-muted)" }}>
+        <p className="text-muted-foreground">
           No records match the current filters.
         </p>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
             <thead>
-              <tr
-                style={{
-                  borderBottom: "2px solid var(--color-border)",
-                  textAlign: "left",
-                }}
-              >
-                <th style={{ padding: "0.5rem", width: "2rem" }}>
+              <tr className="border-b-2 border-border text-left">
+                <th className="p-2 w-8">
                   <input
                     type="checkbox"
                     checked={
@@ -336,22 +289,19 @@ export default function VerificationQueue({
                     aria-label="Select all on page"
                   />
                 </th>
-                <th style={{ padding: "0.5rem" }}>Name</th>
-                <th style={{ padding: "0.5rem" }}>Court</th>
-                <th style={{ padding: "0.5rem" }}>County</th>
-                <th style={{ padding: "0.5rem" }}>State</th>
-                <th style={{ padding: "0.5rem" }}>Source</th>
-                <th style={{ padding: "0.5rem" }}>Status</th>
-                <th style={{ padding: "0.5rem" }}>Actions</th>
+                <th className="p-2">Name</th>
+                <th className="p-2">Court</th>
+                <th className="p-2">County</th>
+                <th className="p-2">State</th>
+                <th className="p-2">Source</th>
+                <th className="p-2">Status</th>
+                <th className="p-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {judges.map((j) => (
-                <tr
-                  key={j.id}
-                  style={{ borderBottom: "1px solid var(--color-border)" }}
-                >
-                  <td style={{ padding: "0.5rem" }}>
+                <tr key={j.id} className="border-b border-border">
+                  <td className="p-2">
                     <input
                       type="checkbox"
                       checked={selectedIds.has(j.id)}
@@ -359,103 +309,64 @@ export default function VerificationQueue({
                       aria-label={`Select ${j.fullName}`}
                     />
                   </td>
-                  <td
-                    style={{
-                      padding: "0.5rem",
-                      fontWeight: 500,
-                      fontSize: "0.875rem",
-                    }}
-                  >
-                    {j.fullName}
-                  </td>
-                  <td style={{ padding: "0.5rem", fontSize: "0.8rem" }}>
-                    {j.court}
-                  </td>
-                  <td style={{ padding: "0.5rem", fontSize: "0.8rem" }}>
-                    {j.county}
-                  </td>
-                  <td style={{ padding: "0.5rem", fontSize: "0.8rem" }}>
-                    {j.state}
-                  </td>
-                  <td style={{ padding: "0.5rem", fontSize: "0.8rem" }}>
+                  <td className="p-2 font-medium text-sm">{j.fullName}</td>
+                  <td className="p-2 text-xs">{j.court}</td>
+                  <td className="p-2 text-xs">{j.county}</td>
+                  <td className="p-2 text-xs">{j.state}</td>
+                  <td className="p-2 text-xs">
                     {j.sourceUrl ? (
                       <a
                         href={j.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ color: "var(--color-link)" }}
+                        className="text-link"
                       >
                         View Source
                       </a>
                     ) : (
-                      <span style={{ color: "var(--color-text-muted)" }}>
-                        —
-                      </span>
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td style={{ padding: "0.5rem" }}>
+                  <td className="p-2">
                     <span
-                      style={{
-                        padding: "0.125rem 0.375rem",
-                        borderRadius: "9999px",
-                        fontSize: "0.7rem",
-                        fontWeight: 600,
-                        background:
-                          j.status === "VERIFIED"
-                            ? "var(--color-badge-success-bg)"
-                            : j.status === "REJECTED"
-                              ? "var(--color-error-bg)"
-                              : "var(--color-badge-warning-bg)",
-                        color:
-                          j.status === "VERIFIED"
-                            ? "var(--color-badge-success-text)"
-                            : j.status === "REJECTED"
-                              ? "var(--color-error-text)"
-                              : "var(--color-badge-warning-text)",
-                      }}
+                      className={cn(
+                        "px-1.5 py-0.5 rounded-full text-[0.7rem] font-semibold",
+                        j.status === "VERIFIED" &&
+                          "bg-badge-success-bg text-badge-success-text",
+                        j.status === "REJECTED" &&
+                          "bg-error-bg text-error-text",
+                        j.status === "UNVERIFIED" &&
+                          "bg-badge-warning-bg text-badge-warning-text",
+                      )}
                     >
                       {j.status}
                     </span>
                   </td>
-                  <td style={{ padding: "0.5rem" }}>
-                    <div style={{ display: "flex", gap: "0.375rem" }}>
+                  <td className="p-2">
+                    <div className="flex gap-1.5">
                       {j.status === "UNVERIFIED" && (
                         <>
                           <button
                             onClick={() => handleAction(j.id, "verify")}
                             disabled={actionLoading === j.id}
-                            style={{
-                              padding: "0.2rem 0.5rem",
-                              background: "var(--color-badge-success-bg)",
-                              color: "var(--color-badge-success-text)",
-                              border: "none",
-                              borderRadius: "0.25rem",
-                              cursor:
-                                actionLoading === j.id
-                                  ? "not-allowed"
-                                  : "pointer",
-                              fontSize: "0.7rem",
-                              fontWeight: 600,
-                            }}
+                            className={cn(
+                              "px-2 py-0.5 bg-badge-success-bg text-badge-success-text border-none rounded text-[0.7rem] font-semibold",
+                              actionLoading === j.id
+                                ? "cursor-not-allowed opacity-50"
+                                : "cursor-pointer",
+                            )}
                           >
                             Verify
                           </button>
                           <button
                             onClick={() => handleAction(j.id, "reject")}
                             disabled={actionLoading === j.id}
-                            style={{
-                              padding: "0.2rem 0.5rem",
-                              background: "var(--color-error-bg)",
-                              color: "var(--color-error-text)",
-                              border: "none",
-                              borderRadius: "0.25rem",
-                              cursor:
-                                actionLoading === j.id
-                                  ? "not-allowed"
-                                  : "pointer",
-                              fontSize: "0.7rem",
-                              fontWeight: 600,
-                            }}
+                            className={cn(
+                              "px-2 py-0.5 bg-error-bg text-error-text border-none rounded text-[0.7rem] font-semibold",
+                              actionLoading === j.id
+                                ? "cursor-not-allowed opacity-50"
+                                : "cursor-pointer",
+                            )}
                           >
                             Reject
                           </button>
@@ -465,17 +376,12 @@ export default function VerificationQueue({
                         <button
                           onClick={() => handleAction(j.id, "unverify")}
                           disabled={actionLoading === j.id}
-                          style={{
-                            padding: "0.2rem 0.5rem",
-                            border: "1px solid var(--color-input-border)",
-                            borderRadius: "0.25rem",
-                            background: "var(--color-bg-primary)",
-                            cursor:
-                              actionLoading === j.id
-                                ? "not-allowed"
-                                : "pointer",
-                            fontSize: "0.7rem",
-                          }}
+                          className={cn(
+                            "px-2 py-0.5 border border-input rounded bg-background text-[0.7rem]",
+                            actionLoading === j.id
+                              ? "cursor-not-allowed opacity-50"
+                              : "cursor-pointer",
+                          )}
                         >
                           Unverify
                         </button>
@@ -491,48 +397,31 @@ export default function VerificationQueue({
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: "0.5rem",
-            marginTop: "1rem",
-          }}
-        >
+        <div className="flex justify-center gap-2 mt-4">
           <button
             disabled={pagination.page <= 1}
             onClick={() => fetchQueue(pagination.page - 1)}
-            style={{
-              padding: "0.375rem 0.75rem",
-              border: "1px solid var(--color-input-border)",
-              borderRadius: "0.375rem",
-              background: "var(--color-bg-primary)",
-              cursor: pagination.page <= 1 ? "not-allowed" : "pointer",
-            }}
+            className={cn(
+              "px-3 py-1.5 border border-input rounded-md bg-background",
+              pagination.page <= 1
+                ? "cursor-not-allowed opacity-50"
+                : "cursor-pointer",
+            )}
           >
             Previous
           </button>
-          <span
-            style={{
-              padding: "0.375rem 0.5rem",
-              fontSize: "0.875rem",
-            }}
-          >
+          <span className="px-2 py-1.5 text-sm">
             Page {pagination.page} of {pagination.totalPages}
           </span>
           <button
             disabled={pagination.page >= pagination.totalPages}
             onClick={() => fetchQueue(pagination.page + 1)}
-            style={{
-              padding: "0.375rem 0.75rem",
-              border: "1px solid var(--color-input-border)",
-              borderRadius: "0.375rem",
-              background: "var(--color-bg-primary)",
-              cursor:
-                pagination.page >= pagination.totalPages
-                  ? "not-allowed"
-                  : "pointer",
-            }}
+            className={cn(
+              "px-3 py-1.5 border border-input rounded-md bg-background",
+              pagination.page >= pagination.totalPages
+                ? "cursor-not-allowed opacity-50"
+                : "cursor-pointer",
+            )}
           >
             Next
           </button>

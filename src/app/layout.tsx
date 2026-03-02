@@ -29,24 +29,28 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "1rem 2rem",
-            borderBottom: "1px solid var(--color-border)",
-          }}
+        {/* Skip navigation link (FR-009) */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-background focus:text-foreground focus:rounded-md focus:ring-2 focus:ring-ring"
         >
+          Skip to main content
+        </a>
+
+        <header className="flex flex-col items-start gap-2 px-4 py-3 border-b border-border sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-4">
           <a
             href="/judges/"
-            style={{ textDecoration: "none", color: "inherit" }}
+            className="no-underline text-foreground hover:no-underline"
           >
-            <strong>{SITE_NAME}</strong>
+            <strong className="text-lg">{SITE_NAME}</strong>
           </a>
           <ThemeToggle />
         </header>
-        <main style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
+
+        <main
+          id="main-content"
+          className="px-4 py-6 mx-auto max-w-[1200px] sm:px-8 sm:py-8"
+        >
           {children}
         </main>
       </body>

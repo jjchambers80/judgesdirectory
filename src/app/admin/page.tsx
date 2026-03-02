@@ -12,25 +12,10 @@ function AdminCard({
   return (
     <Link
       href={href}
-      style={{
-        display: "block",
-        padding: "1.5rem",
-        border: "1px solid var(--color-border)",
-        borderRadius: "0.5rem",
-        textDecoration: "none",
-        color: "inherit",
-      }}
+      className="block p-6 border border-border rounded-lg no-underline text-foreground hover:border-primary transition-colors"
     >
       <strong>{title}</strong>
-      <p
-        style={{
-          color: "var(--color-text-muted)",
-          marginTop: "0.5rem",
-          fontSize: "0.875rem",
-        }}
-      >
-        {description}
-      </p>
+      <p className="text-muted-foreground mt-2 text-sm">{description}</p>
     </Link>
   );
 }
@@ -39,16 +24,10 @@ export default function AdminDashboard() {
   return (
     <div>
       <h1>Admin Dashboard</h1>
-      <p style={{ color: "var(--color-text-muted)", marginBottom: "2rem" }}>
+      <p className="text-muted-foreground mb-8">
         Manage judge records for judgesdirectory.org
       </p>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "1rem",
-        }}
-      >
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <AdminCard
           href="/admin/import/"
           title="CSV Import"

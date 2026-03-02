@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
 import {
   type ThemePreference,
   CYCLE,
@@ -88,7 +89,6 @@ export default function ThemeToggle() {
   const [preference, setPreference] = useState<ThemePreference>("system");
   const [mounted, setMounted] = useState(false);
   const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
 
   // Initialize from localStorage after mount
   useEffect(() => {
@@ -124,10 +124,6 @@ export default function ThemeToggle() {
     setPreference(next);
   }, [preference]);
 
-  const handleFocus = useCallback((e: React.FocusEvent<HTMLButtonElement>) => {
-    if (e.target.matches(":focus-visible")) setFocused(true);
-  }, []);
-
   const label = LABELS[preference];
   const Icon = mounted ? ICONS[preference] : null;
 
@@ -137,26 +133,14 @@ export default function ThemeToggle() {
       onClick={handleClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onFocus={handleFocus}
-      onBlur={() => setFocused(false)}
       aria-label={label}
       title={label}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "36px",
-        height: "36px",
-        padding: "0.5rem",
-        border: "none",
-        borderRadius: "0.375rem",
-        background: hovered ? "var(--color-toggle-hover)" : "transparent",
-        color: "var(--color-text-primary)",
-        cursor: "pointer",
-        outline: focused ? "2px solid var(--color-link)" : "none",
-        outlineOffset: "2px",
-        transition: "background-color 0.15s ease",
-      }}
+      className={cn(
+        "flex items-center justify-center w-11 h-11 p-2 border-none rounded-md",
+        "text-foreground cursor-pointer transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        hovered ? "bg-toggle-hover" : "bg-transparent",
+      )}
     >
       {Icon ? <Icon /> : null}
     </button>

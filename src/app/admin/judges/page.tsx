@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface JudgeRecord {
   id: string;
@@ -80,52 +81,30 @@ export default function AdminJudgesPage() {
 
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "1.5rem",
-        }}
-      >
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1>Judge Records</h1>
         <Link
           href="/admin/judges/new/"
-          style={{
-            padding: "0.5rem 1rem",
-            background: "var(--color-btn-primary)",
-            color: "var(--color-btn-primary-text)",
-            borderRadius: "0.375rem",
-            textDecoration: "none",
-            fontSize: "0.875rem",
-          }}
+          className="px-4 py-2 bg-primary text-btn-primary-text rounded-md no-underline text-sm hover:bg-primary/90 transition-colors"
         >
           + Add Judge
         </Link>
       </div>
 
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}>
+      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:gap-4">
         <input
           type="text"
           placeholder="Search by name..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{
-            padding: "0.5rem 0.75rem",
-            border: "1px solid var(--color-input-border)",
-            borderRadius: "0.375rem",
-            flex: 1,
-          }}
+          aria-label="Search judges by name"
+          className="px-3 py-2 border border-input rounded-md flex-1"
         />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           aria-label="Filter by status"
-          style={{
-            padding: "0.5rem 0.75rem",
-            border: "1px solid var(--color-input-border)",
-            borderRadius: "0.375rem",
-          }}
+          className="px-3 py-2 border border-input rounded-md"
         >
           <option value="">All Status</option>
           <option value="VERIFIED">Verified</option>
@@ -137,166 +116,104 @@ export default function AdminJudgesPage() {
       {loading ? (
         <p>Loading...</p>
       ) : judges.length === 0 ? (
-        <p style={{ color: "var(--color-text-muted)" }}>
+        <p className="text-muted-foreground">
           No judges found.{" "}
-          <Link
-            href="/admin/judges/new/"
-            style={{ color: "var(--color-link)" }}
-          >
+          <Link href="/admin/judges/new/" className="text-link hover:underline">
             Create the first judge record
           </Link>
           .
         </p>
       ) : (
         <>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr
-                style={{
-                  borderBottom: "2px solid var(--color-border)",
-                  textAlign: "left",
-                }}
-              >
-                <th style={{ padding: "0.75rem 0.5rem" }}>Name</th>
-                <th style={{ padding: "0.75rem 0.5rem" }}>Court</th>
-                <th style={{ padding: "0.75rem 0.5rem" }}>Location</th>
-                <th style={{ padding: "0.75rem 0.5rem" }}>Status</th>
-                <th style={{ padding: "0.75rem 0.5rem" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {judges.map((judge) => (
-                <tr
-                  key={judge.id}
-                  style={{ borderBottom: "1px solid var(--color-border)" }}
-                >
-                  <td style={{ padding: "0.75rem 0.5rem" }}>
-                    <strong>{judge.fullName}</strong>
-                  </td>
-                  <td style={{ padding: "0.75rem 0.5rem" }}>
-                    {judge.court.type}
-                  </td>
-                  <td
-                    style={{
-                      padding: "0.75rem 0.5rem",
-                      fontSize: "0.875rem",
-                      color: "var(--color-text-muted)",
-                    }}
-                  >
-                    {judge.court.county.name}, {judge.court.county.state.name}
-                  </td>
-                  <td style={{ padding: "0.75rem 0.5rem" }}>
-                    <span
-                      style={{
-                        padding: "0.25rem 0.5rem",
-                        borderRadius: "9999px",
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        background:
-                          judge.status === "VERIFIED"
-                            ? "var(--color-badge-success-bg)"
-                            : judge.status === "REJECTED"
-                              ? "var(--color-error-bg)"
-                              : "var(--color-badge-warning-bg)",
-                        color:
-                          judge.status === "VERIFIED"
-                            ? "var(--color-badge-success-text)"
-                            : judge.status === "REJECTED"
-                              ? "var(--color-error-text)"
-                              : "var(--color-badge-warning-text)",
-                      }}
-                    >
-                      {judge.status === "VERIFIED"
-                        ? "Verified"
-                        : judge.status === "REJECTED"
-                          ? "Rejected"
-                          : "Unverified"}
-                    </span>
-                  </td>
-                  <td style={{ padding: "0.75rem 0.5rem" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "0.5rem",
-                        fontSize: "0.875rem",
-                      }}
-                    >
-                      <button
-                        onClick={() => handleVerify(judge.id, judge.status)}
-                        style={{
-                          padding: "0.25rem 0.5rem",
-                          border: "1px solid var(--color-input-border)",
-                          borderRadius: "0.25rem",
-                          background: "var(--color-bg-primary)",
-                          cursor: "pointer",
-                          fontSize: "0.75rem",
-                        }}
-                      >
-                        {judge.status === "VERIFIED" ? "Unverify" : "Verify"}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(judge.id, judge.fullName)}
-                        style={{
-                          padding: "0.25rem 0.5rem",
-                          border: "1px solid var(--color-input-border-error)",
-                          borderRadius: "0.25rem",
-                          background: "var(--color-error-bg)",
-                          color: "var(--color-error-text)",
-                          cursor: "pointer",
-                          fontSize: "0.75rem",
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b-2 border-border text-left">
+                  <th className="py-3 px-2">Name</th>
+                  <th className="py-3 px-2">Court</th>
+                  <th className="py-3 px-2">Location</th>
+                  <th className="py-3 px-2">Status</th>
+                  <th className="py-3 px-2">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {judges.map((judge) => (
+                  <tr key={judge.id} className="border-b border-border">
+                    <td className="py-3 px-2">
+                      <strong>{judge.fullName}</strong>
+                    </td>
+                    <td className="py-3 px-2">{judge.court.type}</td>
+                    <td className="py-3 px-2 text-sm text-muted-foreground">
+                      {judge.court.county.name}, {judge.court.county.state.name}
+                    </td>
+                    <td className="py-3 px-2">
+                      <span
+                        className={cn(
+                          "inline-block px-2 py-1 rounded-full text-xs font-semibold",
+                          judge.status === "VERIFIED"
+                            ? "bg-badge-success-bg text-badge-success-text"
+                            : judge.status === "REJECTED"
+                              ? "bg-error-bg text-error-text"
+                              : "bg-badge-warning-bg text-badge-warning-text",
+                        )}
+                      >
+                        {judge.status === "VERIFIED"
+                          ? "Verified"
+                          : judge.status === "REJECTED"
+                            ? "Rejected"
+                            : "Unverified"}
+                      </span>
+                    </td>
+                    <td className="py-3 px-2">
+                      <div className="flex gap-2 text-sm">
+                        <button
+                          onClick={() => handleVerify(judge.id, judge.status)}
+                          className="px-2 py-1 border border-input rounded bg-background cursor-pointer text-xs hover:bg-muted transition-colors"
+                        >
+                          {judge.status === "VERIFIED" ? "Unverify" : "Verify"}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(judge.id, judge.fullName)}
+                          className="px-2 py-1 border border-error-text rounded bg-error-bg text-error-text cursor-pointer text-xs"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginTop: "1rem",
-            }}
-          >
-            <span
-              style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}
-            >
+          <div className="flex flex-col items-center justify-between gap-3 mt-4 sm:flex-row">
+            <span className="text-sm text-muted-foreground">
               Showing {(pagination.page - 1) * pagination.limit + 1}–
               {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
               of {pagination.total}
             </span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div className="flex gap-2">
               <button
                 onClick={() => fetchJudges(pagination.page - 1)}
                 disabled={pagination.page <= 1}
-                style={{
-                  padding: "0.5rem 1rem",
-                  border: "1px solid var(--color-input-border)",
-                  borderRadius: "0.375rem",
-                  cursor: pagination.page <= 1 ? "not-allowed" : "pointer",
-                  opacity: pagination.page <= 1 ? 0.5 : 1,
-                }}
+                className={cn(
+                  "px-4 py-2 border border-input rounded-md text-sm",
+                  pagination.page <= 1
+                    ? "opacity-50 cursor-not-allowed"
+                    : "cursor-pointer hover:bg-muted transition-colors",
+                )}
               >
                 Previous
               </button>
               <button
                 onClick={() => fetchJudges(pagination.page + 1)}
                 disabled={pagination.page >= pagination.totalPages}
-                style={{
-                  padding: "0.5rem 1rem",
-                  border: "1px solid var(--color-input-border)",
-                  borderRadius: "0.375rem",
-                  cursor:
-                    pagination.page >= pagination.totalPages
-                      ? "not-allowed"
-                      : "pointer",
-                  opacity: pagination.page >= pagination.totalPages ? 0.5 : 1,
-                }}
+                className={cn(
+                  "px-4 py-2 border border-input rounded-md text-sm",
+                  pagination.page >= pagination.totalPages
+                    ? "opacity-50 cursor-not-allowed"
+                    : "cursor-pointer hover:bg-muted transition-colors",
+                )}
               >
                 Next
               </button>

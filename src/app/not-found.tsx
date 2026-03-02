@@ -2,18 +2,12 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
+    <div className="text-center py-16 px-4 sm:px-8">
       <h1>404 — Page Not Found</h1>
-      <p>The page you are looking for does not exist.</p>
-      <Link
-        href="/judges/"
-        style={{
-          display: "inline-block",
-          marginTop: "1rem",
-          color: "var(--color-link)",
-          textDecoration: "underline",
-        }}
-      >
+      <p className="text-muted-foreground">
+        The page you are looking for does not exist.
+      </p>
+      <Link href="/judges/" className="inline-block mt-4 text-link underline">
         Browse the Judges Directory
       </Link>
     </div>

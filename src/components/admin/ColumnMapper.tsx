@@ -50,120 +50,78 @@ export default function ColumnMapper({
 
   return (
     <div>
-      <h3 style={{ marginBottom: "0.75rem" }}>Column Mapping</h3>
-      <p
-        style={{
-          fontSize: "0.875rem",
-          color: "var(--color-text-muted)",
-          marginBottom: "1rem",
-        }}
-      >
+      <h3 className="mb-3">Column Mapping</h3>
+      <p className="text-sm text-muted-foreground mb-4">
         Map CSV columns to judge record fields. Fields marked with * are
         required.
       </p>
 
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr
-            style={{
-              borderBottom: "2px solid var(--color-border)",
-              textAlign: "left",
-            }}
-          >
-            <th style={{ padding: "0.5rem" }}>CSV Column</th>
-            <th style={{ padding: "0.5rem" }}>Maps To</th>
-            <th style={{ padding: "0.5rem" }}>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {columns.map((col) => {
-            const targetValue = mapping[col] || "";
-            const isRequired =
-              targetValue && REQUIRED_FIELDS.includes(targetValue);
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b-2 border-border text-left">
+              <th className="p-2">CSV Column</th>
+              <th className="p-2">Maps To</th>
+              <th className="p-2">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {columns.map((col) => {
+              const targetValue = mapping[col] || "";
+              const isRequired =
+                targetValue && REQUIRED_FIELDS.includes(targetValue);
 
-            return (
-              <tr
-                key={col}
-                style={{ borderBottom: "1px solid var(--color-border)" }}
-              >
-                <td
-                  style={{
-                    padding: "0.5rem",
-                    fontFamily: "monospace",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  {col}
-                </td>
-                <td style={{ padding: "0.5rem" }}>
-                  <select
-                    value={targetValue}
-                    onChange={(e) => handleChange(col, e.target.value)}
-                    aria-label={`Mapping for ${col}`}
-                    style={{
-                      padding: "0.375rem 0.5rem",
-                      border: "1px solid var(--color-input-border)",
-                      borderRadius: "0.25rem",
-                      width: "100%",
-                      maxWidth: "16rem",
-                    }}
-                  >
-                    {TARGET_FIELDS.map((f) => (
-                      <option
-                        key={f.value}
-                        value={f.value}
-                        disabled={
-                          f.value !== "" &&
+              return (
+                <tr key={col} className="border-b border-border">
+                  <td className="p-2 font-mono text-sm">{col}</td>
+                  <td className="p-2">
+                    <select
+                      value={targetValue}
+                      onChange={(e) => handleChange(col, e.target.value)}
+                      aria-label={`Mapping for ${col}`}
+                      className="px-2 py-1.5 border border-input rounded w-full max-w-64"
+                    >
+                      {TARGET_FIELDS.map((f) => (
+                        <option
+                          key={f.value}
+                          value={f.value}
+                          disabled={
+                            f.value !== "" &&
+                            f.value !== targetValue &&
+                            mappedValues.includes(f.value)
+                          }
+                        >
+                          {f.label}
+                          {f.value !== "" &&
                           f.value !== targetValue &&
                           mappedValues.includes(f.value)
-                        }
-                      >
-                        {f.label}
-                        {f.value !== "" &&
-                        f.value !== targetValue &&
-                        mappedValues.includes(f.value)
-                          ? " (already mapped)"
-                          : ""}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td style={{ padding: "0.5rem", fontSize: "0.75rem" }}>
-                  {isRequired && (
-                    <span
-                      style={{
-                        color: "var(--color-badge-success-text)",
-                        background: "var(--color-badge-success-bg)",
-                        padding: "0.125rem 0.375rem",
-                        borderRadius: "9999px",
-                      }}
-                    >
-                      Required ✓
-                    </span>
-                  )}
-                  {targetValue && !isRequired && (
-                    <span style={{ color: "var(--color-text-muted)" }}>
-                      Optional
-                    </span>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                            ? " (already mapped)"
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="p-2 text-xs">
+                    {isRequired && (
+                      <span className="text-badge-success-text bg-badge-success-bg px-1.5 py-0.5 rounded-full">
+                        Required ✓
+                      </span>
+                    )}
+                    {targetValue && !isRequired && (
+                      <span className="text-muted-foreground">Optional</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       {missingRequired.length > 0 && (
         <div
           role="alert"
-          style={{
-            marginTop: "0.75rem",
-            padding: "0.5rem 0.75rem",
-            background: "var(--color-badge-warning-bg)",
-            color: "var(--color-badge-warning-text)",
-            borderRadius: "0.375rem",
-            fontSize: "0.875rem",
-          }}
+          className="mt-3 px-3 py-2 bg-badge-warning-bg text-badge-warning-text rounded-md text-sm"
         >
           Missing required mappings:{" "}
           <strong>{missingRequired.join(", ")}</strong>

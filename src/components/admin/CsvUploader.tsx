@@ -2,6 +2,7 @@
 
 import { useState, useRef, DragEvent, ChangeEvent } from "react";
 import { MAX_FILE_SIZE_BYTES } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 interface CsvUploaderProps {
   stateSlug: string;
@@ -125,16 +126,13 @@ export default function CsvUploader({
           }
         }}
         aria-label="Upload CSV file"
-        style={{
-          padding: "2rem",
-          border: `2px dashed ${dragging ? "var(--color-link)" : "var(--color-input-border)"}`,
-          borderRadius: "0.5rem",
-          textAlign: "center",
-          cursor: disabled || uploading ? "not-allowed" : "pointer",
-          background: dragging ? "var(--color-bg-secondary)" : "transparent",
-          opacity: disabled || uploading ? 0.6 : 1,
-          transition: "border-color 0.2s, background 0.2s",
-        }}
+        className={cn(
+          "p-8 border-2 border-dashed rounded-lg text-center transition-[border-color,background] duration-200",
+          dragging ? "border-link bg-secondary" : "border-input bg-transparent",
+          disabled || uploading
+            ? "cursor-not-allowed opacity-60"
+            : "cursor-pointer",
+        )}
       >
         <input
           ref={fileInputRef}
@@ -142,7 +140,7 @@ export default function CsvUploader({
           accept=".csv"
           onChange={handleFileChange}
           disabled={disabled || uploading}
-          style={{ display: "none" }}
+          className="hidden"
           aria-hidden="true"
         />
 
@@ -150,15 +148,10 @@ export default function CsvUploader({
           <p>Uploading and parsing {fileName}…</p>
         ) : (
           <>
-            <p style={{ fontWeight: 600, marginBottom: "0.5rem" }}>
+            <p className="font-semibold mb-2">
               Drop a CSV file here or click to browse
             </p>
-            <p
-              style={{
-                fontSize: "0.875rem",
-                color: "var(--color-text-muted)",
-              }}
-            >
+            <p className="text-sm text-muted-foreground">
               Maximum file size: 5 MB · Maximum rows: 10,000
             </p>
           </>
@@ -168,14 +161,7 @@ export default function CsvUploader({
       {error && (
         <div
           role="alert"
-          style={{
-            marginTop: "0.75rem",
-            padding: "0.75rem 1rem",
-            background: "var(--color-error-bg)",
-            color: "var(--color-error-text)",
-            borderRadius: "0.375rem",
-            fontSize: "0.875rem",
-          }}
+          className="mt-3 px-4 py-3 bg-error-bg text-error-text rounded-md text-sm"
         >
           {error}
         </div>
