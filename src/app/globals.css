@@ -1,0 +1,50 @@
+/* ============================================================
+   Global CSS Entry Point
+   Single entry point: layout.tsx imports only this file.
+   Imports theme-vars.css internally for CSS custom properties.
+   ============================================================ */
+
+/* --- Tailwind v4 CSS-first configuration --- */
+/* Preflight intentionally omitted to prevent regressions on
+   existing pages that use inline styles + browser defaults. */
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* --- Existing theme variables (light/dark/system) --- */
+@import "./theme-vars.css";
+
+/* --- Dark mode: wire Tailwind dark: variant to data-theme attribute --- */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* --- Bridge layer: map shadcn/ui semantic tokens to existing --color-* vars ---
+   Uses @theme inline so Tailwind keeps var() references at runtime
+   (required because the underlying variables change via data-theme). */
+@theme inline {
+  --color-background: var(--color-bg-primary);
+  --color-foreground: var(--color-text-primary);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-text-primary);
+  --color-primary: var(--color-btn-primary);
+  --color-primary-foreground: var(--color-btn-primary-text);
+  --color-secondary: var(--color-bg-secondary);
+  --color-secondary-foreground: var(--color-text-secondary);
+  --color-muted: var(--color-bg-secondary);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-accent: var(--color-bg-secondary);
+  --color-accent-foreground: var(--color-text-primary);
+  --color-destructive: var(--color-error-text);
+  --color-border: var(--color-border);
+  --color-input: var(--color-input-border);
+  --color-ring: var(--color-btn-primary);
+}
+
+/* --- Base body styles (moved from theme-vars.css) --- */
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}

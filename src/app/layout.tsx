@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SITE_NAME, SITE_DESCRIPTION, TITLE_TEMPLATE } from "@/lib/constants";
 import ThemeToggle from "@/components/ThemeToggle";
-import "./theme-vars.css";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: {

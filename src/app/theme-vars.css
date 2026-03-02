@@ -104,12 +104,3 @@
     --color-toggle-hover: rgba(255, 255, 255, 0.1);
   }
 }
-
-/* --- Body base styles --- */
-body {
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-}
