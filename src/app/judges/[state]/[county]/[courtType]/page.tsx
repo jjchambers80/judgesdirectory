@@ -80,76 +80,101 @@ export default async function JudgeListPage({ params }: PageProps) {
     <>
       <JsonLd data={jsonLd} />
       <nav
-        style={{
-          marginBottom: "1rem",
-          fontSize: "0.875rem",
-          color: "var(--color-text-muted)",
-        }}
+        aria-label="Breadcrumb"
+        className="mb-4 text-sm text-muted-foreground"
       >
-        <Link href="/judges/" style={{ color: "var(--color-link)" }}>
-          States
-        </Link>
-        {" › "}
-        <Link
-          href={`/judges/${state.slug}/`}
-          style={{ color: "var(--color-link)" }}
-        >
-          {state.name}
-        </Link>
-        {" › "}
-        <Link
-          href={`/judges/${state.slug}/${county.slug}/`}
-          style={{ color: "var(--color-link)" }}
-        >
-          {county.name}
-        </Link>
-        {" › "}
-        <span>{court.type}</span>
+        <ol className="flex flex-wrap items-center gap-1.5 list-none m-0 p-0">
+          <li>
+            <Link href="/judges/" className="text-link hover:underline">
+              States
+            </Link>
+          </li>
+          <li aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </li>
+          <li>
+            <Link
+              href={`/judges/${state.slug}/`}
+              className="text-link hover:underline"
+            >
+              {state.name}
+            </Link>
+          </li>
+          <li aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </li>
+          <li>
+            <Link
+              href={`/judges/${state.slug}/${county.slug}/`}
+              className="text-link hover:underline"
+            >
+              {county.name}
+            </Link>
+          </li>
+          <li aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </li>
+          <li aria-current="page">{court.type}</li>
+        </ol>
       </nav>
       <h1>
         {court.type} Judges in {county.name}, {state.name}
       </h1>
       {judges.length === 0 ? (
-        <p style={{ color: "var(--color-text-muted)", marginTop: "1rem" }}>
+        <p className="text-muted-foreground mt-4 py-8 text-center">
           No verified judge records available for {court.type} in {county.name}{" "}
           yet. Judge data will be added as part of our ongoing data collection
           effort.
         </p>
       ) : (
         <>
-          <p style={{ color: "var(--color-text-muted)", marginBottom: "2rem" }}>
+          <p className="text-muted-foreground mb-8">
             {judges.length} verified {judges.length === 1 ? "judge" : "judges"}{" "}
             in {court.type}, {county.name}.
           </p>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-              gap: "0.75rem",
-            }}
-          >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {judges.map((judge) => (
               <Link
                 key={judge.id}
                 href={`/judges/${state.slug}/${county.slug}/${court.slug}/${judge.slug}/`}
-                style={{
-                  display: "block",
-                  padding: "1.25rem",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "0.375rem",
-                  textDecoration: "none",
-                  color: "inherit",
-                }}
+                className="block p-5 border border-border rounded-md no-underline text-foreground hover:border-primary transition-colors"
               >
                 <strong>{judge.fullName}</strong>
                 {judge.termEnd && (
-                  <p
-                    style={{
-                      marginTop: "0.25rem",
-                      fontSize: "0.875rem",
-                      color: "var(--color-text-muted)",
-                    }}
-                  >
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Term ends:{" "}
                     {new Date(judge.termEnd).toLocaleDateString("en-US", {
                       year: "numeric",

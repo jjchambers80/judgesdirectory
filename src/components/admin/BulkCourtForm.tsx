@@ -83,15 +83,8 @@ export default function BulkCourtForm({ states }: BulkCourtFormProps) {
   return (
     <div>
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: "1rem" }}>
-          <label
-            htmlFor="state-select"
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: 600,
-            }}
-          >
+        <div className="mb-4">
+          <label htmlFor="state-select" className="block mb-2 font-semibold">
             State
           </label>
           <select
@@ -99,13 +92,7 @@ export default function BulkCourtForm({ states }: BulkCourtFormProps) {
             value={selectedStateId}
             onChange={(e) => setSelectedStateId(e.target.value)}
             required
-            style={{
-              padding: "0.5rem 0.75rem",
-              border: "1px solid var(--color-input-border)",
-              borderRadius: "0.375rem",
-              width: "100%",
-              maxWidth: "24rem",
-            }}
+            className="px-3 py-2 border border-input rounded-md w-full max-w-sm"
           >
             <option value="">Select a state…</option>
             {states.map((s) => (
@@ -116,15 +103,8 @@ export default function BulkCourtForm({ states }: BulkCourtFormProps) {
           </select>
         </div>
 
-        <div style={{ marginBottom: "1rem" }}>
-          <label
-            htmlFor="court-types"
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: 600,
-            }}
-          >
+        <div className="mb-4">
+          <label htmlFor="court-types" className="block mb-2 font-semibold">
             Court Types (comma-separated)
           </label>
           <input
@@ -134,14 +114,9 @@ export default function BulkCourtForm({ states }: BulkCourtFormProps) {
             onChange={(e) => setCourtTypesInput(e.target.value)}
             placeholder="District Court, County Court, Justice of the Peace Court"
             required
-            style={{
-              padding: "0.5rem 0.75rem",
-              border: "1px solid var(--color-input-border)",
-              borderRadius: "0.375rem",
-              width: "100%",
-            }}
+            className="px-3 py-2 border border-input rounded-md w-full"
           />
-          <small style={{ color: "var(--color-text-muted)" }}>
+          <small className="text-muted-foreground">
             Max 10 court types per request
           </small>
         </div>
@@ -149,17 +124,11 @@ export default function BulkCourtForm({ states }: BulkCourtFormProps) {
         <button
           type="submit"
           disabled={submitting}
-          style={{
-            padding: "0.5rem 1.5rem",
-            background: submitting
-              ? "var(--color-text-muted)"
-              : "var(--color-btn-primary)",
-            color: "var(--color-btn-primary-text)",
-            border: "none",
-            borderRadius: "0.375rem",
-            cursor: submitting ? "not-allowed" : "pointer",
-            fontWeight: 600,
-          }}
+          className={
+            submitting
+              ? "px-6 py-2 bg-btn-primary-disabled text-btn-primary-text border-none rounded-md cursor-not-allowed font-semibold"
+              : "px-6 py-2 bg-primary text-btn-primary-text border-none rounded-md cursor-pointer font-semibold hover:bg-primary/90 transition-colors"
+          }
         >
           {submitting ? "Creating…" : "Create Courts"}
         </button>
@@ -168,23 +137,15 @@ export default function BulkCourtForm({ states }: BulkCourtFormProps) {
       {error && (
         <div
           role="alert"
-          style={{
-            marginTop: "1rem",
-            padding: "0.75rem 1rem",
-            background: "var(--color-error-bg)",
-            color: "var(--color-error-text)",
-            borderRadius: "0.375rem",
-          }}
+          className="mt-4 px-4 py-3 bg-error-bg text-error-text rounded-md"
         >
           {error}
         </div>
       )}
 
       {result && (
-        <div style={{ marginTop: "1.5rem" }}>
-          <h2 style={{ marginBottom: "0.75rem" }}>
-            Results for {result.stateName}
-          </h2>
+        <div className="mt-6">
+          <h2 className="mb-3">Results for {result.stateName}</h2>
           <p>
             <strong>{result.courtsCreated}</strong> courts created across{" "}
             <strong>{result.totalCounties}</strong> counties
@@ -193,38 +154,26 @@ export default function BulkCourtForm({ states }: BulkCourtFormProps) {
             )}
           </p>
 
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              marginTop: "1rem",
-            }}
-          >
-            <thead>
-              <tr
-                style={{
-                  borderBottom: "2px solid var(--color-border)",
-                  textAlign: "left",
-                }}
-              >
-                <th style={{ padding: "0.5rem" }}>Court Type</th>
-                <th style={{ padding: "0.5rem" }}>Created</th>
-                <th style={{ padding: "0.5rem" }}>Skipped</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.details.map((d) => (
-                <tr
-                  key={d.courtType}
-                  style={{ borderBottom: "1px solid var(--color-border)" }}
-                >
-                  <td style={{ padding: "0.5rem" }}>{d.courtType}</td>
-                  <td style={{ padding: "0.5rem" }}>{d.created}</td>
-                  <td style={{ padding: "0.5rem" }}>{d.skipped}</td>
+          <div className="overflow-x-auto mt-4">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b-2 border-border text-left">
+                  <th className="p-2">Court Type</th>
+                  <th className="p-2">Created</th>
+                  <th className="p-2">Skipped</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {result.details.map((d) => (
+                  <tr key={d.courtType} className="border-b border-border">
+                    <td className="p-2">{d.courtType}</td>
+                    <td className="p-2">{d.created}</td>
+                    <td className="p-2">{d.skipped}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

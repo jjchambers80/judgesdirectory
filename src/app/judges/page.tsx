@@ -35,7 +35,7 @@ export default async function StatesGridPage() {
     <>
       <JsonLd data={jsonLd} />
       <h1>U.S. Judges Directory — Browse by State</h1>
-      <p style={{ color: "var(--color-text-muted)", marginBottom: "2rem" }}>
+      <p className="text-muted-foreground mb-8">
         Select a state to browse judges by county and court type.
       </p>
       <StateGrid states={states} />

@@ -22,6 +22,11 @@
    Uses @theme inline so Tailwind keeps var() references at runtime
    (required because the underlying variables change via data-theme). */
 @theme inline {
+  /* --- Font family (Roboto via next/font/google) --- */
+  --font-sans:
+    var(--font-roboto), "Roboto", ui-sans-serif, system-ui, sans-serif;
+
+  /* --- shadcn/ui core semantic tokens --- */
   --color-background: var(--color-bg-primary);
   --color-foreground: var(--color-text-primary);
   --color-card: var(--color-surface);
@@ -38,6 +43,61 @@
   --color-border: var(--color-border);
   --color-input: var(--color-input-border);
   --color-ring: var(--color-btn-primary);
+
+  /* --- Extended bridge tokens (FR-029) --- */
+  --color-link: var(--color-link);
+  --color-disclaimer-bg: var(--color-disclaimer-bg);
+  --color-disclaimer-border: var(--color-disclaimer-border);
+  --color-disclaimer-text: var(--color-disclaimer-text);
+  --color-badge-success-bg: var(--color-badge-success-bg);
+  --color-badge-success-text: var(--color-badge-success-text);
+  --color-badge-warning-bg: var(--color-badge-warning-bg);
+  --color-badge-warning-text: var(--color-badge-warning-text);
+  --color-error-bg: var(--color-error-bg);
+  --color-error-text: var(--color-error-text);
+  --color-btn-primary-disabled: var(--color-btn-primary-disabled);
+  --color-toggle-hover: var(--color-toggle-hover);
+  --color-input-border-error: var(--color-input-border-error);
+}
+
+/* --- Typography base layer (FR-028) --- */
+@layer base {
+  h1 {
+    @apply text-2xl font-bold tracking-tight md:text-3xl;
+  }
+  h2 {
+    @apply text-xl font-semibold tracking-tight md:text-2xl;
+  }
+  h3 {
+    @apply text-lg font-semibold;
+  }
+  h4 {
+    @apply text-base font-semibold;
+  }
+  h5 {
+    @apply text-sm font-semibold;
+  }
+  h6 {
+    @apply text-xs font-semibold;
+  }
+  p {
+    @apply leading-relaxed;
+  }
+  a {
+    @apply text-link underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+}
+
+/* --- Reduced motion (FR-031 / Constitution VI) --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* --- Base body styles (moved from theme-vars.css) --- */

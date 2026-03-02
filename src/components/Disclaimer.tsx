@@ -7,14 +7,7 @@ export default function Disclaimer() {
     <aside
       role="note"
       aria-label="Legal disclaimer"
-      style={{
-        padding: "1rem",
-        marginTop: "2rem",
-        borderTop: "1px solid var(--color-disclaimer-border)",
-        fontSize: "0.875rem",
-        color: "var(--color-disclaimer-text)",
-        backgroundColor: "var(--color-disclaimer-bg)",
-      }}
+      className="p-4 mt-8 border-t border-disclaimer-border text-sm text-disclaimer-text bg-disclaimer-bg"
     >
       <p>
         <strong>Disclaimer:</strong> The information provided on this website is

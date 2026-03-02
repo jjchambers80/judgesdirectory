@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 interface ImportResult {
   batchId: string;
   status: string;
@@ -35,31 +37,24 @@ export default function ImportSummary({
 
   return (
     <div>
-      <h3 style={{ marginBottom: "1rem" }}>Import Complete</h3>
+      <h3 className="mb-4">Import Complete</h3>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-          gap: "1rem",
-          marginBottom: "1.5rem",
-        }}
-      >
+      <div className="grid grid-cols-2 gap-4 mb-6 sm:grid-cols-4">
         <StatCard label="Total Processed" value={total} />
         <StatCard
           label="Imported"
           value={result.successCount}
-          color="var(--color-badge-success-text)"
+          colorClass="text-badge-success-text"
         />
         <StatCard
           label="Skipped (Duplicates)"
           value={result.skipCount}
-          color="var(--color-badge-warning-text)"
+          colorClass="text-badge-warning-text"
         />
         <StatCard
           label="Errors"
           value={result.errorCount}
-          color="var(--color-error-text)"
+          colorClass="text-error-text"
         />
         {result.courtsCreated > 0 && (
           <StatCard label="Courts Created" value={result.courtsCreated} />
@@ -67,94 +62,56 @@ export default function ImportSummary({
       </div>
 
       {result.summary.duplicatesSkipped.length > 0 && (
-        <details style={{ marginBottom: "1rem" }}>
-          <summary
-            style={{
-              cursor: "pointer",
-              fontWeight: 600,
-              marginBottom: "0.5rem",
-            }}
-          >
+        <details className="mb-4">
+          <summary className="cursor-pointer font-semibold mb-2">
             Duplicates Skipped ({result.summary.duplicatesSkipped.length})
           </summary>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "0.875rem",
-            }}
-          >
-            <thead>
-              <tr
-                style={{
-                  borderBottom: "2px solid var(--color-border)",
-                  textAlign: "left",
-                }}
-              >
-                <th style={{ padding: "0.375rem 0.5rem" }}>Row</th>
-                <th style={{ padding: "0.375rem 0.5rem" }}>Name</th>
-                <th style={{ padding: "0.375rem 0.5rem" }}>Court</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.summary.duplicatesSkipped.map((d) => (
-                <tr
-                  key={d.row}
-                  style={{ borderBottom: "1px solid var(--color-border)" }}
-                >
-                  <td style={{ padding: "0.375rem 0.5rem" }}>{d.row}</td>
-                  <td style={{ padding: "0.375rem 0.5rem" }}>{d.fullName}</td>
-                  <td style={{ padding: "0.375rem 0.5rem" }}>{d.court}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b-2 border-border text-left">
+                  <th className="py-1.5 px-2">Row</th>
+                  <th className="py-1.5 px-2">Name</th>
+                  <th className="py-1.5 px-2">Court</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {result.summary.duplicatesSkipped.map((d) => (
+                  <tr key={d.row} className="border-b border-border">
+                    <td className="py-1.5 px-2">{d.row}</td>
+                    <td className="py-1.5 px-2">{d.fullName}</td>
+                    <td className="py-1.5 px-2">{d.court}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </details>
       )}
 
       {result.summary.errorsDetail.length > 0 && (
-        <details style={{ marginBottom: "1rem" }}>
-          <summary
-            style={{
-              cursor: "pointer",
-              fontWeight: 600,
-              marginBottom: "0.5rem",
-            }}
-          >
+        <details className="mb-4">
+          <summary className="cursor-pointer font-semibold mb-2">
             Errors ({result.summary.errorsDetail.length})
           </summary>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "0.875rem",
-            }}
-          >
-            <thead>
-              <tr
-                style={{
-                  borderBottom: "2px solid var(--color-border)",
-                  textAlign: "left",
-                }}
-              >
-                <th style={{ padding: "0.375rem 0.5rem" }}>Row</th>
-                <th style={{ padding: "0.375rem 0.5rem" }}>Errors</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.summary.errorsDetail.map((e) => (
-                <tr
-                  key={e.row}
-                  style={{ borderBottom: "1px solid var(--color-border)" }}
-                >
-                  <td style={{ padding: "0.375rem 0.5rem" }}>{e.row}</td>
-                  <td style={{ padding: "0.375rem 0.5rem" }}>
-                    {e.errors.join("; ")}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b-2 border-border text-left">
+                  <th className="py-1.5 px-2">Row</th>
+                  <th className="py-1.5 px-2">Errors</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {result.summary.errorsDetail.map((e) => (
+                  <tr key={e.row} className="border-b border-border">
+                    <td className="py-1.5 px-2">{e.row}</td>
+                    <td className="py-1.5 px-2">{e.errors.join("; ")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </details>
       )}
 
@@ -162,15 +119,10 @@ export default function ImportSummary({
         <button
           onClick={onRollback}
           disabled={rollingBack}
-          style={{
-            padding: "0.5rem 1rem",
-            border: "1px solid var(--color-input-border-error)",
-            borderRadius: "0.375rem",
-            background: "var(--color-error-bg)",
-            color: "var(--color-error-text)",
-            cursor: rollingBack ? "not-allowed" : "pointer",
-            fontSize: "0.875rem",
-          }}
+          className={cn(
+            "px-4 py-2 border border-error-text rounded-md bg-error-bg text-error-text text-sm",
+            rollingBack ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+          )}
         >
           {rollingBack ? "Rolling back…" : "Rollback Import"}
         </button>
@@ -182,39 +134,18 @@ export default function ImportSummary({
 function StatCard({
   label,
   value,
-  color,
+  colorClass,
 }: {
   label: string;
   value: number;
-  color?: string;
+  colorClass?: string;
 }) {
   return (
-    <div
-      style={{
-        padding: "1rem",
-        border: "1px solid var(--color-border)",
-        borderRadius: "0.5rem",
-        textAlign: "center",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "1.5rem",
-          fontWeight: 700,
-          color: color || "inherit",
-        }}
-      >
+    <div className="p-4 border border-border rounded-lg text-center">
+      <div className={cn("text-2xl font-bold", colorClass)}>
         {value.toLocaleString()}
       </div>
-      <div
-        style={{
-          fontSize: "0.75rem",
-          color: "var(--color-text-muted)",
-          marginTop: "0.25rem",
-        }}
-      >
-        {label}
-      </div>
+      <div className="text-xs text-muted-foreground mt-1">{label}</div>
     </div>
   );
 }

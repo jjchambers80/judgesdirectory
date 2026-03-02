@@ -7,6 +7,7 @@ import { SITE_URL } from "@/lib/constants";
 import { judgeProfileTitle, buildPersonJsonLd } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import Disclaimer from "@/components/Disclaimer";
+import { Badge } from "@/components/ui/badge";
 
 interface PageProps {
   params: Promise<{
@@ -79,29 +80,33 @@ function JudgeSilhouette() {
       viewBox="0 0 120 120"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      style={{
-        width: "100%",
-        height: "100%",
-        backgroundColor: "#e5e7eb",
-        borderRadius: "8px",
-      }}
+      className="w-full h-full bg-muted rounded-lg"
+      aria-hidden="true"
     >
       {/* Background circle for head */}
-      <circle cx="60" cy="40" r="22" fill="#9ca3af" />
+      <circle cx="60" cy="40" r="22" className="fill-muted-foreground" />
       {/* Shoulders/robe */}
       <path
         d="M20 120 C20 85 40 70 60 70 C80 70 100 85 100 120"
-        fill="#4b5563"
+        className="fill-foreground/60"
       />
       {/* Judicial collar/robe detail */}
       <path
         d="M45 75 L60 90 L75 75"
-        stroke="#1f2937"
+        className="stroke-foreground"
         strokeWidth="3"
         fill="none"
       />
       {/* Gavel icon hint */}
-      <rect x="85" y="95" width="20" height="6" rx="2" fill="#6b7280" transform="rotate(-30 85 95)" />
+      <rect
+        x="85"
+        y="95"
+        width="20"
+        height="6"
+        rx="2"
+        className="fill-muted-foreground"
+        transform="rotate(-30 85 95)"
+      />
     </svg>
   );
 }
@@ -147,70 +152,113 @@ export default async function JudgeProfilePage({ params }: PageProps) {
   return (
     <>
       <JsonLd data={jsonLd} />
-      
+
       {/* Breadcrumb Navigation */}
       <nav
-        style={{
-          marginBottom: "1.5rem",
-          fontSize: "0.875rem",
-          color: "var(--color-text-muted)",
-        }}
+        aria-label="Breadcrumb"
+        className="mb-6 text-sm text-muted-foreground"
       >
-        <Link href="/judges/" style={{ color: "var(--color-link)" }}>
-          States
-        </Link>
-        {" › "}
-        <Link
-          href={`/judges/${state.slug}/`}
-          style={{ color: "var(--color-link)" }}
-        >
-          {state.name}
-        </Link>
-        {" › "}
-        <Link
-          href={`/judges/${state.slug}/${county.slug}/`}
-          style={{ color: "var(--color-link)" }}
-        >
-          {county.name}
-        </Link>
-        {" › "}
-        <Link
-          href={`/judges/${state.slug}/${county.slug}/${court.slug}/`}
-          style={{ color: "var(--color-link)" }}
-        >
-          {court.type}
-        </Link>
-        {" › "}
-        <span>{judge.fullName}</span>
+        <ol className="flex flex-wrap items-center gap-1.5 list-none m-0 p-0">
+          <li>
+            <Link href="/judges/" className="text-link hover:underline">
+              States
+            </Link>
+          </li>
+          <li aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </li>
+          <li>
+            <Link
+              href={`/judges/${state.slug}/`}
+              className="text-link hover:underline"
+            >
+              {state.name}
+            </Link>
+          </li>
+          <li aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </li>
+          <li>
+            <Link
+              href={`/judges/${state.slug}/${county.slug}/`}
+              className="text-link hover:underline"
+            >
+              {county.name}
+            </Link>
+          </li>
+          <li aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </li>
+          <li>
+            <Link
+              href={`/judges/${state.slug}/${county.slug}/${court.slug}/`}
+              className="text-link hover:underline"
+            >
+              {court.type}
+            </Link>
+          </li>
+          <li aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </li>
+          <li aria-current="page">{judge.fullName}</li>
+        </ol>
       </nav>
 
       {/* Header with Photo */}
-      <div
-        style={{
-          display: "flex",
-          gap: "2rem",
-          marginBottom: "2rem",
-          alignItems: "flex-start",
-        }}
-      >
+      <div className="flex flex-col gap-6 mb-8 sm:flex-row sm:items-start">
         {/* Photo or Silhouette */}
-        <div
-          style={{
-            width: "150px",
-            height: "180px",
-            flexShrink: 0,
-            borderRadius: "8px",
-            overflow: "hidden",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          }}
-        >
+        <div className="w-[150px] h-[180px] shrink-0 rounded-lg overflow-hidden shadow-md">
           {judge.photoUrl ? (
             <Image
               src={judge.photoUrl}
               alt={`Photo of ${judge.fullName}`}
               width={150}
               height={180}
-              style={{ objectFit: "cover", width: "100%", height: "100%" }}
+              className="object-cover w-full h-full"
               unoptimized
             />
           ) : (
@@ -219,52 +267,24 @@ export default async function JudgeProfilePage({ params }: PageProps) {
         </div>
 
         {/* Name and Title */}
-        <div style={{ flex: 1 }}>
-          <h1 style={{ marginTop: 0, marginBottom: "0.5rem" }}>
+        <div className="flex-1">
+          <h1 className="mt-0 mb-2">
             {judge.isChiefJudge && (
-              <span
-                style={{
-                  fontSize: "0.75rem",
-                  fontWeight: 500,
-                  color: "#b45309",
-                  backgroundColor: "#fef3c7",
-                  padding: "0.25rem 0.5rem",
-                  borderRadius: "4px",
-                  marginRight: "0.75rem",
-                  verticalAlign: "middle",
-                }}
+              <Badge
+                variant="outline"
+                className="mr-3 align-middle bg-badge-warning-bg text-badge-warning-text border-transparent text-xs"
               >
                 Chief Judge
-              </span>
+              </Badge>
             )}
             {judge.fullName}
           </h1>
-          <p
-            style={{
-              color: "var(--color-text-muted)",
-              fontSize: "1.1rem",
-              margin: 0,
-            }}
-          >
-            {court.type}
-          </p>
-          <p
-            style={{
-              color: "var(--color-text-muted)",
-              fontSize: "0.95rem",
-              margin: "0.25rem 0 0 0",
-            }}
-          >
+          <p className="text-muted-foreground text-lg m-0">{court.type}</p>
+          <p className="text-muted-foreground text-[0.95rem] mt-1 mb-0">
             {county.name}, {state.name}
           </p>
           {judge.division && (
-            <p
-              style={{
-                color: "var(--color-text-muted)",
-                fontSize: "0.875rem",
-                margin: "0.5rem 0 0 0",
-              }}
-            >
+            <p className="text-muted-foreground text-sm mt-2 mb-0">
               Division: {judge.division}
             </p>
           )}
@@ -272,50 +292,52 @@ export default async function JudgeProfilePage({ params }: PageProps) {
       </div>
 
       {/* Main Info Sections */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-        
+      <div className="flex flex-col gap-8">
         {/* Term & Appointment Section */}
-        {(judge.termStart || judge.termEnd || judge.appointingAuthority || judge.appointmentDate || judge.selectionMethod) && (
+        {(judge.termStart ||
+          judge.termEnd ||
+          judge.appointingAuthority ||
+          judge.appointmentDate ||
+          judge.selectionMethod) && (
           <section>
-            <h2 style={{ fontSize: "1.25rem", marginBottom: "1rem", borderBottom: "2px solid #e5e7eb", paddingBottom: "0.5rem" }}>
+            <h2 className="text-xl mb-4 border-b-2 border-border pb-2">
               Term & Appointment
             </h2>
-            <dl
-              style={{
-                display: "grid",
-                gridTemplateColumns: "180px 1fr",
-                gap: "0.75rem 1.5rem",
-                margin: 0,
-              }}
-            >
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-[180px_1fr] sm:gap-x-6 sm:gap-y-3 m-0">
               {judge.termStart && (
                 <>
-                  <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Term Start</dt>
-                  <dd style={{ margin: 0 }}>{formatDate(judge.termStart)}</dd>
+                  <dt className="font-semibold text-foreground">Term Start</dt>
+                  <dd className="m-0">{formatDate(judge.termStart)}</dd>
                 </>
               )}
               {judge.termEnd && (
                 <>
-                  <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Term End</dt>
-                  <dd style={{ margin: 0 }}>{formatDate(judge.termEnd)}</dd>
+                  <dt className="font-semibold text-foreground">Term End</dt>
+                  <dd className="m-0">{formatDate(judge.termEnd)}</dd>
                 </>
               )}
               {judge.appointingAuthority && (
                 <>
-                  <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Appointed By</dt>
-                  <dd style={{ margin: 0 }}>{judge.appointingAuthority}</dd>
+                  <dt className="font-semibold text-foreground">
+                    Appointed By
+                  </dt>
+                  <dd className="m-0">{judge.appointingAuthority}</dd>
                 </>
               )}
               {judge.appointmentDate && (
                 <>
-                  <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Appointment Date</dt>
-                  <dd style={{ margin: 0 }}>{formatDate(judge.appointmentDate)}</dd>
+                  <dt className="font-semibold text-foreground">
+                    Appointment Date
+                  </dt>
+                  <dd className="m-0">{formatDate(judge.appointmentDate)}</dd>
                 </>
               )}
               {judge.selectionMethod && (
                 <>
-                  <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Selection Method</dt>
-                  <dd style={{ margin: 0 }}>{judge.selectionMethod}</dd>
+                  <dt className="font-semibold text-foreground">
+                    Selection Method
+                  </dt>
+                  <dd className="m-0">{judge.selectionMethod}</dd>
                 </>
               )}
             </dl>
@@ -323,29 +345,26 @@ export default async function JudgeProfilePage({ params }: PageProps) {
         )}
 
         {/* Education & Career Section */}
-        {(judge.education || judge.priorExperience || judge.barAdmissionDate) && (
+        {(judge.education ||
+          judge.priorExperience ||
+          judge.barAdmissionDate) && (
           <section>
-            <h2 style={{ fontSize: "1.25rem", marginBottom: "1rem", borderBottom: "2px solid #e5e7eb", paddingBottom: "0.5rem" }}>
+            <h2 className="text-xl mb-4 border-b-2 border-border pb-2">
               Education & Career
             </h2>
-            <dl
-              style={{
-                display: "grid",
-                gridTemplateColumns: "180px 1fr",
-                gap: "0.75rem 1.5rem",
-                margin: 0,
-              }}
-            >
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-[180px_1fr] sm:gap-x-6 sm:gap-y-3 m-0">
               {judge.education && (
                 <>
-                  <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Education</dt>
-                  <dd style={{ margin: 0, whiteSpace: "pre-line" }}>{judge.education}</dd>
+                  <dt className="font-semibold text-foreground">Education</dt>
+                  <dd className="m-0 whitespace-pre-line">{judge.education}</dd>
                 </>
               )}
               {judge.barAdmissionDate && (
                 <>
-                  <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Bar Admission</dt>
-                  <dd style={{ margin: 0 }}>
+                  <dt className="font-semibold text-foreground">
+                    Bar Admission
+                  </dt>
+                  <dd className="m-0">
                     {formatYear(judge.barAdmissionDate)}
                     {judge.barAdmissionState && ` (${judge.barAdmissionState})`}
                   </dd>
@@ -353,8 +372,12 @@ export default async function JudgeProfilePage({ params }: PageProps) {
               )}
               {judge.priorExperience && (
                 <>
-                  <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Prior Experience</dt>
-                  <dd style={{ margin: 0, whiteSpace: "pre-line" }}>{judge.priorExperience}</dd>
+                  <dt className="font-semibold text-foreground">
+                    Prior Experience
+                  </dt>
+                  <dd className="m-0 whitespace-pre-line">
+                    {judge.priorExperience}
+                  </dd>
                 </>
               )}
             </dl>
@@ -364,27 +387,22 @@ export default async function JudgeProfilePage({ params }: PageProps) {
         {/* Political Information Section */}
         {(judge.politicalAffiliation || judge.birthDate) && (
           <section>
-            <h2 style={{ fontSize: "1.25rem", marginBottom: "1rem", borderBottom: "2px solid #e5e7eb", paddingBottom: "0.5rem" }}>
+            <h2 className="text-xl mb-4 border-b-2 border-border pb-2">
               Additional Information
             </h2>
-            <dl
-              style={{
-                display: "grid",
-                gridTemplateColumns: "180px 1fr",
-                gap: "0.75rem 1.5rem",
-                margin: 0,
-              }}
-            >
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-[180px_1fr] sm:gap-x-6 sm:gap-y-3 m-0">
               {judge.politicalAffiliation && (
                 <>
-                  <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Political Affiliation</dt>
-                  <dd style={{ margin: 0 }}>{judge.politicalAffiliation}</dd>
+                  <dt className="font-semibold text-foreground">
+                    Political Affiliation
+                  </dt>
+                  <dd className="m-0">{judge.politicalAffiliation}</dd>
                 </>
               )}
               {judge.birthDate && (
                 <>
-                  <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Birth Date</dt>
-                  <dd style={{ margin: 0 }}>{formatDate(judge.birthDate)}</dd>
+                  <dt className="font-semibold text-foreground">Birth Date</dt>
+                  <dd className="m-0">{formatDate(judge.birthDate)}</dd>
                 </>
               )}
             </dl>
@@ -394,28 +412,28 @@ export default async function JudgeProfilePage({ params }: PageProps) {
         {/* Contact Information Section */}
         {(judge.courthouseAddress || judge.courthousePhone) && (
           <section>
-            <h2 style={{ fontSize: "1.25rem", marginBottom: "1rem", borderBottom: "2px solid #e5e7eb", paddingBottom: "0.5rem" }}>
+            <h2 className="text-xl mb-4 border-b-2 border-border pb-2">
               Contact Information
             </h2>
-            <dl
-              style={{
-                display: "grid",
-                gridTemplateColumns: "180px 1fr",
-                gap: "0.75rem 1.5rem",
-                margin: 0,
-              }}
-            >
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-[180px_1fr] sm:gap-x-6 sm:gap-y-3 m-0">
               {judge.courthouseAddress && (
                 <>
-                  <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Courthouse Address</dt>
-                  <dd style={{ margin: 0, whiteSpace: "pre-line" }}>{judge.courthouseAddress}</dd>
+                  <dt className="font-semibold text-foreground">
+                    Courthouse Address
+                  </dt>
+                  <dd className="m-0 whitespace-pre-line">
+                    {judge.courthouseAddress}
+                  </dd>
                 </>
               )}
               {judge.courthousePhone && (
                 <>
-                  <dt style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Phone</dt>
-                  <dd style={{ margin: 0 }}>
-                    <a href={`tel:${judge.courthousePhone}`} style={{ color: "var(--color-link)" }}>
+                  <dt className="font-semibold text-foreground">Phone</dt>
+                  <dd className="m-0">
+                    <a
+                      href={`tel:${judge.courthousePhone}`}
+                      className="text-link hover:underline"
+                    >
                       {judge.courthousePhone}
                     </a>
                   </dd>
@@ -428,20 +446,13 @@ export default async function JudgeProfilePage({ params }: PageProps) {
 
       {/* Source Link */}
       {judge.sourceUrl && (
-        <p
-          style={{
-            fontSize: "0.875rem",
-            color: "var(--color-text-muted)",
-            marginTop: "2rem",
-            marginBottom: "2rem",
-          }}
-        >
+        <p className="text-sm text-muted-foreground mt-8 mb-8">
           Source:{" "}
           <a
             href={judge.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: "var(--color-link)", textDecoration: "underline" }}
+            className="text-link underline"
           >
             Official Court Website
           </a>

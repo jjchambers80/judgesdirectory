@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
 import CsvUploader, { UploadResult } from "@/components/admin/CsvUploader";
 import ColumnMapper from "@/components/admin/ColumnMapper";
 import ImportSummary from "@/components/admin/ImportSummary";
@@ -164,27 +165,12 @@ export default function AdminImportPage() {
 
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "1.5rem",
-        }}
-      >
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1>CSV Import</h1>
         {step !== "select-state" && (
           <button
             onClick={resetFlow}
-            style={{
-              padding: "0.5rem 1rem",
-              border: "1px solid var(--color-input-border)",
-              borderRadius: "0.375rem",
-              background: "var(--color-bg-primary)",
-              color: "var(--color-text-primary)",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-            }}
+            className="px-4 py-2 border border-input rounded-md bg-background text-foreground text-sm cursor-pointer hover:bg-muted transition-colors"
           >
             New Import
           </button>
@@ -193,37 +179,21 @@ export default function AdminImportPage() {
 
       {/* Step 1: Select State */}
       {step === "select-state" && (
-        <div style={{ marginBottom: "2rem" }}>
+        <div className="mb-8">
           <label
             htmlFor="import-state-select"
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontWeight: 600,
-            }}
+            className="block mb-2 font-semibold"
           >
             Select the state for this import
           </label>
-          <p
-            style={{
-              fontSize: "0.875rem",
-              color: "var(--color-text-muted)",
-              marginBottom: "0.75rem",
-            }}
-          >
+          <p className="text-sm text-muted-foreground mb-3">
             All rows in the CSV will be attributed to this state.
           </p>
           <select
             id="import-state-select"
             value=""
             onChange={(e) => handleStateSelect(e.target.value)}
-            style={{
-              padding: "0.5rem 0.75rem",
-              border: "1px solid var(--color-input-border)",
-              borderRadius: "0.375rem",
-              width: "100%",
-              maxWidth: "24rem",
-            }}
+            className="px-3 py-2 border border-input rounded-md w-full max-w-96"
           >
             <option value="">Choose a state…</option>
             {states.map((s) => (
@@ -237,8 +207,8 @@ export default function AdminImportPage() {
 
       {/* Step 2: Upload CSV */}
       {step === "upload" && selectedState && (
-        <div style={{ marginBottom: "2rem" }}>
-          <p style={{ marginBottom: "1rem" }}>
+        <div className="mb-8">
+          <p className="mb-4">
             Importing judges for <strong>{selectedState.name}</strong>
           </p>
           <CsvUploader
@@ -250,59 +220,37 @@ export default function AdminImportPage() {
 
       {/* Step 3: Preview & Map Columns */}
       {step === "preview" && uploadResult && (
-        <div style={{ marginBottom: "2rem" }}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-              gap: "0.75rem",
-              marginBottom: "1.5rem",
-            }}
-          >
+        <div className="mb-8">
+          <div className="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-4">
             <MiniStat label="Total Rows" value={uploadResult.totalRows} />
             <MiniStat
               label="Valid"
               value={uploadResult.validRows}
-              color="var(--color-badge-success-text)"
+              colorClass="text-badge-success-text"
             />
             <MiniStat
               label="Invalid"
               value={uploadResult.invalidRows}
-              color="var(--color-error-text)"
+              colorClass="text-error-text"
             />
             <MiniStat
               label="Duplicates"
               value={uploadResult.duplicateRows}
-              color="var(--color-badge-warning-text)"
+              colorClass="text-badge-warning-text"
             />
           </div>
 
           {uploadResult.unmatchedCounties.length > 0 && (
             <div
               role="alert"
-              style={{
-                padding: "0.5rem 0.75rem",
-                background: "var(--color-badge-warning-bg)",
-                color: "var(--color-badge-warning-text)",
-                borderRadius: "0.375rem",
-                fontSize: "0.875rem",
-                marginBottom: "1rem",
-              }}
+              className="px-3 py-2 bg-badge-warning-bg text-badge-warning-text rounded-md text-sm mb-4"
             >
               Unmatched counties: {uploadResult.unmatchedCounties.join(", ")}
             </div>
           )}
 
           {uploadResult.courtsToCreate.length > 0 && (
-            <div
-              style={{
-                padding: "0.5rem 0.75rem",
-                background: "var(--color-bg-secondary)",
-                borderRadius: "0.375rem",
-                fontSize: "0.875rem",
-                marginBottom: "1rem",
-              }}
-            >
+            <div className="px-3 py-2 bg-secondary rounded-md text-sm mb-4">
               {uploadResult.courtsToCreate.length} court(s) will be auto-created
               during import.
             </div>
@@ -316,75 +264,38 @@ export default function AdminImportPage() {
 
           {/* Preview table */}
           {uploadResult.preview.length > 0 && (
-            <details style={{ marginTop: "1rem" }}>
-              <summary
-                style={{
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  marginBottom: "0.5rem",
-                }}
-              >
+            <details className="mt-4">
+              <summary className="cursor-pointer font-semibold mb-2">
                 Preview ({uploadResult.preview.length} rows)
               </summary>
-              <div style={{ overflowX: "auto" }}>
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    fontSize: "0.8rem",
-                  }}
-                >
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-xs">
                   <thead>
-                    <tr
-                      style={{
-                        borderBottom: "2px solid var(--color-border)",
-                        textAlign: "left",
-                      }}
-                    >
-                      <th style={{ padding: "0.375rem" }}>Row</th>
-                      <th style={{ padding: "0.375rem" }}>Status</th>
-                      <th style={{ padding: "0.375rem" }}>Details</th>
+                    <tr className="border-b-2 border-border text-left">
+                      <th className="p-1.5">Row</th>
+                      <th className="p-1.5">Status</th>
+                      <th className="p-1.5">Details</th>
                     </tr>
                   </thead>
                   <tbody>
                     {uploadResult.preview.map((p) => (
-                      <tr
-                        key={p.row}
-                        style={{
-                          borderBottom: "1px solid var(--color-border)",
-                        }}
-                      >
-                        <td style={{ padding: "0.375rem" }}>{p.row}</td>
-                        <td style={{ padding: "0.375rem" }}>
+                      <tr key={p.row} className="border-b border-border">
+                        <td className="p-1.5">{p.row}</td>
+                        <td className="p-1.5">
                           <span
-                            style={{
-                              padding: "0.125rem 0.375rem",
-                              borderRadius: "9999px",
-                              fontSize: "0.7rem",
-                              fontWeight: 600,
-                              background:
-                                p.status === "valid"
-                                  ? "var(--color-badge-success-bg)"
-                                  : p.status === "invalid"
-                                    ? "var(--color-error-bg)"
-                                    : "var(--color-badge-warning-bg)",
-                              color:
-                                p.status === "valid"
-                                  ? "var(--color-badge-success-text)"
-                                  : p.status === "invalid"
-                                    ? "var(--color-error-text)"
-                                    : "var(--color-badge-warning-text)",
-                            }}
+                            className={cn(
+                              "inline-block px-1.5 py-0.5 rounded-full text-[0.7rem] font-semibold",
+                              p.status === "valid"
+                                ? "bg-badge-success-bg text-badge-success-text"
+                                : p.status === "invalid"
+                                  ? "bg-error-bg text-error-text"
+                                  : "bg-badge-warning-bg text-badge-warning-text",
+                            )}
                           >
                             {p.status}
                           </span>
                         </td>
-                        <td
-                          style={{
-                            padding: "0.375rem",
-                            fontSize: "0.75rem",
-                          }}
-                        >
+                        <td className="p-1.5 text-xs">
                           {p.errors && p.errors.join("; ")}
                           {p.reason}
                           {p.status === "valid" && p.data.fullName}
@@ -400,37 +311,22 @@ export default function AdminImportPage() {
           {error && (
             <div
               role="alert"
-              style={{
-                marginTop: "1rem",
-                padding: "0.75rem 1rem",
-                background: "var(--color-error-bg)",
-                color: "var(--color-error-text)",
-                borderRadius: "0.375rem",
-              }}
+              className="mt-4 px-4 py-3 bg-error-bg text-error-text rounded-md"
             >
               {error}
             </div>
           )}
 
-          <div style={{ marginTop: "1.5rem", display: "flex", gap: "0.75rem" }}>
+          <div className="mt-6 flex flex-wrap gap-3">
             <button
               onClick={handleConfirm}
               disabled={confirming || uploadResult.validRows === 0}
-              style={{
-                padding: "0.5rem 1.5rem",
-                background:
-                  confirming || uploadResult.validRows === 0
-                    ? "var(--color-text-muted)"
-                    : "var(--color-btn-primary)",
-                color: "var(--color-btn-primary-text)",
-                border: "none",
-                borderRadius: "0.375rem",
-                cursor:
-                  confirming || uploadResult.validRows === 0
-                    ? "not-allowed"
-                    : "pointer",
-                fontWeight: 600,
-              }}
+              className={cn(
+                "px-6 py-2 border-none rounded-md font-semibold text-btn-primary-text",
+                confirming || uploadResult.validRows === 0
+                  ? "bg-muted-foreground cursor-not-allowed"
+                  : "bg-primary cursor-pointer hover:bg-primary/90",
+              )}
             >
               {confirming
                 ? "Importing…"
@@ -438,14 +334,7 @@ export default function AdminImportPage() {
             </button>
             <button
               onClick={resetFlow}
-              style={{
-                padding: "0.5rem 1rem",
-                border: "1px solid var(--color-input-border)",
-                borderRadius: "0.375rem",
-                background: "var(--color-bg-primary)",
-                color: "var(--color-text-primary)",
-                cursor: "pointer",
-              }}
+              className="px-4 py-2 border border-input rounded-md bg-background text-foreground cursor-pointer hover:bg-muted transition-colors"
             >
               Cancel
             </button>
@@ -455,14 +344,14 @@ export default function AdminImportPage() {
 
       {/* Step 4: Confirming */}
       {step === "confirming" && (
-        <div style={{ textAlign: "center", padding: "2rem" }}>
+        <div className="text-center py-8">
           <p>Processing import…</p>
         </div>
       )}
 
       {/* Step 5: Complete */}
       {step === "complete" && importResult && (
-        <div style={{ marginBottom: "2rem" }}>
+        <div className="mb-8">
           <ImportSummary
             result={importResult}
             onRollback={() => handleRollback(importResult.batchId)}
@@ -472,109 +361,72 @@ export default function AdminImportPage() {
       )}
 
       {/* Batch History */}
-      <div style={{ marginTop: "2rem" }}>
-        <h2 style={{ marginBottom: "1rem" }}>Import History</h2>
+      <div className="mt-8">
+        <h2 className="mb-4">Import History</h2>
         {batches.length === 0 ? (
-          <p style={{ color: "var(--color-text-muted)" }}>No imports yet.</p>
+          <p className="text-muted-foreground">No imports yet.</p>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr
-                style={{
-                  borderBottom: "2px solid var(--color-border)",
-                  textAlign: "left",
-                }}
-              >
-                <th style={{ padding: "0.5rem" }}>File</th>
-                <th style={{ padding: "0.5rem" }}>Rows</th>
-                <th style={{ padding: "0.5rem" }}>Result</th>
-                <th style={{ padding: "0.5rem" }}>Status</th>
-                <th style={{ padding: "0.5rem" }}>Date</th>
-                <th style={{ padding: "0.5rem" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {batches.map((b) => (
-                <tr
-                  key={b.id}
-                  style={{ borderBottom: "1px solid var(--color-border)" }}
-                >
-                  <td
-                    style={{
-                      padding: "0.5rem",
-                      fontSize: "0.875rem",
-                      maxWidth: "12rem",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {b.fileName}
-                  </td>
-                  <td style={{ padding: "0.5rem", fontSize: "0.875rem" }}>
-                    {b.totalRows}
-                  </td>
-                  <td style={{ padding: "0.5rem", fontSize: "0.75rem" }}>
-                    {b.successCount} ok / {b.skipCount} skip / {b.errorCount}{" "}
-                    err
-                  </td>
-                  <td style={{ padding: "0.5rem" }}>
-                    <span
-                      style={{
-                        padding: "0.125rem 0.375rem",
-                        borderRadius: "9999px",
-                        fontSize: "0.7rem",
-                        fontWeight: 600,
-                        background:
-                          b.status === "COMPLETE"
-                            ? "var(--color-badge-success-bg)"
-                            : b.status === "ROLLED_BACK"
-                              ? "var(--color-error-bg)"
-                              : "var(--color-badge-warning-bg)",
-                        color:
-                          b.status === "COMPLETE"
-                            ? "var(--color-badge-success-text)"
-                            : b.status === "ROLLED_BACK"
-                              ? "var(--color-error-text)"
-                              : "var(--color-badge-warning-text)",
-                      }}
-                    >
-                      {b.status}
-                    </span>
-                  </td>
-                  <td
-                    style={{
-                      padding: "0.5rem",
-                      fontSize: "0.75rem",
-                      color: "var(--color-text-muted)",
-                    }}
-                  >
-                    {new Date(b.createdAt).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: "0.5rem" }}>
-                    {b.status === "COMPLETE" && !b.hasVerifiedJudges && (
-                      <button
-                        onClick={() => handleRollback(b.id)}
-                        disabled={rollingBack === b.id}
-                        style={{
-                          padding: "0.25rem 0.5rem",
-                          border: "1px solid var(--color-input-border-error)",
-                          borderRadius: "0.25rem",
-                          background: "var(--color-error-bg)",
-                          color: "var(--color-error-text)",
-                          cursor:
-                            rollingBack === b.id ? "not-allowed" : "pointer",
-                          fontSize: "0.7rem",
-                        }}
-                      >
-                        {rollingBack === b.id ? "…" : "Rollback"}
-                      </button>
-                    )}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b-2 border-border text-left">
+                  <th className="p-2">File</th>
+                  <th className="p-2">Rows</th>
+                  <th className="p-2">Result</th>
+                  <th className="p-2">Status</th>
+                  <th className="p-2">Date</th>
+                  <th className="p-2">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {batches.map((b) => (
+                  <tr key={b.id} className="border-b border-border">
+                    <td className="p-2 text-sm max-w-48 overflow-hidden text-ellipsis whitespace-nowrap">
+                      {b.fileName}
+                    </td>
+                    <td className="p-2 text-sm">{b.totalRows}</td>
+                    <td className="p-2 text-xs">
+                      {b.successCount} ok / {b.skipCount} skip / {b.errorCount}{" "}
+                      err
+                    </td>
+                    <td className="p-2">
+                      <span
+                        className={cn(
+                          "inline-block px-1.5 py-0.5 rounded-full text-[0.7rem] font-semibold",
+                          b.status === "COMPLETE"
+                            ? "bg-badge-success-bg text-badge-success-text"
+                            : b.status === "ROLLED_BACK"
+                              ? "bg-error-bg text-error-text"
+                              : "bg-badge-warning-bg text-badge-warning-text",
+                        )}
+                      >
+                        {b.status}
+                      </span>
+                    </td>
+                    <td className="p-2 text-xs text-muted-foreground">
+                      {new Date(b.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="p-2">
+                      {b.status === "COMPLETE" && !b.hasVerifiedJudges && (
+                        <button
+                          onClick={() => handleRollback(b.id)}
+                          disabled={rollingBack === b.id}
+                          className={cn(
+                            "px-2 py-1 border border-error-text rounded bg-error-bg text-error-text text-[0.7rem]",
+                            rollingBack === b.id
+                              ? "cursor-not-allowed opacity-50"
+                              : "cursor-pointer",
+                          )}
+                        >
+                          {rollingBack === b.id ? "…" : "Rollback"}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
@@ -584,38 +436,18 @@ export default function AdminImportPage() {
 function MiniStat({
   label,
   value,
-  color,
+  colorClass,
 }: {
   label: string;
   value: number;
-  color?: string;
+  colorClass?: string;
 }) {
   return (
-    <div
-      style={{
-        padding: "0.75rem",
-        border: "1px solid var(--color-border)",
-        borderRadius: "0.375rem",
-        textAlign: "center",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "1.25rem",
-          fontWeight: 700,
-          color: color || "inherit",
-        }}
-      >
+    <div className="p-3 border border-border rounded-md text-center">
+      <div className={cn("text-xl font-bold", colorClass)}>
         {value.toLocaleString()}
       </div>
-      <div
-        style={{
-          fontSize: "0.7rem",
-          color: "var(--color-text-muted)",
-        }}
-      >
-        {label}
-      </div>
+      <div className="text-[0.7rem] text-muted-foreground">{label}</div>
     </div>
   );
 }

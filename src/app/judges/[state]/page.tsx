@@ -60,52 +60,47 @@ export default async function CountyListPage({ params }: PageProps) {
     <>
       <JsonLd data={jsonLd} />
       <nav
-        style={{
-          marginBottom: "1rem",
-          fontSize: "0.875rem",
-          color: "var(--color-text-muted)",
-        }}
+        aria-label="Breadcrumb"
+        className="mb-4 text-sm text-muted-foreground"
       >
-        <Link href="/judges/" style={{ color: "var(--color-link)" }}>
-          States
-        </Link>
-        {" › "}
-        <span>{state.name}</span>
+        <ol className="flex flex-wrap items-center gap-1.5 list-none m-0 p-0">
+          <li>
+            <Link href="/judges/" className="text-link hover:underline">
+              States
+            </Link>
+          </li>
+          <li aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </li>
+          <li aria-current="page">{state.name}</li>
+        </ol>
       </nav>
       <h1>Judges in {state.name} — County Directory</h1>
-      <p style={{ color: "var(--color-text-muted)", marginBottom: "2rem" }}>
+      <p className="text-muted-foreground mb-8">
         {counties.length} {counties.length === 1 ? "county" : "counties"} in{" "}
         {state.name}. Select a county to view court types.
       </p>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-          gap: "0.75rem",
-        }}
-      >
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {counties.map((county) => (
           <Link
             key={county.id}
             href={`/judges/${state.slug}/${county.slug}/`}
-            style={{
-              display: "block",
-              padding: "1rem 1.25rem",
-              border: "1px solid var(--color-border)",
-              borderRadius: "0.375rem",
-              textDecoration: "none",
-              color: "inherit",
-            }}
+            className="block px-5 py-4 border border-border rounded-md no-underline text-foreground hover:border-primary transition-colors"
           >
             <strong>{county.name}</strong>
             {county._count.courts > 0 && (
-              <span
-                style={{
-                  marginLeft: "0.5rem",
-                  fontSize: "0.875rem",
-                  color: "var(--color-text-muted)",
-                }}
-              >
+              <span className="ml-2 text-sm text-muted-foreground">
                 ({county._count.courts}{" "}
                 {county._count.courts === 1 ? "court" : "courts"})
               </span>

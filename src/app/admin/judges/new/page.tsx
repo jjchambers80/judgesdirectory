@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 interface StateOption {
   id: string;
@@ -146,29 +147,20 @@ export default function AdminJudgeNewPage() {
   const fieldError = (field: string) =>
     errors.find((e) => e.field === field)?.message;
 
-  const inputStyle = (field: string) => ({
-    display: "block",
-    width: "100%",
-    padding: "0.5rem 0.75rem",
-    border: `1px solid ${fieldError(field) ? "var(--color-input-border-error)" : "var(--color-input-border)"}`,
-    borderRadius: "0.375rem",
-    marginTop: "0.25rem",
-    boxSizing: "border-box" as const,
-  });
+  const inputClasses = (field: string) =>
+    cn(
+      "block w-full px-3 py-2 border rounded-md mt-1",
+      fieldError(field) ? "border-input-border-error" : "border-input",
+    );
 
   return (
-    <div style={{ maxWidth: "640px" }}>
+    <div className="max-w-xl">
       <h1>Add Judge Record</h1>
 
       {success && (
         <div
-          style={{
-            padding: "1rem",
-            background: "var(--color-badge-success-bg)",
-            color: "var(--color-badge-success-text)",
-            borderRadius: "0.375rem",
-            marginBottom: "1rem",
-          }}
+          role="status"
+          className="p-4 bg-badge-success-bg text-badge-success-text rounded-md mb-4"
         >
           Judge created successfully! Redirecting...
         </div>
@@ -176,13 +168,8 @@ export default function AdminJudgeNewPage() {
 
       {errors.length > 0 && (
         <div
-          style={{
-            padding: "1rem",
-            background: "var(--color-error-bg)",
-            color: "var(--color-error-text)",
-            borderRadius: "0.375rem",
-            marginBottom: "1rem",
-          }}
+          role="alert"
+          className="p-4 bg-error-bg text-error-text rounded-md mb-4"
         >
           {errors.map((err, i) => (
             <p key={i}>
@@ -195,30 +182,18 @@ export default function AdminJudgeNewPage() {
 
       <form onSubmit={handleSubmit}>
         {/* Location Selection */}
-        <fieldset
-          style={{
-            border: "1px solid var(--color-border)",
-            padding: "1rem",
-            borderRadius: "0.375rem",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <legend style={{ fontWeight: 600, padding: "0 0.5rem" }}>
-            Court Assignment
-          </legend>
+        <fieldset className="border border-border p-4 rounded-md mb-6">
+          <legend className="font-semibold px-2">Court Assignment</legend>
 
-          <div style={{ marginBottom: "1rem" }}>
-            <label
-              htmlFor="state"
-              style={{ fontWeight: 500, fontSize: "0.875rem" }}
-            >
+          <div className="mb-4">
+            <label htmlFor="state" className="font-medium text-sm">
               State *
             </label>
             <select
               id="state"
               value={selectedStateId}
               onChange={(e) => setSelectedStateId(e.target.value)}
-              style={inputStyle("stateId")}
+              className={inputClasses("stateId")}
               required
             >
               <option value="">Select state...</option>
@@ -230,18 +205,15 @@ export default function AdminJudgeNewPage() {
             </select>
           </div>
 
-          <div style={{ marginBottom: "1rem" }}>
-            <label
-              htmlFor="county"
-              style={{ fontWeight: 500, fontSize: "0.875rem" }}
-            >
+          <div className="mb-4">
+            <label htmlFor="county" className="font-medium text-sm">
               County *
             </label>
             <select
               id="county"
               value={selectedCountyId}
               onChange={(e) => setSelectedCountyId(e.target.value)}
-              style={inputStyle("countyId")}
+              className={inputClasses("countyId")}
               disabled={!selectedStateId}
               required
             >
@@ -254,19 +226,16 @@ export default function AdminJudgeNewPage() {
             </select>
           </div>
 
-          <div style={{ marginBottom: "0.5rem" }}>
-            <label
-              htmlFor="court"
-              style={{ fontWeight: 500, fontSize: "0.875rem" }}
-            >
+          <div className="mb-2">
+            <label htmlFor="court" className="font-medium text-sm">
               Court *
             </label>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div className="flex gap-2">
               <select
                 id="court"
                 value={selectedCourtId}
                 onChange={(e) => setSelectedCourtId(e.target.value)}
-                style={{ ...inputStyle("courtId"), flex: 1 }}
+                className={cn(inputClasses("courtId"), "flex-1")}
                 disabled={!selectedCountyId}
                 required={!showNewCourt}
               >
@@ -281,42 +250,29 @@ export default function AdminJudgeNewPage() {
                 type="button"
                 onClick={() => setShowNewCourt(!showNewCourt)}
                 disabled={!selectedCountyId}
-                style={{
-                  padding: "0.5rem 0.75rem",
-                  border: "1px solid var(--color-input-border)",
-                  borderRadius: "0.375rem",
-                  background: "var(--color-bg-primary)",
-                  cursor: selectedCountyId ? "pointer" : "not-allowed",
-                  whiteSpace: "nowrap",
-                  fontSize: "0.875rem",
-                }}
+                className={cn(
+                  "px-3 py-2 border border-input rounded-md bg-background whitespace-nowrap text-sm",
+                  selectedCountyId
+                    ? "cursor-pointer"
+                    : "cursor-not-allowed opacity-50",
+                )}
               >
                 {showNewCourt ? "Cancel" : "+ New"}
               </button>
             </div>
             {showNewCourt && (
-              <div
-                style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}
-              >
+              <div className="flex gap-2 mt-2">
                 <input
                   type="text"
                   placeholder="e.g., District Court"
                   value={newCourtType}
                   onChange={(e) => setNewCourtType(e.target.value)}
-                  style={{ ...inputStyle("newCourt"), flex: 1 }}
+                  className={cn(inputClasses("newCourt"), "flex-1")}
                 />
                 <button
                   type="button"
                   onClick={handleCreateCourt}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    background: "var(--color-btn-primary)",
-                    color: "var(--color-btn-primary-text)",
-                    border: "none",
-                    borderRadius: "0.375rem",
-                    cursor: "pointer",
-                    fontSize: "0.875rem",
-                  }}
+                  className="px-4 py-2 bg-primary text-btn-primary-text border-none rounded-md cursor-pointer text-sm"
                 >
                   Create
                 </button>
@@ -326,23 +282,11 @@ export default function AdminJudgeNewPage() {
         </fieldset>
 
         {/* Judge Information */}
-        <fieldset
-          style={{
-            border: "1px solid var(--color-border)",
-            padding: "1rem",
-            borderRadius: "0.375rem",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <legend style={{ fontWeight: 600, padding: "0 0.5rem" }}>
-            Judge Information
-          </legend>
+        <fieldset className="border border-border p-4 rounded-md mb-6">
+          <legend className="font-semibold px-2">Judge Information</legend>
 
-          <div style={{ marginBottom: "1rem" }}>
-            <label
-              htmlFor="fullName"
-              style={{ fontWeight: 500, fontSize: "0.875rem" }}
-            >
+          <div className="mb-4">
+            <label htmlFor="fullName" className="font-medium text-sm">
               Full Name *
             </label>
             <input
@@ -351,35 +295,23 @@ export default function AdminJudgeNewPage() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="e.g., John A. Smith"
-              style={inputStyle("fullName")}
+              className={inputClasses("fullName")}
+              aria-describedby={
+                fieldError("fullName") ? "fullName-error" : undefined
+              }
+              aria-invalid={!!fieldError("fullName")}
               required
             />
             {fieldError("fullName") && (
-              <p
-                style={{
-                  color: "var(--color-error-text)",
-                  fontSize: "0.75rem",
-                  marginTop: "0.25rem",
-                }}
-              >
+              <p id="fullName-error" className="text-error-text text-xs mt-1">
                 {fieldError("fullName")}
               </p>
             )}
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "1rem",
-              marginBottom: "1rem",
-            }}
-          >
+          <div className="grid grid-cols-1 gap-4 mb-4 sm:grid-cols-2">
             <div>
-              <label
-                htmlFor="termStart"
-                style={{ fontWeight: 500, fontSize: "0.875rem" }}
-              >
+              <label htmlFor="termStart" className="font-medium text-sm">
                 Term Start
               </label>
               <input
@@ -387,14 +319,11 @@ export default function AdminJudgeNewPage() {
                 type="date"
                 value={termStart}
                 onChange={(e) => setTermStart(e.target.value)}
-                style={inputStyle("termStart")}
+                className={inputClasses("termStart")}
               />
             </div>
             <div>
-              <label
-                htmlFor="termEnd"
-                style={{ fontWeight: 500, fontSize: "0.875rem" }}
-              >
+              <label htmlFor="termEnd" className="font-medium text-sm">
                 Term End
               </label>
               <input
@@ -402,31 +331,21 @@ export default function AdminJudgeNewPage() {
                 type="date"
                 value={termEnd}
                 onChange={(e) => setTermEnd(e.target.value)}
-                style={inputStyle("termEnd")}
+                className={inputClasses("termEnd")}
               />
             </div>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "1rem",
-              marginBottom: "1rem",
-            }}
-          >
+          <div className="grid grid-cols-1 gap-4 mb-4 sm:grid-cols-2">
             <div>
-              <label
-                htmlFor="selectionMethod"
-                style={{ fontWeight: 500, fontSize: "0.875rem" }}
-              >
+              <label htmlFor="selectionMethod" className="font-medium text-sm">
                 Selection Method
               </label>
               <select
                 id="selectionMethod"
                 value={selectionMethod}
                 onChange={(e) => setSelectionMethod(e.target.value)}
-                style={inputStyle("selectionMethod")}
+                className={inputClasses("selectionMethod")}
               >
                 <option value="">Not specified</option>
                 <option value="Elected">Elected</option>
@@ -437,7 +356,7 @@ export default function AdminJudgeNewPage() {
             <div>
               <label
                 htmlFor="appointingAuthority"
-                style={{ fontWeight: 500, fontSize: "0.875rem" }}
+                className="font-medium text-sm"
               >
                 Appointing Authority
               </label>
@@ -447,15 +366,15 @@ export default function AdminJudgeNewPage() {
                 value={appointingAuthority}
                 onChange={(e) => setAppointingAuthority(e.target.value)}
                 placeholder="e.g., Governor"
-                style={inputStyle("appointingAuthority")}
+                className={inputClasses("appointingAuthority")}
               />
             </div>
           </div>
 
-          <div style={{ marginBottom: "1rem" }}>
+          <div className="mb-4">
             <label
               htmlFor="politicalAffiliation"
-              style={{ fontWeight: 500, fontSize: "0.875rem" }}
+              className="font-medium text-sm"
             >
               Political Affiliation
             </label>
@@ -465,15 +384,12 @@ export default function AdminJudgeNewPage() {
               value={politicalAffiliation}
               onChange={(e) => setPoliticalAffiliation(e.target.value)}
               placeholder="e.g., Republican, Democrat"
-              style={inputStyle("politicalAffiliation")}
+              className={inputClasses("politicalAffiliation")}
             />
           </div>
 
-          <div style={{ marginBottom: "1rem" }}>
-            <label
-              htmlFor="education"
-              style={{ fontWeight: 500, fontSize: "0.875rem" }}
-            >
+          <div className="mb-4">
+            <label htmlFor="education" className="font-medium text-sm">
               Education
             </label>
             <textarea
@@ -482,15 +398,12 @@ export default function AdminJudgeNewPage() {
               onChange={(e) => setEducation(e.target.value)}
               placeholder="e.g., J.D., University of Texas School of Law"
               rows={2}
-              style={inputStyle("education")}
+              className={inputClasses("education")}
             />
           </div>
 
-          <div style={{ marginBottom: "1rem" }}>
-            <label
-              htmlFor="priorExperience"
-              style={{ fontWeight: 500, fontSize: "0.875rem" }}
-            >
+          <div className="mb-4">
+            <label htmlFor="priorExperience" className="font-medium text-sm">
               Prior Experience
             </label>
             <textarea
@@ -499,29 +412,17 @@ export default function AdminJudgeNewPage() {
               onChange={(e) => setPriorExperience(e.target.value)}
               placeholder="e.g., Assistant District Attorney, 2005-2015"
               rows={2}
-              style={inputStyle("priorExperience")}
+              className={inputClasses("priorExperience")}
             />
           </div>
         </fieldset>
 
         {/* Source */}
-        <fieldset
-          style={{
-            border: "1px solid var(--color-border)",
-            padding: "1rem",
-            borderRadius: "0.375rem",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <legend style={{ fontWeight: 600, padding: "0 0.5rem" }}>
-            Source Attribution
-          </legend>
+        <fieldset className="border border-border p-4 rounded-md mb-6">
+          <legend className="font-semibold px-2">Source Attribution</legend>
 
           <div>
-            <label
-              htmlFor="sourceUrl"
-              style={{ fontWeight: 500, fontSize: "0.875rem" }}
-            >
+            <label htmlFor="sourceUrl" className="font-medium text-sm">
               Source URL *
             </label>
             <input
@@ -530,26 +431,21 @@ export default function AdminJudgeNewPage() {
               value={sourceUrl}
               onChange={(e) => setSourceUrl(e.target.value)}
               placeholder="https://www.courts.gov/judges/..."
-              style={inputStyle("sourceUrl")}
+              className={inputClasses("sourceUrl")}
+              aria-describedby={
+                fieldError("sourceUrl") ? "sourceUrl-error" : "sourceUrl-hint"
+              }
+              aria-invalid={!!fieldError("sourceUrl")}
               required
             />
             {fieldError("sourceUrl") && (
-              <p
-                style={{
-                  color: "var(--color-error-text)",
-                  fontSize: "0.75rem",
-                  marginTop: "0.25rem",
-                }}
-              >
+              <p id="sourceUrl-error" className="text-error-text text-xs mt-1">
                 {fieldError("sourceUrl")}
               </p>
             )}
             <p
-              style={{
-                fontSize: "0.75rem",
-                color: "var(--color-text-muted)",
-                marginTop: "0.25rem",
-              }}
+              id="sourceUrl-hint"
+              className="text-xs text-muted-foreground mt-1"
             >
               Required per Constitution I — link to the public government source
               for this judge record.
@@ -560,18 +456,12 @@ export default function AdminJudgeNewPage() {
         <button
           type="submit"
           disabled={submitting}
-          style={{
-            padding: "0.75rem 2rem",
-            background: submitting
-              ? "var(--color-btn-primary-disabled)"
-              : "var(--color-btn-primary)",
-            color: "var(--color-btn-primary-text)",
-            border: "none",
-            borderRadius: "0.375rem",
-            cursor: submitting ? "not-allowed" : "pointer",
-            fontSize: "1rem",
-            fontWeight: 600,
-          }}
+          className={cn(
+            "px-8 py-3 text-btn-primary-text border-none rounded-md text-base font-semibold",
+            submitting
+              ? "bg-btn-primary-disabled cursor-not-allowed"
+              : "bg-primary cursor-pointer hover:bg-primary/90 transition-colors",
+          )}
         >
           {submitting ? "Creating..." : "Create Judge Record"}
         </button>

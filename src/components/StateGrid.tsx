@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface StateItem {
   id: string;
@@ -18,52 +19,25 @@ interface StateGridProps {
  */
 export default function StateGrid({ states }: StateGridProps) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-        gap: "1rem",
-      }}
-    >
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {states.map((state) => (
         <Link
           key={state.id}
           href={`/judges/${state.slug}/`}
-          style={{
-            display: "block",
-            padding: "1.5rem",
-            border: "1px solid var(--color-border)",
-            borderRadius: "0.5rem",
-            textDecoration: "none",
-            color: "inherit",
-            transition: "border-color 0.15s",
-          }}
+          className={cn(
+            "block p-6 rounded-lg border border-border",
+            "no-underline text-foreground",
+            "transition-colors hover:border-primary hover:no-underline",
+            "bg-card",
+          )}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <strong style={{ fontSize: "1.125rem" }}>{state.name}</strong>
-            <span
-              style={{
-                fontSize: "0.875rem",
-                color: "var(--color-text-muted)",
-                fontWeight: 600,
-              }}
-            >
+          <div className="flex items-center justify-between">
+            <strong className="text-lg">{state.name}</strong>
+            <span className="text-sm font-semibold text-muted-foreground">
               {state.abbreviation}
             </span>
           </div>
-          <p
-            style={{
-              marginTop: "0.5rem",
-              fontSize: "0.875rem",
-              color: "var(--color-text-muted)",
-            }}
-          >
+          <p className="mt-2 text-sm text-muted-foreground">
             {state._count.counties}{" "}
             {state._count.counties === 1 ? "county" : "counties"}
           </p>

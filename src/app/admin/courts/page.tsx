@@ -13,14 +13,8 @@ export default async function AdminCourtsPage() {
 
   return (
     <div>
-      <h1 style={{ marginBottom: "1.5rem" }}>Bulk Court Creation</h1>
-      <p
-        style={{
-          marginBottom: "1.5rem",
-          color: "var(--color-text-muted)",
-          fontSize: "0.875rem",
-        }}
-      >
+      <h1 className="mb-6">Bulk Court Creation</h1>
+      <p className="mb-6 text-muted-foreground text-sm">
         Create court types across all counties in a state. This is required
         before importing judges — courts are the parent records for judge
         assignments.

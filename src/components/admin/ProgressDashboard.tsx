@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 interface DashboardData {
   target: number;
@@ -44,17 +45,11 @@ export default function ProgressDashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <p style={{ color: "var(--color-text-muted)" }}>Loading dashboard…</p>
-    );
+    return <p className="text-muted-foreground">Loading dashboard…</p>;
   }
 
   if (!data) {
-    return (
-      <p style={{ color: "var(--color-error-text)" }}>
-        Failed to load dashboard data.
-      </p>
-    );
+    return <p className="text-error-text">Failed to load dashboard data.</p>;
   }
 
   const { totals, target, byState, recentBatches, milestoneReached } = data;
@@ -66,16 +61,7 @@ export default function ProgressDashboard() {
       {milestoneReached && (
         <div
           role="status"
-          style={{
-            padding: "1rem",
-            background: "var(--color-badge-success-bg)",
-            color: "var(--color-badge-success-text)",
-            borderRadius: "0.375rem",
-            marginBottom: "1.5rem",
-            textAlign: "center",
-            fontWeight: 700,
-            fontSize: "1.1rem",
-          }}
+          className="p-4 bg-badge-success-bg text-badge-success-text rounded-md mb-6 text-center font-bold text-lg"
         >
           🎉 Milestone reached! {totals.imported.toLocaleString()} judges
           imported — target of {target.toLocaleString()} met!
@@ -83,20 +69,13 @@ export default function ProgressDashboard() {
       )}
 
       {/* Progress bar */}
-      <div style={{ marginBottom: "1.5rem" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: "0.375rem",
-            fontSize: "0.875rem",
-          }}
-        >
+      <div className="mb-6">
+        <div className="flex justify-between mb-1.5 text-sm">
           <span>
             Progress: {totals.imported.toLocaleString()} /{" "}
             {target.toLocaleString()}
           </span>
-          <span style={{ fontWeight: 600 }}>{progressPct}%</span>
+          <span className="font-semibold">{progressPct}%</span>
         </div>
         <div
           role="progressbar"
@@ -104,175 +83,114 @@ export default function ProgressDashboard() {
           aria-valuemin={0}
           aria-valuemax={100}
           aria-label="Import progress toward pilot target"
-          style={{
-            width: "100%",
-            height: "1.25rem",
-            background: "var(--color-bg-secondary)",
-            borderRadius: "9999px",
-            overflow: "hidden",
-          }}
+          className="w-full h-5 bg-secondary rounded-full overflow-hidden"
         >
           <div
-            style={{
-              width: `${progressPct}%`,
-              height: "100%",
-              background: milestoneReached
-                ? "var(--color-badge-success-text)"
-                : "var(--color-btn-primary)",
-              borderRadius: "9999px",
-              transition: "width 0.5s ease",
-            }}
+            className={cn(
+              "h-full rounded-full transition-[width] duration-500 ease-in-out",
+              milestoneReached ? "bg-badge-success-text" : "bg-primary",
+            )}
+            style={{ width: `${progressPct}%` }}
           />
         </div>
       </div>
 
       {/* Stats grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-          gap: "0.75rem",
-          marginBottom: "2rem",
-        }}
-      >
+      <div className="grid grid-cols-2 gap-3 mb-8 sm:grid-cols-4">
         <StatCard label="Total Imported" value={totals.imported} />
         <StatCard
           label="Verified"
           value={totals.verified}
-          color="var(--color-badge-success-text)"
+          colorClass="text-badge-success-text"
         />
         <StatCard
           label="Unverified"
           value={totals.unverified}
-          color="var(--color-badge-warning-text)"
+          colorClass="text-badge-warning-text"
         />
         <StatCard
           label="Rejected"
           value={totals.rejected}
-          color="var(--color-error-text)"
+          colorClass="text-error-text"
         />
       </div>
 
       {/* Per-state breakdown */}
       {byState.length > 0 && (
-        <div style={{ marginBottom: "2rem" }}>
-          <h2 style={{ marginBottom: "0.75rem", fontSize: "1.1rem" }}>
-            By State
-          </h2>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr
-                style={{
-                  borderBottom: "2px solid var(--color-border)",
-                  textAlign: "left",
-                }}
-              >
-                <th style={{ padding: "0.5rem" }}>State</th>
-                <th style={{ padding: "0.5rem" }}>Imported</th>
-                <th style={{ padding: "0.5rem" }}>Verified</th>
-                <th style={{ padding: "0.5rem" }}>Unverified</th>
-                <th style={{ padding: "0.5rem" }}>Rejected</th>
-                <th style={{ padding: "0.5rem" }}>% of Target</th>
-              </tr>
-            </thead>
-            <tbody>
-              {byState.map((s) => (
-                <tr
-                  key={s.stateId}
-                  style={{ borderBottom: "1px solid var(--color-border)" }}
-                >
-                  <td style={{ padding: "0.5rem", fontWeight: 500 }}>
-                    {s.stateName}
-                  </td>
-                  <td style={{ padding: "0.5rem" }}>
-                    {s.imported.toLocaleString()}
-                  </td>
-                  <td style={{ padding: "0.5rem" }}>
-                    {s.verified.toLocaleString()}
-                  </td>
-                  <td style={{ padding: "0.5rem" }}>
-                    {s.unverified.toLocaleString()}
-                  </td>
-                  <td style={{ padding: "0.5rem" }}>
-                    {s.rejected.toLocaleString()}
-                  </td>
-                  <td style={{ padding: "0.5rem" }}>{s.percentOfTarget}%</td>
+        <div className="mb-8">
+          <h2 className="mb-3 text-lg">By State</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b-2 border-border text-left">
+                  <th className="p-2">State</th>
+                  <th className="p-2">Imported</th>
+                  <th className="p-2">Verified</th>
+                  <th className="p-2">Unverified</th>
+                  <th className="p-2">Rejected</th>
+                  <th className="p-2">% of Target</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {byState.map((s) => (
+                  <tr key={s.stateId} className="border-b border-border">
+                    <td className="p-2 font-medium">{s.stateName}</td>
+                    <td className="p-2">{s.imported.toLocaleString()}</td>
+                    <td className="p-2">{s.verified.toLocaleString()}</td>
+                    <td className="p-2">{s.unverified.toLocaleString()}</td>
+                    <td className="p-2">{s.rejected.toLocaleString()}</td>
+                    <td className="p-2">{s.percentOfTarget}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* Recent batches */}
       {recentBatches.length > 0 && (
         <div>
-          <h2 style={{ marginBottom: "0.75rem", fontSize: "1.1rem" }}>
-            Recent Imports
-          </h2>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr
-                style={{
-                  borderBottom: "2px solid var(--color-border)",
-                  textAlign: "left",
-                }}
-              >
-                <th style={{ padding: "0.5rem" }}>File</th>
-                <th style={{ padding: "0.5rem" }}>Records</th>
-                <th style={{ padding: "0.5rem" }}>Status</th>
-                <th style={{ padding: "0.5rem" }}>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentBatches.map((b) => (
-                <tr
-                  key={b.id}
-                  style={{ borderBottom: "1px solid var(--color-border)" }}
-                >
-                  <td style={{ padding: "0.5rem", fontSize: "0.875rem" }}>
-                    {b.fileName}
-                  </td>
-                  <td style={{ padding: "0.5rem", fontSize: "0.875rem" }}>
-                    {b.successCount.toLocaleString()}
-                  </td>
-                  <td style={{ padding: "0.5rem" }}>
-                    <span
-                      style={{
-                        padding: "0.125rem 0.375rem",
-                        borderRadius: "9999px",
-                        fontSize: "0.7rem",
-                        fontWeight: 600,
-                        background:
-                          b.status === "COMPLETE"
-                            ? "var(--color-badge-success-bg)"
-                            : b.status === "ROLLED_BACK"
-                              ? "var(--color-error-bg)"
-                              : "var(--color-badge-warning-bg)",
-                        color:
-                          b.status === "COMPLETE"
-                            ? "var(--color-badge-success-text)"
-                            : b.status === "ROLLED_BACK"
-                              ? "var(--color-error-text)"
-                              : "var(--color-badge-warning-text)",
-                      }}
-                    >
-                      {b.status}
-                    </span>
-                  </td>
-                  <td
-                    style={{
-                      padding: "0.5rem",
-                      fontSize: "0.75rem",
-                      color: "var(--color-text-muted)",
-                    }}
-                  >
-                    {new Date(b.createdAt).toLocaleDateString()}
-                  </td>
+          <h2 className="mb-3 text-lg">Recent Imports</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b-2 border-border text-left">
+                  <th className="p-2">File</th>
+                  <th className="p-2">Records</th>
+                  <th className="p-2">Status</th>
+                  <th className="p-2">Date</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {recentBatches.map((b) => (
+                  <tr key={b.id} className="border-b border-border">
+                    <td className="p-2 text-sm">{b.fileName}</td>
+                    <td className="p-2 text-sm">
+                      {b.successCount.toLocaleString()}
+                    </td>
+                    <td className="p-2">
+                      <span
+                        className={cn(
+                          "inline-block px-1.5 py-0.5 rounded-full text-[0.7rem] font-semibold",
+                          b.status === "COMPLETE"
+                            ? "bg-badge-success-bg text-badge-success-text"
+                            : b.status === "ROLLED_BACK"
+                              ? "bg-error-bg text-error-text"
+                              : "bg-badge-warning-bg text-badge-warning-text",
+                        )}
+                      >
+                        {b.status}
+                      </span>
+                    </td>
+                    <td className="p-2 text-xs text-muted-foreground">
+                      {new Date(b.createdAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
@@ -282,33 +200,18 @@ export default function ProgressDashboard() {
 function StatCard({
   label,
   value,
-  color,
+  colorClass,
 }: {
   label: string;
   value: number;
-  color?: string;
+  colorClass?: string;
 }) {
   return (
-    <div
-      style={{
-        padding: "1rem",
-        border: "1px solid var(--color-border)",
-        borderRadius: "0.375rem",
-        textAlign: "center",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "1.5rem",
-          fontWeight: 700,
-          color: color || "inherit",
-        }}
-      >
+    <div className="p-4 border border-border rounded-md text-center">
+      <div className={cn("text-2xl font-bold", colorClass)}>
         {value.toLocaleString()}
       </div>
-      <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>
-        {label}
-      </div>
+      <div className="text-xs text-muted-foreground">{label}</div>
     </div>
   );
 }

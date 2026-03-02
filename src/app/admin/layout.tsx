@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 /**
  * Admin layout — basic layout for admin panel.
@@ -9,43 +10,33 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const linkClasses = "text-link no-underline hover:underline font-normal";
+
   return (
     <div>
       <nav
-        style={{
-          display: "flex",
-          gap: "1.5rem",
-          padding: "0.75rem 0",
-          marginBottom: "2rem",
-          borderBottom: "2px solid var(--color-link)",
-          fontSize: "0.875rem",
-        }}
+        aria-label="Admin navigation"
+        className="flex flex-wrap gap-x-6 gap-y-2 py-3 mb-6 border-b-2 border-link text-sm"
       >
-        <Link
-          href="/admin/"
-          style={{ color: "var(--color-link)", fontWeight: 600 }}
-        >
+        <Link href="/admin/" className={cn(linkClasses, "font-semibold")}>
           Dashboard
         </Link>
-        <Link href="/admin/judges/" style={{ color: "var(--color-link)" }}>
+        <Link href="/admin/judges/" className={linkClasses}>
           Judges
         </Link>
-        <Link href="/admin/judges/new/" style={{ color: "var(--color-link)" }}>
+        <Link href="/admin/judges/new/" className={linkClasses}>
           + Add Judge
         </Link>
-        <Link href="/admin/import/" style={{ color: "var(--color-link)" }}>
+        <Link href="/admin/import/" className={linkClasses}>
           Import
         </Link>
-        <Link
-          href="/admin/verification/"
-          style={{ color: "var(--color-link)" }}
-        >
+        <Link href="/admin/verification/" className={linkClasses}>
           Verification
         </Link>
-        <Link href="/admin/courts/" style={{ color: "var(--color-link)" }}>
+        <Link href="/admin/courts/" className={linkClasses}>
           Courts
         </Link>
-        <Link href="/admin/dashboard/" style={{ color: "var(--color-link)" }}>
+        <Link href="/admin/dashboard/" className={linkClasses}>
           Progress
         </Link>
       </nav>
