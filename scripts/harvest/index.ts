@@ -1,15 +1,20 @@
 #!/usr/bin/env ts-node
 /**
- * Florida Judge Harvest — CLI entry point.
+ * Judge Harvest — CLI entry point.
  *
  * Orchestrates: config → checkpoint → fetch → extract → enrich →
  * normalize → deduplicate → CSV write → quality report.
  *
  * Usage:
- *   npx ts-node scripts/harvest/index.ts [flags]
+ *   npx ts-node scripts/harvest/index.ts [state-flags] [pipeline-flags]
  *
- * Flags:
- *   --seed-courts-only       Seed Florida court structure only
+ * State Flags:
+ *   --state <name>           Target a specific state (default: florida)
+ *   --all                    Process all available state configs
+ *   --list                   Print available states and exit
+ *
+ * Pipeline Flags:
+ *   --seed-courts-only       Seed court structure only
  *   --dry-run                Fetch HTML but skip LLM API calls
  *   --reset                  Clear checkpoint and start fresh
  *   --resume                 Resume from last checkpoint (default)
@@ -33,15 +38,18 @@ import Papa from "papaparse";
 import {
   parseFlags,
   validateEnv,
-  loadCourtConfig,
-  flattenCourtUrls,
+  loadStateConfig,
+  buildCourtUrlEntries,
+  discoverStates,
+  stateSlug,
   type CliFlags,
   type CsvJudgeRecord,
   type EnrichedJudgeRecord,
   type CourtUrlEntry,
   type Checkpoint,
 } from "./config";
-import { seedFloridaCourts } from "./court-seeder";
+import type { StateConfig } from "./state-config-schema";
+import { seedStateCourts } from "./court-seeder";
 import { loadCheckpoint, saveCheckpoint, resetCheckpoint } from "./checkpoint";
 import { fetchPage } from "./fetcher";
 import { extractJudges, type JudgeRecord } from "./extractor";
@@ -50,7 +58,11 @@ import { enrichAllWithBallotpedia } from "./ballotpedia-enricher";
 import { normalizeJudgeName, canonicalizeCourtType } from "./normalizer";
 import { deduplicateJudges, deduplicateEnrichedJudges } from "./deduplicator";
 import { generateReport, generateEnrichedReport } from "./reporter";
-import { getLLMConfig, validateLLMConfig, describeLLMConfig } from "./llm-provider";
+import {
+  getLLMConfig,
+  validateLLMConfig,
+  describeLLMConfig,
+} from "./llm-provider";
 
 // ---------------------------------------------------------------------------
 // File-based logging
@@ -58,13 +70,14 @@ import { getLLMConfig, validateLLMConfig, describeLLMConfig } from "./llm-provid
 
 let logStream: fs.WriteStream | null = null;
 
-function setupLogging(outputDir: string): void {
+function setupLogging(outputDir: string, slug?: string): void {
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
+  const prefix = slug || "harvest";
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const logPath = path.join(outputDir, `florida-harvest-${timestamp}.log`);
+  const logPath = path.join(outputDir, `${prefix}-harvest-${timestamp}.log`);
   logStream = fs.createWriteStream(logPath, { flags: "a" });
 
   // Intercept console methods to also write to log file
@@ -115,17 +128,123 @@ async function main(): Promise<void> {
   const flags = parseFlags();
   validateEnv(flags);
 
-  // Initialize file-based logging
-  setupLogging(flags.outputDir);
+  // --list: print available states and exit
+  if (flags.list) {
+    const states = discoverStates();
+    if (states.length === 0) {
+      console.log("No state configurations found.");
+    } else {
+      console.log("Available states:");
+      for (const s of states) {
+        console.log(`  ${s}`);
+      }
+    }
+    return;
+  }
 
-  console.log("Florida Judge Harvest");
-  console.log("=====================\n");
+  // --all: process all available states sequentially
+  if (flags.all) {
+    const states = discoverStates();
+    if (states.length === 0) {
+      console.error("Error: No state configurations found.");
+      process.exit(1);
+    }
+
+    console.log(`Processing ${states.length} state(s): ${states.join(", ")}\n`);
+
+    const results: Array<{
+      state: string;
+      success: boolean;
+      judgeCount: number;
+      error?: string;
+    }> = [];
+
+    for (const stateName of states) {
+      try {
+        const count = await runSingleState(stateName, flags);
+        results.push({ state: stateName, success: true, judgeCount: count });
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error(
+          `\nERROR: ${stateName} failed: ${errMsg}. Checkpoint saved. Continuing to next state.\n`,
+        );
+        results.push({
+          state: stateName,
+          success: false,
+          judgeCount: 0,
+          error: errMsg,
+        });
+      }
+    }
+
+    // Write combined summary
+    writeCombinedSummary(results, flags.outputDir);
+
+    // Check if all states failed
+    const allFailed = results.every((r) => !r.success);
+    if (allFailed) {
+      console.error(
+        "\nError: All states failed. See combined summary for details.",
+      );
+      process.exit(1);
+    }
+
+    // Print results
+    const succeeded = results.filter((r) => r.success);
+    const failed = results.filter((r) => !r.success);
+    console.log(`\n===== All States Complete =====`);
+    console.log(`Succeeded: ${succeeded.length} | Failed: ${failed.length}`);
+    if (failed.length > 0) {
+      console.log(`Failed states: ${failed.map((f) => f.state).join(", ")}`);
+    }
+    return;
+  }
+
+  // Single state (--state <name> or default to florida)
+  const stateName = flags.state || "florida";
+  await runSingleState(stateName, flags);
+}
+
+// ---------------------------------------------------------------------------
+// Single-state harvest
+// ---------------------------------------------------------------------------
+
+interface StateRunResult {
+  judgeCount: number;
+}
+
+/**
+ * Run the full harvest pipeline for a single state.
+ * Returns the number of judges extracted.
+ */
+async function runSingleState(
+  stateName: string,
+  flags: CliFlags,
+): Promise<number> {
+  const stateConfig = loadStateConfig(stateName);
+  const slug = stateSlug(stateName);
+
+  // Per-state output directory
+  const stateOutputDir = path.join(flags.outputDir, slug);
+  const checkpointDir = path.join(stateOutputDir, "checkpoints");
+  for (const dir of [stateOutputDir, checkpointDir]) {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  }
+
+  // Initialize file-based logging in per-state directory
+  setupLogging(stateOutputDir, slug);
+
+  console.log(`${stateConfig.state} Judge Harvest`);
+  console.log("=".repeat(stateConfig.state.length + " Judge Harvest".length));
+  console.log("");
 
   // --seed-courts-only: seed courts and exit
   if (flags.seedCourtsOnly) {
-    console.log("Seeding Florida court structure...\n");
-    await seedFloridaCourts();
-    return;
+    console.log(`Seeding ${stateConfig.state} court structure...\n`);
+    await seedStateCourts(stateConfig);
+    return 0;
   }
 
   // Validate LLM config if not dry-run
@@ -133,42 +252,51 @@ async function main(): Promise<void> {
     const llmConfig = getLLMConfig();
     validateLLMConfig(llmConfig);
     console.log(`LLM Provider: ${describeLLMConfig()}`);
-    console.log("(Deterministic extraction tried first to minimize LLM costs)\n");
+    console.log(
+      "(Deterministic extraction tried first to minimize LLM costs)\n",
+    );
   }
 
-  // Load court URL configuration
-  const config = loadCourtConfig();
-  const courtUrls = flattenCourtUrls(config);
-  console.log(`Loaded ${courtUrls.length} court URL(s) from config\n`);
+  // Load court URL configuration from state config
+  const courtUrls = buildCourtUrlEntries(stateConfig);
+  console.log(
+    `Loaded ${courtUrls.length} court URL(s) from ${slug}-courts.json\n`,
+  );
 
   // Handle --reset
   if (flags.reset) {
-    resetCheckpoint(flags.outputDir);
+    resetCheckpoint(stateOutputDir, slug);
   }
 
-  // Load or create checkpoint
-  const checkpoint = loadCheckpoint(flags.outputDir);
+  // Load or create checkpoint (per-state)
+  const checkpoint = loadCheckpoint(stateOutputDir, slug);
 
   // Run extraction pipeline (with optional bio enrichment)
-  const pipelineResult = await runEnrichedPipeline(courtUrls, checkpoint, flags);
+  const pipelineResult = await runEnrichedPipeline(
+    courtUrls,
+    checkpoint,
+    flags,
+    slug,
+    stateConfig,
+  );
 
   if (pipelineResult.records.length === 0) {
     console.log("\nNo judge records extracted. Nothing to write.");
-    return;
+    return 0;
   }
 
   const rawCount = pipelineResult.records.length;
 
   // Deduplicate across overlapping court pages
   const dedupResult = deduplicateEnrichedJudges(pipelineResult.records, {
-    useIdentity: flags.useIdentity,
+    useIdentity: true,
   });
   console.log(
     `\nDeduplication: ${rawCount} raw → ${dedupResult.duplicates.length} dupes removed → ${dedupResult.unique.length} unique`,
   );
 
   // Log identity stats if using identity-based dedup
-  if (flags.useIdentity && dedupResult.identityStats) {
+  if (dedupResult.identityStats) {
     const stats = dedupResult.identityStats;
     console.log(
       `  Identity confidence: ${stats.highConfidence} high, ${stats.mediumConfidence} medium, ${stats.lowConfidence} low`,
@@ -177,12 +305,15 @@ async function main(): Promise<void> {
 
   // Optional: Ballotpedia enrichment for political/electoral data
   let finalRecords = dedupResult.unique;
-  let ballotpediaStats: { totalEnriched: number; fieldCounts: Record<string, number> } | null = null;
+  let ballotpediaStats: {
+    totalEnriched: number;
+    fieldCounts: Record<string, number>;
+  } | null = null;
 
   if (flags.ballotpedia) {
     console.log("\n===== Ballotpedia Enrichment =====");
     const ballotResult = await enrichAllWithBallotpedia(finalRecords, {
-      delayMs: 1500, // 1.5s delay between requests to be respectful
+      delayMs: stateConfig.rateLimit?.fetchDelayMs ?? 1500,
       maxJudges: flags.ballotpediaMax || undefined,
     });
     finalRecords = ballotResult.judges;
@@ -192,8 +323,8 @@ async function main(): Promise<void> {
     };
   }
 
-  // Write enriched CSV output
-  const csvPath = writeEnrichedCsv(finalRecords, flags.outputDir);
+  // Write enriched CSV output to per-state directory
+  const csvPath = writeEnrichedCsv(finalRecords, stateOutputDir, slug);
   console.log(`CSV written: ${csvPath}`);
 
   // Generate quality report with field coverage
@@ -208,10 +339,74 @@ async function main(): Promise<void> {
       timestamp,
       bioStats: pipelineResult.bioStats,
       ballotpediaStats,
+      stateSlug: slug,
     },
-    flags.outputDir,
+    stateOutputDir,
   );
   console.log(`Report written: ${reportPath}`);
+
+  return finalRecords.length;
+}
+
+// ---------------------------------------------------------------------------
+// Combined summary (--all)
+// ---------------------------------------------------------------------------
+
+function writeCombinedSummary(
+  results: Array<{
+    state: string;
+    success: boolean;
+    judgeCount: number;
+    error?: string;
+  }>,
+  outputDir: string,
+): void {
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const filePath = path.join(outputDir, `combined-summary-${timestamp}.txt`);
+
+  const lines: string[] = [];
+  lines.push(`# Combined Harvest Summary — ${new Date().toISOString()}`);
+  lines.push("");
+  lines.push("## Per-State Results");
+  lines.push("");
+  lines.push("| State | Status | Judges Extracted |");
+  lines.push("| --- | --- | --- |");
+
+  let totalJudges = 0;
+  const succeeded = results.filter((r) => r.success);
+  const failed = results.filter((r) => !r.success);
+
+  for (const r of results) {
+    const status = r.success ? "✓ SUCCESS" : "✗ FAILED";
+    lines.push(`| ${r.state} | ${status} | ${r.judgeCount} |`);
+    totalJudges += r.judgeCount;
+  }
+
+  lines.push("");
+  lines.push("## Aggregate Totals");
+  lines.push("");
+  lines.push(`- States processed: ${results.length}`);
+  lines.push(`- States succeeded: ${succeeded.length}`);
+  lines.push(`- States failed: ${failed.length}`);
+  lines.push(`- Total judges extracted: ${totalJudges}`);
+
+  if (failed.length > 0) {
+    lines.push("");
+    lines.push("## Failed States");
+    lines.push("");
+    for (const r of failed) {
+      lines.push(`### ${r.state}`);
+      lines.push(`Error: ${r.error || "Unknown error"}`);
+      lines.push("");
+    }
+  }
+
+  fs.writeFileSync(filePath, lines.join("\n"), "utf-8");
+  console.log(`\nCombined summary: ${filePath}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -232,9 +427,12 @@ async function runEnrichedPipeline(
   courtUrls: CourtUrlEntry[],
   checkpoint: Checkpoint,
   flags: CliFlags,
+  slug: string,
+  stateConfig: StateConfig,
 ): Promise<EnrichedPipelineResult> {
   const allRecords: EnrichedJudgeRecord[] = [];
   const completedSet = new Set(checkpoint.completedUrls);
+  const stateOutputDir = path.join(flags.outputDir, slug);
 
   const bioStats = {
     bioPagesFetched: 0,
@@ -246,6 +444,7 @@ async function runEnrichedPipeline(
   let processed = 0;
   let skipped = 0;
   let failed = 0;
+  let skippedFetchMethod = 0;
 
   for (const entry of courtUrls) {
     // Resume support: skip already-completed URLs
@@ -255,9 +454,19 @@ async function runEnrichedPipeline(
       continue;
     }
 
+    // Skip entries requiring unsupported fetch methods (browser, manual)
+    if (entry.fetchMethod === "browser" || entry.fetchMethod === "manual") {
+      skippedFetchMethod++;
+      console.warn(
+        `\n[skip:${entry.fetchMethod}] ${entry.label} — requires ${entry.fetchMethod}-based fetching (not yet supported)`,
+      );
+      console.warn(`  URL: ${entry.url}`);
+      continue;
+    }
+
     processed++;
     console.log(
-      `\n[${processed}/${courtUrls.length - skipped}] Fetching: ${entry.label}`,
+      `\n[${processed}/${courtUrls.length - skipped - skippedFetchMethod}] Fetching: ${entry.label}`,
     );
     console.log(`  URL: ${entry.url}`);
 
@@ -271,7 +480,7 @@ async function runEnrichedPipeline(
       // Dry run: log sizes but skip extraction
       if (flags.dryRun) {
         console.log("  [dry-run] Skipping extraction");
-        updateCheckpoint(checkpoint, entry.url, 0, [], flags.outputDir);
+        updateCheckpoint(checkpoint, entry.url, 0, [], stateOutputDir);
         continue;
       }
 
@@ -282,6 +491,9 @@ async function runEnrichedPipeline(
         counties: entry.counties,
         rawHtml: fetchResult.rawHtml,
         url: entry.url,
+        deterministic: entry.deterministic,
+        selectorHint: entry.selectorHint,
+        extractionPromptFile: stateConfig.extractionPromptFile,
       });
 
       console.log(`  Extracted: ${result.judges.length} judge(s)`);
@@ -289,6 +501,7 @@ async function runEnrichedPipeline(
       // Phase 2: Enrich with bio page data (unless --skip-bio)
       const enrichResult = await enrichWithBioPages(result.judges, entry, {
         skipBioFetch: flags.skipBio,
+        stateAbbreviation: stateConfig.abbreviation,
         onProgress: (current, total, name) => {
           if (!flags.skipBio) {
             console.log(`  [${current}/${total}] Enriching: ${name}`);
@@ -308,7 +521,10 @@ async function runEnrichedPipeline(
       }
 
       // Expand multi-county records
-      const expandedRecords = expandEnrichedRecords(enrichResult.enriched, entry);
+      const expandedRecords = expandEnrichedRecords(
+        enrichResult.enriched,
+        entry,
+      );
       allRecords.push(...expandedRecords);
 
       // Update checkpoint
@@ -317,7 +533,7 @@ async function runEnrichedPipeline(
         entry.url,
         result.judges.length,
         [],
-        flags.outputDir,
+        stateOutputDir,
       );
 
       if (!flags.skipBio && enrichResult.stats.bioPagesFetched > 0) {
@@ -331,12 +547,15 @@ async function runEnrichedPipeline(
       console.error(`  ERROR: ${errMsg}`);
 
       // Record failure in checkpoint but continue with next URL
-      updateCheckpoint(checkpoint, entry.url, 0, [errMsg], flags.outputDir);
+      updateCheckpoint(checkpoint, entry.url, 0, [errMsg], stateOutputDir);
     }
   }
 
   console.log(
-    `\nPipeline complete: ${processed} processed, ${skipped} skipped (resumed), ${failed} failed`,
+    `\nPipeline complete: ${processed} processed, ${skipped} skipped (resumed), ${failed} failed` +
+      (skippedFetchMethod > 0
+        ? `, ${skippedFetchMethod} skipped (unsupported fetch method)`
+        : ""),
   );
 
   return { records: allRecords, bioStats };
@@ -352,9 +571,9 @@ function expandEnrichedRecords(
 ): EnrichedJudgeRecord[] {
   const expanded: EnrichedJudgeRecord[] = [];
 
-  const isAppellate =
-    entry.courtType === "Supreme Court" ||
-    entry.courtType === "District Court of Appeal";
+  // Use the level field from the court entry to determine expansion behavior
+  const isAppellateOrSupreme =
+    entry.level === "supreme" || entry.level === "appellate";
 
   for (const record of records) {
     const normalizedName = normalizeJudgeName(record.fullName);
@@ -373,14 +592,13 @@ function expandEnrichedRecords(
       continue;
     }
 
-    // Appellate judges or County Court: single record
-    const isCountyCourt = courtType === "County Court";
-    if (isAppellate || isCountyCourt) {
+    // Appellate/supreme judges: single record, no county expansion
+    if (isAppellateOrSupreme) {
       expanded.push(baseRecord);
       continue;
     }
 
-    // Circuit Court judges without specific county: expand to all counties in circuit
+    // Trial/specialized judges without specific county: expand to all counties
     if (entry.counties.length > 0) {
       for (const county of entry.counties) {
         expanded.push({ ...baseRecord, county });
@@ -408,6 +626,7 @@ async function runExtractionPipeline(
   let processed = 0;
   let skipped = 0;
   let failed = 0;
+  let skippedFetchMethod = 0;
 
   for (const entry of courtUrls) {
     // Resume support: skip already-completed URLs
@@ -421,9 +640,19 @@ async function runExtractionPipeline(
       continue;
     }
 
+    // Skip entries requiring unsupported fetch methods (browser, manual)
+    if (entry.fetchMethod === "browser" || entry.fetchMethod === "manual") {
+      skippedFetchMethod++;
+      console.warn(
+        `\n[skip:${entry.fetchMethod}] ${entry.label} — requires ${entry.fetchMethod}-based fetching (not yet supported)`,
+      );
+      console.warn(`  URL: ${entry.url}`);
+      continue;
+    }
+
     processed++;
     console.log(
-      `\n[${processed}/${courtUrls.length - skipped}] Fetching: ${entry.label}`,
+      `\n[${processed}/${courtUrls.length - skipped - skippedFetchMethod}] Fetching: ${entry.label}`,
     );
     console.log(`  URL: ${entry.url}`);
 
@@ -441,11 +670,15 @@ async function runExtractionPipeline(
         continue;
       }
 
-      // Extract judges via Claude
+      // Extract judges via LLM (or deterministic)
       const result = await extractJudges(fetchResult.markdown, {
         label: entry.label,
         courtType: entry.courtType,
         counties: entry.counties,
+        rawHtml: fetchResult.rawHtml,
+        url: entry.url,
+        deterministic: entry.deterministic,
+        selectorHint: entry.selectorHint,
       });
 
       console.log(`  Extracted: ${result.judges.length} judge(s)`);
@@ -473,7 +706,10 @@ async function runExtractionPipeline(
   }
 
   console.log(
-    `\nPipeline complete: ${processed} processed, ${skipped} skipped (resumed), ${failed} failed`,
+    `\nPipeline complete: ${processed} processed, ${skipped} skipped (resumed), ${failed} failed` +
+      (skippedFetchMethod > 0
+        ? `, ${skippedFetchMethod} skipped (unsupported fetch method)`
+        : ""),
   );
 
   return allRecords;
@@ -614,13 +850,15 @@ function writeCsv(records: CsvJudgeRecord[], outputDir: string): string {
 function writeEnrichedCsv(
   records: EnrichedJudgeRecord[],
   outputDir: string,
+  slug?: string,
 ): string {
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
+  const prefix = slug || "florida";
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const filename = `florida-judges-enriched-${timestamp}.csv`;
+  const filename = `${prefix}-judges-enriched-${timestamp}.csv`;
   const filePath = path.join(outputDir, filename);
 
   // Transform enriched records to flat CSV format

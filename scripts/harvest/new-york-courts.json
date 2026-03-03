@@ -1,0 +1,170 @@
+{
+  "state": "New York",
+  "abbreviation": "NY",
+  "rateLimit": {
+    "fetchDelayMs": 3000,
+    "maxConcurrent": 1,
+    "requestTimeoutMs": 30000,
+    "maxRetries": 3
+  },
+  "extractionPromptFile": "prompts/new-york-extraction-prompt.txt",
+  "courts": [
+    {
+      "url": "https://www.nycourts.gov/ctapps/",
+      "courtType": "Court of Appeals",
+      "level": "supreme",
+      "label": "New York Court of Appeals",
+      "counties": [],
+      "notes": "Court of last resort — 7 judges (Chief Judge + 6 Associate Judges)"
+    },
+    {
+      "url": "https://www.nycourts.gov/courts/ad1/Justicesofthecourt.shtml",
+      "courtType": "Appellate Division",
+      "level": "appellate",
+      "label": "Appellate Division — 1st Department",
+      "department": 1,
+      "counties": ["New York", "Bronx"]
+    },
+    {
+      "url": "https://www.nycourts.gov/courts/ad2/justices.shtml",
+      "courtType": "Appellate Division",
+      "level": "appellate",
+      "label": "Appellate Division — 2nd Department",
+      "department": 2,
+      "counties": [
+        "Kings",
+        "Queens",
+        "Richmond",
+        "Dutchess",
+        "Nassau",
+        "Orange",
+        "Putnam",
+        "Rockland",
+        "Suffolk",
+        "Westchester"
+      ]
+    },
+    {
+      "url": "https://www.nycourts.gov/courts/ad3/justices.html",
+      "courtType": "Appellate Division",
+      "level": "appellate",
+      "label": "Appellate Division — 3rd Department",
+      "department": 3,
+      "counties": [
+        "Albany",
+        "Broome",
+        "Chemung",
+        "Chenango",
+        "Clinton",
+        "Columbia",
+        "Cortland",
+        "Delaware",
+        "Essex",
+        "Franklin",
+        "Fulton",
+        "Greene",
+        "Hamilton",
+        "Herkimer",
+        "Jefferson",
+        "Lewis",
+        "Madison",
+        "Montgomery",
+        "Oneida",
+        "Onondaga",
+        "Otsego",
+        "Rensselaer",
+        "St. Lawrence",
+        "Saratoga",
+        "Schenectady",
+        "Schoharie",
+        "Schuyler",
+        "Sullivan",
+        "Tioga",
+        "Tompkins",
+        "Ulster",
+        "Warren",
+        "Washington"
+      ]
+    },
+    {
+      "url": "https://www.nycourts.gov/courts/ad4/Clerk/Justices/justices.html",
+      "courtType": "Appellate Division",
+      "level": "appellate",
+      "label": "Appellate Division — 4th Department",
+      "department": 4,
+      "counties": [
+        "Allegany",
+        "Cattaraugus",
+        "Cayuga",
+        "Chautauqua",
+        "Erie",
+        "Genesee",
+        "Livingston",
+        "Monroe",
+        "Niagara",
+        "Ontario",
+        "Orleans",
+        "Oswego",
+        "Seneca",
+        "Steuben",
+        "Wayne",
+        "Wyoming",
+        "Yates"
+      ]
+    },
+    {
+      "url": "https://iapps.courts.state.ny.us/judicialdirectory/",
+      "courtType": "Supreme Court",
+      "level": "trial",
+      "label": "Supreme Court — Statewide Directory",
+      "counties": [],
+      "fetchMethod": "browser",
+      "notes": "Java web app with A-Z pagination — requires headless browser. NY Supreme Court is a trial court. ~62 counties."
+    },
+    {
+      "url": "https://iapps.courts.state.ny.us/judicialdirectory/",
+      "courtType": "County Court",
+      "level": "trial",
+      "label": "County Courts — Statewide Directory",
+      "counties": [],
+      "fetchMethod": "browser",
+      "notes": "Same Java directory app — County Courts outside NYC. Requires headless browser."
+    },
+    {
+      "url": "https://iapps.courts.state.ny.us/judicialdirectory/",
+      "courtType": "Family Court",
+      "level": "specialized",
+      "label": "Family Courts — Statewide Directory",
+      "counties": [],
+      "fetchMethod": "browser",
+      "notes": "Same Java directory app — Family Courts statewide. Requires headless browser."
+    },
+    {
+      "url": "https://iapps.courts.state.ny.us/judicialdirectory/",
+      "courtType": "Surrogate's Court",
+      "level": "specialized",
+      "label": "Surrogate's Courts — Statewide Directory",
+      "counties": [],
+      "fetchMethod": "browser",
+      "notes": "Same Java directory app — Surrogate's Courts (probate). Requires headless browser."
+    },
+    {
+      "url": "https://nycourts.gov/courts/nyc/civil/general.shtml",
+      "courtType": "Civil Court",
+      "level": "specialized",
+      "label": "NYC Civil Court",
+      "counties": ["New York", "Bronx", "Kings", "Queens", "Richmond"],
+      "fetchMethod": "browser",
+      "notes": "NYC-only court. Cloudflare protected."
+    },
+    {
+      "url": "https://nycourts.gov/courts/nyc/criminal/general.shtml",
+      "courtType": "Criminal Court",
+      "level": "specialized",
+      "label": "NYC Criminal Court",
+      "counties": ["New York", "Bronx", "Kings", "Queens", "Richmond"],
+      "fetchMethod": "browser",
+      "notes": "NYC-only court. Cloudflare protected."
+    }
+  ]
+}

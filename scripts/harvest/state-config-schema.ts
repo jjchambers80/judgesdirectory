@@ -1,0 +1,109 @@
+/**
+ * Zod validation schemas for state court configuration files.
+ *
+ * Defines StateConfig, CourtEntry, and RateLimitConfig schemas with
+ * defaults and constraints per data-model.md.
+ *
+ * @module scripts/harvest/state-config-schema
+ */
+
+import { z } from "zod";
+
+// ---------------------------------------------------------------------------
+// RateLimitConfig
+// ---------------------------------------------------------------------------
+
+const RateLimitObjectSchema = z.object({
+  fetchDelayMs: z.number().min(500).default(1500),
+  maxConcurrent: z.number().int().min(1).default(1),
+  requestTimeoutMs: z.number().min(5000).default(15000),
+  maxRetries: z.number().int().min(0).default(3),
+});
+
+export const RateLimitConfigSchema = RateLimitObjectSchema.default({
+  fetchDelayMs: 1500,
+  maxConcurrent: 1,
+  requestTimeoutMs: 15000,
+  maxRetries: 3,
+});
+
+export type RateLimitConfig = z.infer<typeof RateLimitConfigSchema>;
+
+// ---------------------------------------------------------------------------
+// CourtEntry
+// ---------------------------------------------------------------------------
+
+export const CourtEntrySchema = z.object({
+  url: z.string().url(),
+  courtType: z.string().min(1),
+  level: z.enum(["supreme", "appellate", "trial", "specialized"]),
+  label: z.string().min(1),
+  counties: z.array(z.string()),
+  district: z.number().int().nullable().optional().default(null),
+  circuit: z.number().int().nullable().optional().default(null),
+  department: z.number().int().nullable().optional().default(null),
+  division: z.string().nullable().optional().default(null),
+  judicialDistrict: z.number().int().nullable().optional().default(null),
+  parentCourt: z.string().nullable().optional().default(null),
+  fetchMethod: z.enum(["http", "browser", "manual"]).default("http"),
+  deterministic: z.boolean().default(false),
+  selectorHint: z.string().nullable().optional().default(null),
+  notes: z.string().nullable().optional().default(null),
+});
+
+export type CourtEntry = z.infer<typeof CourtEntrySchema>;
+
+// ---------------------------------------------------------------------------
+// StateConfig
+// ---------------------------------------------------------------------------
+
+export const StateConfigSchema = z
+  .object({
+    state: z.string().min(1),
+    abbreviation: z
+      .string()
+      .length(2)
+      .regex(/^[A-Z]{2}$/, "Must be 2 uppercase letters"),
+    rateLimit: RateLimitConfigSchema,
+    extractionPromptFile: z.string().optional(),
+    courts: z.array(CourtEntrySchema).min(1, "At least one court is required"),
+  })
+  .refine((config) => config.courts.some((c) => c.level === "supreme"), {
+    message: "Config should have at least one court with level 'supreme'",
+    path: ["courts"],
+  });
+
+export type StateConfig = z.infer<typeof StateConfigSchema>;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Derive a URL-safe state slug from a state name.
+ * e.g. "New York" → "new-york", "Florida" → "florida"
+ */
+export function stateSlug(stateName: string): string {
+  return stateName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/**
+ * Check for duplicate URLs within a config and log warnings.
+ * Returns the list of duplicate URLs found.
+ */
+export function checkDuplicateUrls(config: StateConfig): string[] {
+  const seen = new Set<string>();
+  const duplicates: string[] = [];
+
+  for (const court of config.courts) {
+    if (seen.has(court.url)) {
+      duplicates.push(court.url);
+    }
+    seen.add(court.url);
+  }
+
+  return duplicates;
+}

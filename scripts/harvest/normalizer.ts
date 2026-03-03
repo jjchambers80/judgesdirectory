@@ -95,9 +95,99 @@ export function normalizeJudgeName(raw: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Court type canonicalization
+// Court type canonicalization — per-state registry
 // ---------------------------------------------------------------------------
 
+/**
+ * Per-state court type mapping registry.
+ * Key: state abbreviation (uppercase). Value: mapping of lowercase aliases → canonical name.
+ */
+const STATE_COURT_TYPE_REGISTRY = new Map<string, Record<string, string>>();
+
+/**
+ * Register court type mappings for a state.
+ * Entries are lowercase alias → canonical display name.
+ */
+export function registerStateCourtTypes(
+  abbreviation: string,
+  mapping: Record<string, string>,
+): void {
+  STATE_COURT_TYPE_REGISTRY.set(abbreviation.toUpperCase(), mapping);
+}
+
+/**
+ * Get the court type mapping for a specific state.
+ */
+export function getCourtTypeMapping(
+  abbreviation: string,
+): Record<string, string> | undefined {
+  return STATE_COURT_TYPE_REGISTRY.get(abbreviation.toUpperCase());
+}
+
+// Register Florida mappings as default
+registerStateCourtTypes("FL", {
+  "supreme court": "Supreme Court",
+  "district court of appeal": "District Court of Appeal",
+  "district court of appeals": "District Court of Appeal",
+  dca: "District Court of Appeal",
+  "circuit court": "Circuit Court",
+  "circuit ct": "Circuit Court",
+  "circuit ct.": "Circuit Court",
+  "county court": "County Court",
+  "county ct": "County Court",
+  "county ct.": "County Court",
+});
+
+// Register Texas mappings
+registerStateCourtTypes("TX", {
+  "supreme court": "Supreme Court",
+  "supreme court of texas": "Supreme Court",
+  "court of criminal appeals": "Court of Criminal Appeals",
+  cca: "Court of Criminal Appeals",
+  "court of appeals": "Court of Appeals",
+  "courts of appeals": "Court of Appeals",
+  coa: "Court of Appeals",
+  "district court": "District Court",
+  "district ct": "District Court",
+  "district ct.": "District Court",
+});
+
+// Register California mappings
+registerStateCourtTypes("CA", {
+  "supreme court": "Supreme Court",
+  "supreme court of california": "Supreme Court",
+  "court of appeal": "Court of Appeal",
+  "courts of appeal": "Court of Appeal",
+  "district court of appeal": "Court of Appeal",
+  "appellate court": "Court of Appeal",
+  "superior court": "Superior Court",
+  "superior ct": "Superior Court",
+  "superior ct.": "Superior Court",
+});
+
+// Register New York mappings
+registerStateCourtTypes("NY", {
+  "court of appeals": "Court of Appeals",
+  "appellate division": "Appellate Division",
+  "appellate div": "Appellate Division",
+  "appellate div.": "Appellate Division",
+  "supreme court": "Supreme Court",
+  "supreme ct": "Supreme Court",
+  "supreme ct.": "Supreme Court",
+  "county court": "County Court",
+  "county ct": "County Court",
+  "county ct.": "County Court",
+  "family court": "Family Court",
+  "family ct": "Family Court",
+  "family ct.": "Family Court",
+  "surrogate's court": "Surrogate's Court",
+  "surrogates court": "Surrogate's Court",
+  "surrogate court": "Surrogate's Court",
+  "civil court": "Civil Court",
+  "criminal court": "Criminal Court",
+});
+
+// Legacy global map (union of all registered state mappings, used as fallback)
 const COURT_TYPE_MAP: Record<string, string> = {
   "supreme court": "Supreme Court",
   "district court of appeal": "District Court of Appeal",
@@ -120,12 +210,28 @@ const CANONICAL_COURT_TYPES = [
 
 /**
  * Map a court type string to its canonical form.
- * Returns the canonical name, or the original string if no mapping found.
+ * Checks state-specific registry first, then falls back to global map.
+ *
+ * @param raw The raw court type string
+ * @param stateAbbreviation Optional 2-letter state code for state-specific mapping
  */
-export function canonicalizeCourtType(raw: string): string {
+export function canonicalizeCourtType(
+  raw: string,
+  stateAbbreviation?: string,
+): string {
   const lower = raw.toLowerCase().trim();
 
-  // Direct map lookup
+  // Try state-specific mapping first
+  if (stateAbbreviation) {
+    const stateMap = STATE_COURT_TYPE_REGISTRY.get(
+      stateAbbreviation.toUpperCase(),
+    );
+    if (stateMap && stateMap[lower]) {
+      return stateMap[lower];
+    }
+  }
+
+  // Fall back to global map
   if (COURT_TYPE_MAP[lower]) {
     return COURT_TYPE_MAP[lower];
   }

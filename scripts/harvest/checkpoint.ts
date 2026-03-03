@@ -5,6 +5,8 @@
  * interrupted runs can resume without re-fetching.  Uses atomic writes
  * (write .tmp → rename) to prevent corruption on unexpected termination.
  *
+ * Supports per-state checkpoint paths: output/{state-slug}/checkpoints/
+ *
  * @module scripts/harvest/checkpoint
  */
 
@@ -25,9 +27,15 @@ const CHECKPOINTS_DIR = "checkpoints";
 
 /**
  * Load an existing checkpoint or return a fresh one.
+ *
+ * @param outputDir Base output directory
+ * @param stateSlug Optional state slug for per-state checkpoint paths
  */
-export function loadCheckpoint(outputDir: string): Checkpoint {
-  const filePath = checkpointPath(outputDir);
+export function loadCheckpoint(
+  outputDir: string,
+  stateSlug?: string,
+): Checkpoint {
+  const filePath = checkpointPath(outputDir, stateSlug);
 
   if (!fs.existsSync(filePath)) {
     return freshCheckpoint();
@@ -52,9 +60,17 @@ export function loadCheckpoint(outputDir: string): Checkpoint {
 
 /**
  * Persist checkpoint to disk using atomic write (tmp + rename).
+ *
+ * @param outputDir Base output directory
+ * @param data Checkpoint data to persist
+ * @param stateSlug Optional state slug for per-state checkpoint paths
  */
-export function saveCheckpoint(outputDir: string, data: Checkpoint): void {
-  const filePath = checkpointPath(outputDir);
+export function saveCheckpoint(
+  outputDir: string,
+  data: Checkpoint,
+  stateSlug?: string,
+): void {
+  const filePath = checkpointPath(outputDir, stateSlug);
   const dir = path.dirname(filePath);
 
   // Ensure directory exists
@@ -71,9 +87,12 @@ export function saveCheckpoint(outputDir: string, data: Checkpoint): void {
 
 /**
  * Delete the checkpoint file so the next run starts fresh.
+ *
+ * @param outputDir Base output directory
+ * @param stateSlug Optional state slug for per-state checkpoint paths
  */
-export function resetCheckpoint(outputDir: string): void {
-  const filePath = checkpointPath(outputDir);
+export function resetCheckpoint(outputDir: string, stateSlug?: string): void {
+  const filePath = checkpointPath(outputDir, stateSlug);
 
   if (fs.existsSync(filePath)) {
     fs.unlinkSync(filePath);
@@ -85,7 +104,15 @@ export function resetCheckpoint(outputDir: string): void {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function checkpointPath(outputDir: string): string {
+function checkpointPath(outputDir: string, stateSlug?: string): string {
+  if (stateSlug) {
+    return path.join(
+      outputDir,
+      stateSlug,
+      CHECKPOINTS_DIR,
+      CHECKPOINT_FILENAME,
+    );
+  }
   return path.join(outputDir, CHECKPOINTS_DIR, CHECKPOINT_FILENAME);
 }
 

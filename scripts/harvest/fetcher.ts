@@ -10,6 +10,7 @@
 
 import * as cheerio from "cheerio";
 import TurndownService from "turndown";
+import type { RateLimitConfig } from "./state-config-schema";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -23,13 +24,13 @@ export interface FetchResult {
 }
 
 // ---------------------------------------------------------------------------
-// Constants
+// Constants (defaults — overridable via RateLimitConfig)
 // ---------------------------------------------------------------------------
 
 const USER_AGENT = "JudgesDirectory/1.0 (public court data research)";
-const REQUEST_TIMEOUT_MS = 15_000;
-const MIN_DELAY_MS = 1_500; // 1.5 s between requests (rate-limit courtesy)
-const MAX_RETRIES = 3;
+const DEFAULT_REQUEST_TIMEOUT_MS = 15_000;
+const DEFAULT_MIN_DELAY_MS = 1_500;
+const DEFAULT_MAX_RETRIES = 3;
 const BACKOFF_BASE_MS = 2_000; // linear backoff: 2s, 4s, 6s
 
 /** Tags stripped before converting to Markdown */
@@ -58,23 +59,33 @@ const turndown = new TurndownService({
  *
  * For SPA sites (Next.js / Gatsby), falls back to structured data extraction
  * when the rendered HTML yields no meaningful Markdown.
+ *
+ * @param url The URL to fetch
+ * @param rateLimit Optional per-state rate limit configuration
  */
-export async function fetchPage(url: string): Promise<FetchResult> {
+export async function fetchPage(
+  url: string,
+  rateLimit?: RateLimitConfig,
+): Promise<FetchResult> {
+  const minDelay = rateLimit?.fetchDelayMs ?? DEFAULT_MIN_DELAY_MS;
+  const maxRetries = rateLimit?.maxRetries ?? DEFAULT_MAX_RETRIES;
+  const timeout = rateLimit?.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+
   // Rate-limit: wait if needed
   const elapsed = Date.now() - lastFetchTime;
-  if (elapsed < MIN_DELAY_MS) {
-    await sleep(MIN_DELAY_MS - elapsed);
+  if (elapsed < minDelay) {
+    await sleep(minDelay - elapsed);
   }
 
   let lastError: Error | undefined;
 
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       lastFetchTime = Date.now();
 
       const response = await fetch(url, {
         headers: { "User-Agent": USER_AGENT },
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeout),
         redirect: "follow",
       });
 
@@ -111,10 +122,10 @@ export async function fetchPage(url: string): Promise<FetchResult> {
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
 
-      if (attempt < MAX_RETRIES) {
+      if (attempt < maxRetries) {
         const backoff = BACKOFF_BASE_MS * attempt; // linear: 2s, 4s, 6s
         console.warn(
-          `  Retry ${attempt}/${MAX_RETRIES} for ${url} — ${lastError.message} (waiting ${backoff}ms)`,
+          `  Retry ${attempt}/${maxRetries} for ${url} — ${lastError.message} (waiting ${backoff}ms)`,
         );
         await sleep(backoff);
       }
@@ -122,7 +133,7 @@ export async function fetchPage(url: string): Promise<FetchResult> {
   }
 
   throw new Error(
-    `Failed after ${MAX_RETRIES} retries: ${url} — ${lastError?.message}`,
+    `Failed after ${maxRetries} retries: ${url} — ${lastError?.message}`,
   );
 }
 
@@ -297,7 +308,7 @@ async function fetchGatsbyPageData(pageUrl: string): Promise<string | null> {
 
     const response = await fetch(dataUrl, {
       headers: { "User-Agent": USER_AGENT },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal: AbortSignal.timeout(DEFAULT_REQUEST_TIMEOUT_MS),
     });
     if (!response.ok) return null;
 

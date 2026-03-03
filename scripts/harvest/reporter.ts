@@ -35,6 +35,8 @@ export interface ReportStats {
   finalRecords: CsvJudgeRecord[];
   /** Timestamp of the run */
   timestamp: string;
+  /** State slug for per-state reporting */
+  stateSlug?: string;
 }
 
 export interface EnrichedReportStats {
@@ -62,6 +64,8 @@ export interface EnrichedReportStats {
     totalEnriched: number;
     fieldCounts: Record<string, number>;
   } | null;
+  /** State slug for per-state reporting */
+  stateSlug?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -80,8 +84,9 @@ export function generateReport(stats: ReportStats, outputDir: string): string {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
+  const slug = stats.stateSlug || "florida";
   const timestamp = stats.timestamp.replace(/[:.]/g, "-").slice(0, 19);
-  const filename = `florida-report-${timestamp}.md`;
+  const filename = `${slug}-quality-report-${timestamp}.md`;
   const filePath = path.join(outputDir, filename);
 
   fs.writeFileSync(filePath, report, "utf-8");
@@ -113,7 +118,12 @@ function buildReport(stats: ReportStats): string {
   const lines: string[] = [];
 
   // Header
-  lines.push(`# Florida Judge Harvest Report — ${timestamp}`);
+  const stateName = stats.stateSlug
+    ? stats.stateSlug
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    : "Florida";
+  lines.push(`# ${stateName} Judge Harvest Report — ${timestamp}`);
   lines.push("");
 
   // Summary section
@@ -282,8 +292,9 @@ export function generateEnrichedReport(
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
+  const slug = stats.stateSlug || "florida";
   const timestamp = stats.timestamp.replace(/[:.]/g, "-").slice(0, 19);
-  const filename = `florida-enriched-report-${timestamp}.md`;
+  const filename = `${slug}-enriched-report-${timestamp}.md`;
   const filePath = path.join(outputDir, filename);
 
   fs.writeFileSync(filePath, report, "utf-8");
@@ -314,7 +325,12 @@ function buildEnrichedReport(stats: EnrichedReportStats): string {
   const lines: string[] = [];
 
   // Header
-  lines.push(`# Florida Judge Enriched Harvest Report — ${timestamp}`);
+  const stateName = stats.stateSlug
+    ? stats.stateSlug
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    : "Florida";
+  lines.push(`# ${stateName} Judge Enriched Harvest Report — ${timestamp}`);
   lines.push("");
 
   // Summary section
@@ -523,19 +539,29 @@ function printEnrichedSummary(stats: EnrichedReportStats): void {
   const failed = results.filter((r) => r.errors.length > 0);
 
   console.log("\n===== Enriched Harvest Summary =====");
-  console.log(`Roster pages: ${successful.length} OK / ${failed.length} failed`);
+  console.log(
+    `Roster pages: ${successful.length} OK / ${failed.length} failed`,
+  );
   console.log(
     `Bio pages: ${stats.bioStats.bioPagesSucceeded} OK / ${stats.bioStats.bioPagesFailed} failed`,
   );
   if (stats.ballotpediaStats) {
-    console.log(`Ballotpedia: ${stats.ballotpediaStats.totalEnriched} judges enriched`);
+    console.log(
+      `Ballotpedia: ${stats.ballotpediaStats.totalEnriched} judges enriched`,
+    );
   }
   console.log(
     `Judges: ${stats.rawCount} extracted → ${stats.dedupResult.duplicates.length} dupes removed → ${stats.finalRecords.length} final`,
   );
 
   // Field coverage highlights
-  const keyFields = ["photoUrl", "education", "priorExperience", "termStart", "politicalAffiliation"];
+  const keyFields = [
+    "photoUrl",
+    "education",
+    "priorExperience",
+    "termStart",
+    "politicalAffiliation",
+  ];
   for (const field of keyFields) {
     let count = 0;
     for (const record of stats.finalRecords) {

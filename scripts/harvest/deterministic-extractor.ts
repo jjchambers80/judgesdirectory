@@ -76,7 +76,7 @@ export function tryDeterministicExtraction(
           // Too many results - probably false positives, skip this pattern
           continue;
         }
-        
+
         return {
           success: true,
           result,
@@ -87,6 +87,137 @@ export function tryDeterministicExtraction(
     } catch {
       // Pattern failed, try next
     }
+  }
+
+  return { success: false, confidence: 0 };
+}
+
+// ---------------------------------------------------------------------------
+// Selector-hint extraction (for deterministic: true entries)
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract judges using a CSS selector hint.
+ * Designed for structured HTML pages (e.g., California's central roster table
+ * where <th> = county name and <td> = "Hon. {Name}").
+ *
+ * Falls back to generic table/list extraction if selector doesn't match.
+ */
+export function extractWithSelectorHint(
+  html: string,
+  courtType: string,
+  selectorHint?: string,
+): DeterministicResult {
+  const $ = cheerio.load(html);
+  const judges: JudgeRecord[] = [];
+
+  // If a CSS selector is provided, narrow the scope
+  const $scope = selectorHint ? $(selectorHint) : $.root();
+
+  if (selectorHint && $scope.length === 0) {
+    return { success: false, confidence: 0 };
+  }
+
+  // Strategy 1: County-header table format (th=county, td=judge names)
+  // This matches California's central roster page
+  let currentCounty: string | null = null;
+
+  $scope.find("table").each((_, table) => {
+    const $table = $(table);
+
+    $table.find("tr").each((_, row) => {
+      const $row = $(row);
+
+      // Check for county header in <th>
+      const th = $row.find("th");
+      if (th.length > 0) {
+        const headerText = th.text().trim();
+        // County headers are typically just the county name
+        if (
+          headerText &&
+          !headerText.toLowerCase().includes("judge") &&
+          headerText.length < 60
+        ) {
+          currentCounty = headerText.replace(/\s*county$/i, "").trim();
+        }
+      }
+
+      // Extract judge names from <td>
+      $row.find("td").each((_, cell) => {
+        const text = $(cell).text().trim();
+        if (!text) return;
+
+        // Match "Hon. First Last" or similar patterns
+        const honMatch = text.match(/^(?:Hon\.\s*|Honorable\s+)(.+)$/i);
+        if (honMatch) {
+          const name = normalizeName(honMatch[1]);
+          const link = $(cell).find("a").attr("href") || null;
+          const isChief = /\b(?:chief|presiding)\b/i.test(text);
+
+          judges.push({
+            name,
+            courtType: courtType as JudgeRecord["courtType"],
+            county: currentCounty,
+            division: null,
+            selectionMethod: null,
+            bioPageUrl: link,
+            isChiefJudge: isChief,
+          });
+        } else if (looksLikeJudgeName(text)) {
+          // Fallback: raw judge name without "Hon." prefix
+          const name = normalizeName(text);
+          const link = $(cell).find("a").attr("href") || null;
+          const isChief = /\b(?:chief|presiding)\b/i.test(text);
+
+          judges.push({
+            name,
+            courtType: courtType as JudgeRecord["courtType"],
+            county: currentCounty,
+            division: null,
+            selectionMethod: null,
+            bioPageUrl: link,
+            isChiefJudge: isChief,
+          });
+        }
+      });
+    });
+  });
+
+  // Strategy 2: If no table matches, try general name patterns in scoped area
+  if (judges.length === 0) {
+    $scope.find("*").each((_, el) => {
+      const text = $(el).text().trim();
+      const honMatch = text.match(/^(?:Hon\.\s*|Honorable\s+)(.+)$/i);
+      if (honMatch && !$(el).children().length) {
+        const name = normalizeName(honMatch[1]);
+        const link =
+          $(el).closest("a").attr("href") ||
+          $(el).find("a").attr("href") ||
+          null;
+        judges.push({
+          name,
+          courtType: courtType as JudgeRecord["courtType"],
+          county: null,
+          division: null,
+          selectionMethod: null,
+          bioPageUrl: link,
+          isChiefJudge: /\b(?:chief|presiding)\b/i.test(text),
+        });
+      }
+    });
+  }
+
+  if (judges.length >= 1) {
+    return {
+      success: true,
+      result: {
+        judges,
+        pageTitle: $("title").text() || null,
+        courtLevel: courtType,
+      },
+      confidence: 0.9,
+      method: "selector-hint",
+    };
   }
 
   return { success: false, confidence: 0 };
@@ -368,7 +499,7 @@ const NON_NAME_WORDS = new Set([
 function looksLikeJudgeName(text: string): boolean {
   // Skip empty or very short text
   if (!text || text.length < 5) return false;
-  
+
   // Skip very long text (likely a description or nav item)
   if (text.length > 60) return false;
 
@@ -376,7 +507,7 @@ function looksLikeJudgeName(text: string): boolean {
   if (/^(judge|justice|chief|hon\.?|name|county|division)$/i.test(text)) {
     return false;
   }
-  
+
   // Skip if text contains common non-name words
   const lowerText = text.toLowerCase();
   const nonNameWordsArray = Array.from(NON_NAME_WORDS);
@@ -394,7 +525,7 @@ function looksLikeJudgeName(text: string): boolean {
   // Looks like "First Last" or "Last, First" pattern (2-4 words typical for names)
   const words = text.split(/\s+/);
   if (words.length < 2 || words.length > 6) return false;
-  
+
   const namePattern = /^[A-Z][a-z]+(\s+[A-Z]\.?)?\s+[A-Z][a-z]+/;
   const lastFirstPattern = /^[A-Z][a-z]+,\s*[A-Z][a-z]+/;
 

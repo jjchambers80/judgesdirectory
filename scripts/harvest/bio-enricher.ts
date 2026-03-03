@@ -6,7 +6,11 @@
  */
 
 import { fetchPage } from "./fetcher";
-import { extractBioPage, type BioPageData, type JudgeRecord } from "./extractor";
+import {
+  extractBioPage,
+  type BioPageData,
+  type JudgeRecord,
+} from "./extractor";
 import type { EnrichedJudgeRecord, CourtUrlEntry } from "./config";
 
 // ---------------------------------------------------------------------------
@@ -41,6 +45,7 @@ export async function enrichWithBioPages(
   courtEntry: CourtUrlEntry,
   options: {
     skipBioFetch?: boolean;
+    stateAbbreviation?: string;
     onProgress?: (current: number, total: number, name: string) => void;
   } = {},
 ): Promise<EnrichmentResult> {
@@ -57,7 +62,11 @@ export async function enrichWithBioPages(
     options.onProgress?.(i + 1, judges.length, judge.name);
 
     // Start with base record from roster data
-    const record = createBaseRecord(judge, courtEntry);
+    const record = createBaseRecord(
+      judge,
+      courtEntry,
+      options.stateAbbreviation,
+    );
 
     // If judge has a bio page URL and we're not skipping, fetch and enrich
     if (judge.bioPageUrl && !options.skipBioFetch) {
@@ -116,6 +125,7 @@ export async function enrichWithBioPages(
 function createBaseRecord(
   judge: JudgeRecord,
   courtEntry: CourtUrlEntry,
+  stateAbbreviation?: string,
 ): EnrichedJudgeRecord {
   return {
     // Identity
@@ -125,7 +135,7 @@ function createBaseRecord(
     // Court Assignment
     courtType: judge.courtType,
     county: judge.county,
-    state: "FL",
+    state: stateAbbreviation || "FL",
     division: judge.division,
     isChiefJudge: judge.isChiefJudge ?? false,
 
@@ -162,7 +172,9 @@ function createBaseRecord(
       "isChiefJudge",
       "selectionMethod",
     ].filter((f) => {
-      const val = (judge as Record<string, unknown>)[f === "fullName" ? "name" : f];
+      const val = (judge as Record<string, unknown>)[
+        f === "fullName" ? "name" : f
+      ];
       return val !== null && val !== undefined;
     }),
     fieldsFromBio: [],

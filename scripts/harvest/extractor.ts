@@ -9,8 +9,13 @@
  */
 
 import { z } from "zod";
+import fs from "node:fs";
+import path from "node:path";
 import { chatCompletion, describeLLMConfig } from "./llm-provider";
-import { tryDeterministicExtraction } from "./deterministic-extractor";
+import {
+  tryDeterministicExtraction,
+  extractWithSelectorHint,
+} from "./deterministic-extractor";
 
 // ---------------------------------------------------------------------------
 // Zod schemas (per contracts/cli-contract.md)
@@ -108,29 +113,55 @@ export const BioPageDataSchema = z.object({
     .array(z.string())
     .nullable()
     .describe("Court divisions/sections the judge serves"),
-  biography: z.string().nullable().describe("Full biographical text if present"),
+  biography: z
+    .string()
+    .nullable()
+    .describe("Full biographical text if present"),
 });
 
 export type BioPageData = z.infer<typeof BioPageDataSchema>;
 
 // ---------------------------------------------------------------------------
-// System prompts
+// Extraction prompt loading
 // ---------------------------------------------------------------------------
 
-const ROSTER_SYSTEM_PROMPT = `You are a data extraction assistant for a US judicial directory. Extract all judge/justice names from the provided court webpage content. Return structured JSON only.
+const DEFAULT_PROMPT_PATH = path.resolve(
+  __dirname,
+  "prompts/generic-extraction.txt",
+);
 
-Rules:
-- Extract every judge or justice listed on the page
-- Normalize names to "First Last" format (strip "Hon.", "Judge", "Justice", "Chief" prefixes)
-- Preserve name suffixes (Jr., Sr., III, etc.) as part of the name
-- If "Last, First" format is detected, reverse to "First Last"
-- For each judge, determine the court type: "Supreme Court", "District Court of Appeal", "Circuit Court", or "County Court"
-- Determine the county assignment if listed (some judges serve multiple counties in a circuit)
-- If selection method is mentioned (elected, appointed), include it
-- IMPORTANT: Extract any link to the judge's individual bio/profile page (look for "Read more", "Biography", or name links)
-- Mark isChiefJudge as true if the judge is designated "Chief Judge" or "Chief Justice"
-- If you cannot determine a field with confidence, leave it as null
-- Do NOT fabricate or hallucinate data — only extract what is explicitly on the page`;
+/**
+ * Load an extraction prompt from a file path.
+ * Falls back to the generic prompt at prompts/generic-extraction.txt.
+ *
+ * @param promptFilePath Optional path to state-specific prompt file (relative to scripts/harvest/)
+ */
+export function loadExtractionPrompt(promptFilePath?: string): string {
+  if (promptFilePath) {
+    const resolved = path.resolve(__dirname, promptFilePath);
+    if (fs.existsSync(resolved)) {
+      return fs.readFileSync(resolved, "utf-8").trim();
+    }
+    console.warn(
+      `Extraction prompt not found: ${resolved} — falling back to generic prompt`,
+    );
+  }
+
+  // Fall back to generic prompt, or inline constant if file not found
+  if (fs.existsSync(DEFAULT_PROMPT_PATH)) {
+    return fs.readFileSync(DEFAULT_PROMPT_PATH, "utf-8").trim();
+  }
+
+  // Ultimate fallback: if generic prompt file is missing, throw a clear error
+  throw new Error(
+    `Extraction prompt not found at ${DEFAULT_PROMPT_PATH}. ` +
+      `Please ensure prompts/generic-extraction.txt exists in scripts/harvest/.`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// System prompts (bio extraction — separate from roster extraction)
+// ---------------------------------------------------------------------------
 
 const BIO_SYSTEM_PROMPT = `You are a data extraction assistant for a US judicial directory. Extract detailed biographical information from an individual judge's profile page. Return structured JSON only.
 
@@ -161,6 +192,12 @@ export interface ExtractContext {
   rawHtml?: string;
   /** Source URL */
   url?: string;
+  /** If true, force Cheerio-only extraction — skip LLM entirely (per FR-020) */
+  deterministic?: boolean;
+  /** CSS selector to narrow HTML before deterministic extraction */
+  selectorHint?: string | null;
+  /** Path to state-specific extraction prompt file (relative to scripts/harvest/) */
+  extractionPromptFile?: string;
 }
 
 export interface ExtractionStats {
@@ -182,11 +219,49 @@ export function getLastExtractionStats(): ExtractionStats | null {
 /**
  * Extract judges from page content.
  * Tries deterministic extraction first, falls back to LLM if needed.
+ * When context.deterministic is true, forces Cheerio-only extraction (no LLM).
  */
 export async function extractJudges(
   markdown: string,
   context: ExtractContext,
 ): Promise<ExtractionResult> {
+  // If deterministic flag is set, force Cheerio-only extraction (per FR-020)
+  if (context.deterministic && context.rawHtml) {
+    const selectorResult = extractWithSelectorHint(
+      context.rawHtml,
+      context.courtType,
+      context.selectorHint || undefined,
+    );
+
+    if (selectorResult.success && selectorResult.result) {
+      console.log(
+        `    [deterministic:selector-hint] Extracted ${selectorResult.result.judges.length} judges (zero LLM cost)`,
+      );
+      lastExtractionStats = { method: "deterministic" };
+      return selectorResult.result;
+    }
+
+    // If selector hint failed, try generic deterministic patterns
+    const generic = tryDeterministicExtraction(
+      context.rawHtml,
+      context.url || "",
+      context.courtType,
+    );
+
+    if (generic.success && generic.result) {
+      console.log(
+        `    [deterministic:${generic.method}] Extracted ${generic.result.judges.length} judges (zero LLM cost)`,
+      );
+      lastExtractionStats = { method: "deterministic" };
+      return generic.result;
+    }
+
+    // Deterministic flag was set but extraction failed — warn but fall through to LLM
+    console.warn(
+      `    [deterministic] Failed to extract with Cheerio — falling back to LLM for: ${context.label}`,
+    );
+  }
+
   // Try deterministic extraction first (free!)
   if (context.rawHtml && context.url) {
     const deterministic = tryDeterministicExtraction(
@@ -205,13 +280,10 @@ export async function extractJudges(
   }
 
   // Fall back to LLM extraction
+  const systemPrompt = loadExtractionPrompt(context.extractionPromptFile);
   const userPrompt = buildRosterPrompt(markdown, context);
 
-  const response = await chatCompletion(
-    ROSTER_SYSTEM_PROMPT,
-    userPrompt,
-    16384,
-  );
+  const response = await chatCompletion(systemPrompt, userPrompt, 16384);
 
   console.log(`    [${describeLLMConfig()}] LLM extraction`);
   lastExtractionStats = {
@@ -400,7 +472,11 @@ function safeJsonParse(jsonStr: string): unknown {
  */
 function normalizeCourtType(
   value: string,
-): "Supreme Court" | "District Court of Appeal" | "Circuit Court" | "County Court" {
+):
+  | "Supreme Court"
+  | "District Court of Appeal"
+  | "Circuit Court"
+  | "County Court" {
   const lower = value.toLowerCase();
 
   if (lower.includes("supreme")) {
@@ -458,14 +534,12 @@ function normalizeExtractionResult(data: unknown): unknown {
  * Normalize selectionMethod values to match the Zod enum.
  * LLMs sometimes return variations like "Election" or "Merit Selection".
  */
-function normalizeSelectionMethod(value: string): "Elected" | "Appointed" | null {
+function normalizeSelectionMethod(
+  value: string,
+): "Elected" | "Appointed" | null {
   const lower = value.toLowerCase().trim();
 
-  if (
-    lower === "elected" ||
-    lower === "election" ||
-    lower.includes("elect")
-  ) {
+  if (lower === "elected" || lower === "election" || lower.includes("elect")) {
     return "Elected";
   }
 

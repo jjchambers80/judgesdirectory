@@ -1,10 +1,25 @@
 /**
  * Harvest CLI configuration — flag parsing, env validation, shared types.
  *
+ * State configuration loading uses Zod-validated JSON files.
+ * Re-exports StateConfig and CourtEntry from state-config-schema.ts.
+ *
  * @module scripts/harvest/config
  */
 
+import fs from "node:fs";
 import path from "node:path";
+import {
+  StateConfigSchema,
+  checkDuplicateUrls,
+  stateSlug,
+} from "./state-config-schema";
+import type { StateConfig, CourtEntry } from "./state-config-schema";
+
+// Re-export state config types for consumers
+export type { StateConfig, CourtEntry } from "./state-config-schema";
+export { stateSlug } from "./state-config-schema";
+export type { RateLimitConfig } from "./state-config-schema";
 
 // ---------------------------------------------------------------------------
 // Shared interfaces
@@ -19,47 +34,25 @@ export interface CliFlags {
   ballotpedia: boolean;
   ballotpediaMax: number | null;
   outputDir: string;
-}
-
-/** Shape of a single entry in florida-courts.json → supremeCourt */
-export interface SupremeCourtConfig {
-  url: string;
-  courtType: "Supreme Court";
-}
-
-/** Shape of a single entry in florida-courts.json → districtCourts[] */
-export interface DistrictCourtConfig {
-  district: number;
-  name: string;
-  url: string;
-  courtType: "District Court of Appeal";
-  circuits: number[];
-  counties: string[];
-}
-
-/** Shape of a single entry in florida-courts.json → circuitCourts[] */
-export interface CircuitCourtConfig {
-  circuit: number;
-  url: string;
-  courtType: "Circuit Court";
-  counties: string[];
-}
-
-/** Top-level shape of florida-courts.json */
-export interface FloridaCourtsConfig {
-  state: string;
-  abbreviation: string;
-  supremeCourt: SupremeCourtConfig;
-  districtCourts: DistrictCourtConfig[];
-  circuitCourts: CircuitCourtConfig[];
+  // State selection flags (new)
+  state: string | null;
+  all: boolean;
+  list: boolean;
 }
 
 /** A single extracted court URL entry with metadata for the pipeline */
 export interface CourtUrlEntry {
   url: string;
   courtType: string;
+  level: string;
   counties: string[];
-  label: string; // human-readable label for logging
+  label: string;
+  // Pipeline hints from CourtEntry
+  fetchMethod?: "http" | "browser" | "manual";
+  deterministic?: boolean;
+  selectorHint?: string | null;
+  district?: number | null;
+  circuit?: number | null;
 }
 
 /** Checkpoint stored between runs for resume support */
@@ -131,18 +124,6 @@ export interface EnrichedJudgeRecord {
 // Flag parsing
 // ---------------------------------------------------------------------------
 
-export interface CliFlags {
-  resume: boolean;
-  reset: boolean;
-  seedCourtsOnly: boolean;
-  dryRun: boolean;
-  skipBio: boolean;
-  ballotpedia: boolean;
-  ballotpediaMax: number | null;
-  useIdentity: boolean;
-  outputDir: string;
-}
-
 export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
   const flags: CliFlags = {
     resume: true,
@@ -152,8 +133,10 @@ export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
     skipBio: false,
     ballotpedia: false,
     ballotpediaMax: null,
-    useIdentity: true, // Default to identity-based dedup
     outputDir: path.resolve(process.cwd(), "scripts/harvest/output"),
+    state: null,
+    all: false,
+    list: false,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -187,10 +170,9 @@ export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
         }
         break;
       case "--no-identity":
-        flags.useIdentity = false;
+        flags.outputDir = flags.outputDir; // no-op to keep switch exhaustive
         break;
       case "--use-identity":
-        flags.useIdentity = true;
         break;
       case "--output-dir":
         if (argv[i + 1] && !argv[i + 1].startsWith("--")) {
@@ -200,10 +182,30 @@ export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
           process.exit(1);
         }
         break;
+      case "--state":
+        if (argv[i + 1] && !argv[i + 1].startsWith("--")) {
+          flags.state = argv[++i].toLowerCase();
+        } else {
+          console.error("Error: --state requires a state name argument");
+          process.exit(1);
+        }
+        break;
+      case "--all":
+        flags.all = true;
+        break;
+      case "--list":
+        flags.list = true;
+        break;
       default:
         console.error(`Unknown flag: ${argv[i]}`);
         process.exit(1);
     }
+  }
+
+  // Mutual exclusion: --state and --all cannot be combined
+  if (flags.state && flags.all) {
+    console.error("Error: --state and --all are mutually exclusive");
+    process.exit(1);
   }
 
   return flags;
@@ -229,7 +231,7 @@ export function validateEnv(flags: CliFlags): void {
 
   // Check for appropriate API key based on LLM provider
   const provider = process.env.LLM_PROVIDER?.toLowerCase() || "openai";
-  
+
   if (provider === "anthropic") {
     if (!process.env.ANTHROPIC_API_KEY) {
       console.error(
@@ -249,55 +251,77 @@ export function validateEnv(flags: CliFlags): void {
 }
 
 // ---------------------------------------------------------------------------
-// Load florida-courts.json
+// State config loading
 // ---------------------------------------------------------------------------
 
-export function loadCourtConfig(): FloridaCourtsConfig {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const config: FloridaCourtsConfig = require("./florida-courts.json");
-  return config;
+/** Directory containing state config JSON files */
+const HARVEST_DIR = path.resolve(__dirname);
+
+/**
+ * Load and validate a state's court configuration.
+ * Reads {stateName}-courts.json from the harvest directory, validates via Zod.
+ */
+export function loadStateConfig(stateName: string): StateConfig {
+  const slug = stateSlug(stateName);
+  const configPath = path.join(HARVEST_DIR, `${slug}-courts.json`);
+
+  if (!fs.existsSync(configPath)) {
+    const available = discoverStates();
+    console.error(
+      `Error: No configuration found for state "${stateName}". Available: ${available.join(", ") || "(none)"}`,
+    );
+    process.exit(1);
+  }
+
+  const raw = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+  const result = StateConfigSchema.safeParse(raw);
+
+  if (!result.success) {
+    console.error(
+      `Error: Invalid configuration for ${stateName}: ${result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`,
+    );
+    process.exit(1);
+  }
+
+  // Warn on duplicate URLs
+  const duplicates = checkDuplicateUrls(result.data);
+  if (duplicates.length > 0) {
+    console.warn(
+      `Warning: Duplicate URLs in ${slug}-courts.json: ${duplicates.join(", ")}`,
+    );
+  }
+
+  return result.data;
 }
 
 /**
- * Flatten the config into a sequential list of court URL entries for the
- * extraction pipeline.
+ * Discover all available state configurations by scanning for *-courts.json files.
+ * Returns an array of state slugs (e.g., ["florida", "texas", "new-york"]).
  */
-export function flattenCourtUrls(config: FloridaCourtsConfig): CourtUrlEntry[] {
-  const entries: CourtUrlEntry[] = [];
-
-  // Supreme Court
-  entries.push({
-    url: config.supremeCourt.url,
-    courtType: config.supremeCourt.courtType,
-    counties: ["Leon"], // Statewide but administratively based in Leon County
-    label: "Florida Supreme Court",
-  });
-
-  // District Courts of Appeal
-  for (const dca of config.districtCourts) {
-    entries.push({
-      url: dca.url,
-      courtType: dca.courtType,
-      counties: dca.counties,
-      label: dca.name,
-    });
-  }
-
-  // Circuit Courts (includes county court judges on the same page)
-  for (const circuit of config.circuitCourts) {
-    entries.push({
-      url: circuit.url,
-      courtType: circuit.courtType,
-      counties: circuit.counties,
-      label: `${ordinal(circuit.circuit)} Judicial Circuit`,
-    });
-  }
-
-  return entries;
+export function discoverStates(): string[] {
+  const files = fs.readdirSync(HARVEST_DIR);
+  return files
+    .filter((f) => f.endsWith("-courts.json"))
+    .map((f) => f.replace("-courts.json", ""))
+    .sort();
 }
 
-function ordinal(n: number): string {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+/**
+ * Convert a StateConfig's courts array into CourtUrlEntry[] for the pipeline.
+ * This replaces the old flattenCourtUrls() — the flat courts[] format makes
+ * this a straightforward mapping rather than a structural transformation.
+ */
+export function buildCourtUrlEntries(config: StateConfig): CourtUrlEntry[] {
+  return config.courts.map((court: CourtEntry) => ({
+    url: court.url,
+    courtType: court.courtType,
+    level: court.level,
+    counties: court.counties,
+    label: court.label,
+    fetchMethod: court.fetchMethod ?? "http",
+    deterministic: court.deterministic ?? false,
+    selectorHint: court.selectorHint ?? null,
+    district: court.district ?? null,
+    circuit: court.circuit ?? null,
+  }));
 }
