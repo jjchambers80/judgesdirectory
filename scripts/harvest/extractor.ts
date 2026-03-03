@@ -27,12 +27,7 @@ import {
 
 export const JudgeRecordSchema = z.object({
   name: z.string().describe("Full name in 'First Last' format"),
-  courtType: z.enum([
-    "Supreme Court",
-    "District Court of Appeal",
-    "Circuit Court",
-    "County Court",
-  ]),
+  courtType: z.string().min(1).describe("Court type name (e.g., 'Supreme Court', 'Court of Appeals', 'Superior Court')"),
   county: z
     .string()
     .nullable()
@@ -198,6 +193,8 @@ export interface ExtractContext {
   selectorHint?: string | null;
   /** Path to state-specific extraction prompt file (relative to scripts/harvest/) */
   extractionPromptFile?: string;
+  /** 2-letter state abbreviation for state-aware normalization */
+  stateAbbreviation?: string;
 }
 
 export interface ExtractionStats {
@@ -298,7 +295,7 @@ export async function extractJudges(
   const parsed = safeJsonParse(jsonStr);
 
   // Normalize LLM output before validation (fixes courtType variations)
-  const normalized = normalizeExtractionResult(parsed);
+  const normalized = normalizeExtractionResult(parsed, context.stateAbbreviation);
 
   // Validate with Zod
   const result = ExtractionResultSchema.parse(normalized);
@@ -467,43 +464,21 @@ function safeJsonParse(jsonStr: string): unknown {
 }
 
 /**
- * Normalize courtType values to match the Zod enum.
- * LLMs sometimes return variations like "Circuit Court - Civil Division".
+ * Normalize courtType values to a canonical form using the normalizer's
+ * state-aware canonicalization. Falls back to basic normalization for
+ * backward compatibility.
  */
-function normalizeCourtType(
-  value: string,
-):
-  | "Supreme Court"
-  | "District Court of Appeal"
-  | "Circuit Court"
-  | "County Court" {
-  const lower = value.toLowerCase();
-
-  if (lower.includes("supreme")) {
-    return "Supreme Court";
-  }
-  if (lower.includes("district") && lower.includes("appeal")) {
-    return "District Court of Appeal";
-  }
-  if (lower.includes("dca")) {
-    return "District Court of Appeal";
-  }
-  if (lower.includes("circuit")) {
-    return "Circuit Court";
-  }
-  if (lower.includes("county")) {
-    return "County Court";
-  }
-
-  // Default to Circuit Court for Florida trial courts
-  return "Circuit Court";
+function normalizeCourtType(value: string, stateAbbreviation?: string): string {
+  // Use the normalizer's canonicalizeCourtType which has per-state registries
+  const { canonicalizeCourtType } = require("./normalizer");
+  return canonicalizeCourtType(value, stateAbbreviation);
 }
 
 /**
  * Normalize extraction result before Zod validation.
  * Fixes common LLM output variations.
  */
-function normalizeExtractionResult(data: unknown): unknown {
+function normalizeExtractionResult(data: unknown, stateAbbreviation?: string): unknown {
   if (!data || typeof data !== "object") return data;
 
   const obj = data as Record<string, unknown>;
@@ -515,7 +490,7 @@ function normalizeExtractionResult(data: unknown): unknown {
 
       // Normalize courtType
       if (typeof j.courtType === "string") {
-        j.courtType = normalizeCourtType(j.courtType);
+        j.courtType = normalizeCourtType(j.courtType, stateAbbreviation);
       }
 
       // Normalize selectionMethod (LLM sometimes returns variations)

@@ -7,6 +7,7 @@ Rules:
 - If "Last, First" format is detected, reverse to "First Last"
 - For each judge, determine the court type from the page context
 - Determine the county assignment if listed (some judges serve multiple counties in a circuit)
+- If a subject-matter division is listed (e.g., Criminal, Civil, Family, Juvenile), extract it as the `division` field; set to null if not stated
 - If selection method is mentioned (elected, appointed), include it
 - IMPORTANT: Extract any link to the judge's individual bio/profile page (look for "Read more", "Biography", or name links)
 - Mark isChiefJudge as true if the judge is designated "Chief Judge" or "Chief Justice"

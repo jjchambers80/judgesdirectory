@@ -8,6 +8,9 @@
     "maxRetries": 3
   },
   "extractionPromptFile": "prompts/california-extraction-prompt.txt",
+  "countyAliases": {
+    "San Buenaventura": "Ventura"
+  },
   "courts": [
     {
       "url": "https://www.courts.ca.gov/supremecourt.htm",

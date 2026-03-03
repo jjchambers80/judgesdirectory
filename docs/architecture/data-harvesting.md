@@ -291,9 +291,54 @@ The harvest uses a tiered extraction strategy to minimize LLM API costs:
 3. **Multi-state support** — Abstract Florida-specific logic
 4. **Incremental updates** — Only re-fetch changed pages
 5. **Per-field confidence scoring** — Track extraction reliability
+6. **FOIA enrichment pipeline** — Validate scraped data and add unique fields (see below)
+
+## FOIA Enrichment Layer (Planned)
+
+The scraping pipeline is the primary data source. FOIA adds a validation and enrichment layer for data that doesn't appear on court websites.
+
+```
+Scraping Pipeline (primary — fast, rich)         FOIA Pipeline (enrichment — slow, unique)
+─────────────────────────────────────────         ──────────────────────────────────────────
+Court Website → fetch → extract → normalize  ──▶  State AOC Roster CSV
+                                              ▲      │
+                                              │      ▼
+                                              │   foia-validator.ts
+                                              │      ├─ Match by name + court
+                                              │      ├─ Flag discrepancies
+                                              │      └─ Set verified = true
+                                              │
+                                              └── foia-enricher.ts
+                                                     ├─ Salary data (Comptroller)
+                                                     ├─ Historical judges (AOC archives)
+                                                     ├─ Campaign finance (Election Commission)
+                                                     └─ Merge into judge profiles
+```
+
+### Planned Components
+
+| Component | Purpose | Input | Output |
+|---|---|---|---|
+| `foia-validator.ts` | Cross-reference scraped data against official FOIA roster | FOIA CSV + scraped records | Verified flags, discrepancy report |
+| `foia-enricher.ts` | Merge FOIA-only fields into judge profiles | FOIA data files + existing profiles | Enriched records (salary, history) |
+| `foia-tracker.ts` | Track FOIA request status per state/agency | Manual entries | Dashboard of pending/received requests |
+
+### FOIA Data Types
+
+| Data | Source Agency | Enriches | Priority |
+|---|---|---|---|
+| Official roster | State AOC | Validation / verified badge | P1 |
+| Judge salary | State Comptroller | Salary field + aggregate pages | P2 |
+| Historical appointments | State AOC archives | Retired judge profiles | P2 |
+| Campaign finance | Election Commission | Political contribution data | P3 |
+| Caseload statistics | State AOC | Aggregate analytics | P3 |
+
+See [FOIA vs. Scraping Strategy](../business/foia-vs-scraping-strategy.md) for full strategic analysis.
 
 ## Related Documents
 
 - [Web Scraping Tools Research](../research/web-scraping-tools.md)
 - [Florida Judge Harvest Spec](../../specs/004-florida-judge-harvest/spec.md)
 - [CLI Contract](../../specs/004-florida-judge-harvest/contracts/cli-contract.md)
+- [FOIA vs. Scraping Strategy](../business/foia-vs-scraping-strategy.md)
+- [Competitor Analysis: VoterRecords.com](../business/competitor-analysis-voterrecords.md)

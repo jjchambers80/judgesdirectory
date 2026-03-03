@@ -1,7 +1,8 @@
 # judgesdirectory.org — ICP & Monetization
 
-**Last Updated**: 2026-03-01
+**Last Updated**: 2026-03-02
 **Status**: Draft
+**See also**: [monetization-plan.md](monetization-plan.md) — concrete revenue streams, projections, and implementation sequence
 
 ## ICP (Ideal Customer Profiles)
 

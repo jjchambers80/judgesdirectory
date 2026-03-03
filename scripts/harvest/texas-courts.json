@@ -8,6 +8,10 @@
     "maxRetries": 3
   },
   "extractionPromptFile": "prompts/texas-extraction-prompt.txt",
+  "countyAliases": {
+    "Dewitt": "DeWitt",
+    "De Witt": "DeWitt"
+  },
   "courts": [
     {
       "url": "https://www.txcourts.gov/supreme/",

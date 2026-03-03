@@ -66,6 +66,10 @@ export const StateConfigSchema = z
       .regex(/^[A-Z]{2}$/, "Must be 2 uppercase letters"),
     rateLimit: RateLimitConfigSchema,
     extractionPromptFile: z.string().optional(),
+    countyAliases: z
+      .record(z.string().min(1), z.string().min(1))
+      .optional()
+      .default({}),
     courts: z.array(CourtEntrySchema).min(1, "At least one court is required"),
   })
   .refine((config) => config.courts.some((c) => c.level === "supreme"), {
@@ -74,6 +78,35 @@ export const StateConfigSchema = z
   });
 
 export type StateConfig = z.infer<typeof StateConfigSchema>;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// HarvestManifest (written after each successful harvest run)
+// ---------------------------------------------------------------------------
+
+/**
+ * Zod schema for the harvest manifest file.
+ * Written to output/{state-slug}/harvest-manifest.json after each successful run.
+ */
+export const HarvestManifestSchema = z.object({
+  /** ISO 8601 timestamp of last successful run completion */
+  lastCompletedAt: z.string().datetime(),
+  /** Total judges in the final output CSV */
+  judgeCount: z.number().int().min(0),
+  /** Filename of the quality report generated */
+  reportFile: z.string().min(1),
+  /** Total roster pages targeted */
+  pagesTargeted: z.number().int().min(1),
+  /** Pages that failed to fetch or extract */
+  pagesFailed: z.number().int().min(0),
+  /** Quality gate verdict from the run */
+  qualityVerdict: z.enum(["PASS", "WARNING", "CRITICAL"]),
+});
+
+export type HarvestManifest = z.infer<typeof HarvestManifestSchema>;
 
 // ---------------------------------------------------------------------------
 // Helpers

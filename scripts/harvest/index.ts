@@ -49,6 +49,10 @@ import {
   type Checkpoint,
 } from "./config";
 import type { StateConfig } from "./state-config-schema";
+import {
+  HarvestManifestSchema,
+  type HarvestManifest,
+} from "./state-config-schema";
 import { seedStateCourts } from "./court-seeder";
 import { loadCheckpoint, saveCheckpoint, resetCheckpoint } from "./checkpoint";
 import { fetchPage } from "./fetcher";
@@ -57,7 +61,7 @@ import { enrichWithBioPages } from "./bio-enricher";
 import { enrichAllWithBallotpedia } from "./ballotpedia-enricher";
 import { normalizeJudgeName, canonicalizeCourtType } from "./normalizer";
 import { deduplicateJudges, deduplicateEnrichedJudges } from "./deduplicator";
-import { generateReport, generateEnrichedReport } from "./reporter";
+import { generateReport, generateEnrichedReport, type Severity } from "./reporter";
 import {
   getLLMConfig,
   validateLLMConfig,
@@ -121,6 +125,140 @@ function closeLogging(): void {
 }
 
 // ---------------------------------------------------------------------------
+// Harvest manifest — freshness tracking (per contract: freshness-tracker.ts)
+// ---------------------------------------------------------------------------
+
+/** Number of days before data is considered stale. */
+const DATA_FRESHNESS_THRESHOLD_DAYS = 90;
+
+/** Manifest filename within each state's output directory. */
+const MANIFEST_FILENAME = "harvest-manifest.json";
+
+/**
+ * Read and parse a harvest manifest for a state.
+ * @returns Parsed HarvestManifest or null if file doesn't exist / is invalid.
+ */
+function readManifest(
+  outputDir: string,
+  slug: string,
+): HarvestManifest | null {
+  const manifestPath = path.join(outputDir, slug, MANIFEST_FILENAME);
+  if (!fs.existsSync(manifestPath)) return null;
+
+  try {
+    const raw = fs.readFileSync(manifestPath, "utf-8");
+    const parsed = JSON.parse(raw);
+    const result = HarvestManifestSchema.safeParse(parsed);
+    if (result.success) return result.data;
+    console.warn(`  WARN: Invalid manifest at ${manifestPath}: ${result.error.message}`);
+    return null;
+  } catch (err) {
+    console.warn(`  WARN: Failed to read manifest at ${manifestPath}: ${err instanceof Error ? err.message : String(err)}`);
+    return null;
+  }
+}
+
+/**
+ * Write a harvest manifest after a successful run.
+ * Uses atomic write (tmp file + rename) to prevent partial writes.
+ */
+function writeManifest(
+  outputDir: string,
+  slug: string,
+  manifest: HarvestManifest,
+): void {
+  const dir = path.join(outputDir, slug);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  const finalPath = path.join(dir, MANIFEST_FILENAME);
+  const tmpPath = `${finalPath}.tmp`;
+
+  fs.writeFileSync(tmpPath, JSON.stringify(manifest, null, 2), "utf-8");
+  fs.renameSync(tmpPath, finalPath);
+  console.log(`Manifest written: ${finalPath}`);
+}
+
+/**
+ * Check data freshness for a state.
+ */
+interface FreshnessResult {
+  state: string;
+  hasManifest: boolean;
+  lastCompletedAt: string | null;
+  daysSinceHarvest: number | null;
+  isStale: boolean;
+  lastJudgeCount: number | null;
+}
+
+function checkFreshness(outputDir: string, slug: string): FreshnessResult {
+  const manifest = readManifest(outputDir, slug);
+  if (!manifest) {
+    return {
+      state: slug,
+      hasManifest: false,
+      lastCompletedAt: null,
+      daysSinceHarvest: null,
+      isStale: true,
+      lastJudgeCount: null,
+    };
+  }
+
+  const lastDate = new Date(manifest.lastCompletedAt);
+  const now = new Date();
+  const daysSince = Math.floor(
+    (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  return {
+    state: slug,
+    hasManifest: true,
+    lastCompletedAt: manifest.lastCompletedAt,
+    daysSinceHarvest: daysSince,
+    isStale: daysSince > DATA_FRESHNESS_THRESHOLD_DAYS,
+    lastJudgeCount: manifest.judgeCount,
+  };
+}
+
+/**
+ * Print freshness table to stdout for all discovered states.
+ */
+function printFreshnessTable(
+  outputDir: string,
+  stateSlugs: string[],
+): void {
+  const results = stateSlugs.map((s) => checkFreshness(outputDir, s));
+
+  console.log("\n===== Data Freshness =====\n");
+  console.log(
+    "| State | Last Harvest | Days Ago | Judges | Status |",
+  );
+  console.log(
+    "|-------|-------------|----------|--------|--------|",
+  );
+
+  for (const r of results) {
+    if (!r.hasManifest) {
+      console.log(
+        `| ${r.state} | — | — | — | 🆕 No prior harvest |`,
+      );
+    } else {
+      const date = r.lastCompletedAt
+        ? new Date(r.lastCompletedAt).toISOString().slice(0, 10)
+        : "—";
+      const status = r.isStale
+        ? `⚠️ STALE (>${DATA_FRESHNESS_THRESHOLD_DAYS}d)`
+        : "✅ Fresh";
+      console.log(
+        `| ${r.state} | ${date} | ${r.daysSinceHarvest} | ${r.lastJudgeCount} | ${status} |`,
+      );
+    }
+  }
+  console.log("");
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -152,26 +290,30 @@ async function main(): Promise<void> {
 
     console.log(`Processing ${states.length} state(s): ${states.join(", ")}\n`);
 
-    const results: Array<{
-      state: string;
-      success: boolean;
-      judgeCount: number;
-      error?: string;
-    }> = [];
+    // Print freshness table before processing
+    const slugs = states.map((s) => stateSlug(s));
+    printFreshnessTable(flags.outputDir, slugs);
+
+    const results: StateRunResult[] = [];
 
     for (const stateName of states) {
       try {
-        const count = await runSingleState(stateName, flags);
-        results.push({ state: stateName, success: true, judgeCount: count });
+        const result = await runSingleState(stateName, flags);
+        results.push(result);
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : String(err);
         console.error(
           `\nERROR: ${stateName} failed: ${errMsg}. Checkpoint saved. Continuing to next state.\n`,
         );
         results.push({
-          state: stateName,
+          state: stateSlug(stateName),
           success: false,
           judgeCount: 0,
+          pages: { total: 0, succeeded: 0, failed: 0 },
+          courtTypeCounts: {},
+          duplicatesRemoved: 0,
+          reportPath: "",
+          qualityVerdict: "CRITICAL",
           error: errMsg,
         });
       }
@@ -202,6 +344,23 @@ async function main(): Promise<void> {
 
   // Single state (--state <name> or default to florida)
   const stateName = flags.state || "florida";
+  const slug = stateSlug(stateName);
+
+  // Show freshness info for single state
+  const freshness = checkFreshness(flags.outputDir, slug);
+  if (freshness.hasManifest) {
+    const date = freshness.lastCompletedAt
+      ? new Date(freshness.lastCompletedAt).toISOString().slice(0, 10)
+      : "—";
+    const staleTag = freshness.isStale ? " ⚠️ STALE" : "";
+    console.log(
+      `Data freshness: last harvest ${date} (${freshness.daysSinceHarvest}d ago, ${freshness.lastJudgeCount} judges)${staleTag}`,
+    );
+  } else {
+    console.log("Data freshness: no previous harvest on record");
+  }
+  console.log("");
+
   await runSingleState(stateName, flags);
 }
 
@@ -210,17 +369,38 @@ async function main(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 interface StateRunResult {
+  /** State slug (e.g., "texas") */
+  state: string;
+  /** Whether the harvest completed without fatal errors */
+  success: boolean;
+  /** Total judges in final CSV (0 if failed) */
   judgeCount: number;
+  /** Page-level fetch statistics */
+  pages: {
+    total: number;
+    succeeded: number;
+    failed: number;
+  };
+  /** Judge count broken down by court type */
+  courtTypeCounts: Record<string, number>;
+  /** Records removed during deduplication */
+  duplicatesRemoved: number;
+  /** Absolute path to the per-state quality report */
+  reportPath: string;
+  /** Quality gate verdict from the per-state report */
+  qualityVerdict: "PASS" | "WARNING" | "CRITICAL";
+  /** Error message if the run failed (null on success) */
+  error: string | null;
 }
 
 /**
  * Run the full harvest pipeline for a single state.
- * Returns the number of judges extracted.
+ * Returns a full StateRunResult with judge count, page stats, quality verdict, etc.
  */
 async function runSingleState(
   stateName: string,
   flags: CliFlags,
-): Promise<number> {
+): Promise<StateRunResult> {
   const stateConfig = loadStateConfig(stateName);
   const slug = stateSlug(stateName);
 
@@ -244,7 +424,17 @@ async function runSingleState(
   if (flags.seedCourtsOnly) {
     console.log(`Seeding ${stateConfig.state} court structure...\n`);
     await seedStateCourts(stateConfig);
-    return 0;
+    return {
+      state: slug,
+      success: true,
+      judgeCount: 0,
+      pages: { total: 0, succeeded: 0, failed: 0 },
+      courtTypeCounts: {},
+      duplicatesRemoved: 0,
+      reportPath: "",
+      qualityVerdict: "PASS",
+      error: null,
+    };
   }
 
   // Validate LLM config if not dry-run
@@ -282,7 +472,17 @@ async function runSingleState(
 
   if (pipelineResult.records.length === 0) {
     console.log("\nNo judge records extracted. Nothing to write.");
-    return 0;
+    return {
+      state: slug,
+      success: true,
+      judgeCount: 0,
+      pages: { total: courtUrls.length, succeeded: courtUrls.length, failed: 0 },
+      courtTypeCounts: {},
+      duplicatesRemoved: 0,
+      reportPath: "",
+      qualityVerdict: "WARNING",
+      error: null,
+    };
   }
 
   const rawCount = pipelineResult.records.length;
@@ -329,7 +529,7 @@ async function runSingleState(
 
   // Generate quality report with field coverage
   const timestamp = new Date().toISOString();
-  const reportPath = generateEnrichedReport(
+  const { filePath: reportPath, qualityVerdict } = generateEnrichedReport(
     {
       courtUrls,
       checkpoint,
@@ -345,67 +545,197 @@ async function runSingleState(
   );
   console.log(`Report written: ${reportPath}`);
 
-  return finalRecords.length;
+  // Write harvest manifest for freshness tracking
+  const courtResults = Object.values(checkpoint.results);
+  const failedPages = courtResults.filter((r) => r.errors.length > 0).length;
+  const succeededPages = courtUrls.length - failedPages;
+  writeManifest(flags.outputDir, slug, {
+    lastCompletedAt: timestamp,
+    judgeCount: finalRecords.length,
+    reportFile: path.basename(reportPath),
+    pagesTargeted: courtUrls.length,
+    pagesFailed: failedPages,
+    qualityVerdict,
+  });
+
+  // Compute court type counts for the result
+  const courtTypeCounts: Record<string, number> = {};
+  for (const rec of finalRecords) {
+    const ct = rec.courtType || "Unknown";
+    courtTypeCounts[ct] = (courtTypeCounts[ct] || 0) + 1;
+  }
+
+  return {
+    state: slug,
+    success: true,
+    judgeCount: finalRecords.length,
+    pages: {
+      total: courtUrls.length,
+      succeeded: succeededPages,
+      failed: failedPages,
+    },
+    courtTypeCounts,
+    duplicatesRemoved: dedupResult.duplicates.length,
+    reportPath,
+    qualityVerdict,
+    error: null,
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Combined summary (--all)
 // ---------------------------------------------------------------------------
 
+interface AggregateStats {
+  statesProcessed: number;
+  statesSucceeded: number;
+  statesFailed: number;
+  totalJudges: number;
+  totalPages: number;
+  totalFailedPages: number;
+  totalDuplicatesRemoved: number;
+  courtTypeCounts: Record<string, number>;
+  overallVerdict: "PASS" | "WARNING" | "CRITICAL";
+}
+
+/**
+ * Compute aggregate statistics from per-state results.
+ * Overall verdict = worst individual verdict across all states.
+ */
+function computeAggregateStats(results: StateRunResult[]): AggregateStats {
+  const succeeded = results.filter((r) => r.success);
+  const failed = results.filter((r) => !r.success);
+
+  const courtTypeCounts: Record<string, number> = {};
+  for (const result of succeeded) {
+    for (const [type, count] of Object.entries(result.courtTypeCounts)) {
+      courtTypeCounts[type] = (courtTypeCounts[type] || 0) + count;
+    }
+  }
+
+  const verdictPriority = { PASS: 0, WARNING: 1, CRITICAL: 2 } as const;
+  const worstVerdict = results.reduce<"PASS" | "WARNING" | "CRITICAL">(
+    (worst, r) =>
+      verdictPriority[r.qualityVerdict] > verdictPriority[worst]
+        ? r.qualityVerdict
+        : worst,
+    "PASS",
+  );
+
+  return {
+    statesProcessed: results.length,
+    statesSucceeded: succeeded.length,
+    statesFailed: failed.length,
+    totalJudges: succeeded.reduce((sum, r) => sum + r.judgeCount, 0),
+    totalPages: results.reduce((sum, r) => sum + r.pages.total, 0),
+    totalFailedPages: results.reduce((sum, r) => sum + r.pages.failed, 0),
+    totalDuplicatesRemoved: succeeded.reduce(
+      (sum, r) => sum + r.duplicatesRemoved,
+      0,
+    ),
+    courtTypeCounts,
+    overallVerdict: worstVerdict,
+  };
+}
+
+/**
+ * Write a combined multi-state summary report in Markdown format.
+ * Includes run metadata, per-state results with quality verdicts,
+ * aggregate totals, failed state details, and court type breakdown.
+ */
 function writeCombinedSummary(
-  results: Array<{
-    state: string;
-    success: boolean;
-    judgeCount: number;
-    error?: string;
-  }>,
+  results: StateRunResult[],
   outputDir: string,
 ): void {
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const filePath = path.join(outputDir, `combined-summary-${timestamp}.txt`);
+  const stats = computeAggregateStats(results);
+  const runTimestamp = new Date().toISOString();
+  const fileTimestamp = runTimestamp.replace(/[:.]/g, "-").slice(0, 19);
+  const filePath = path.join(outputDir, `combined-summary-${fileTimestamp}.md`);
 
-  const lines: string[] = [];
-  lines.push(`# Combined Harvest Summary — ${new Date().toISOString()}`);
-  lines.push("");
-  lines.push("## Per-State Results");
-  lines.push("");
-  lines.push("| State | Status | Judges Extracted |");
-  lines.push("| --- | --- | --- |");
+  const verdictEmoji: Record<string, string> = {
+    PASS: "✅",
+    WARNING: "🟡",
+    CRITICAL: "🔴",
+  };
 
-  let totalJudges = 0;
-  const succeeded = results.filter((r) => r.success);
-  const failed = results.filter((r) => !r.success);
+  const lines: string[] = [
+    `# Combined Harvest Summary — ${runTimestamp}`,
+    "",
+    "## Overview",
+    "",
+    "| Metric | Value |",
+    "|--------|-------|",
+    `| States processed | ${stats.statesProcessed} |`,
+    `| States succeeded | ${stats.statesSucceeded} |`,
+    `| States failed | ${stats.statesFailed} |`,
+    `| Total judges | ${stats.totalJudges} |`,
+    `| Total pages | ${stats.totalPages} |`,
+    `| Failed pages | ${stats.totalFailedPages} |`,
+    `| Duplicates removed | ${stats.totalDuplicatesRemoved} |`,
+    `| Overall verdict | ${verdictEmoji[stats.overallVerdict]} ${stats.overallVerdict} |`,
+    "",
+    "## Per-State Results",
+    "",
+    "| State | Status | Verdict | Judges | Pages (ok/fail) | Dupes Removed | Report |",
+    "|-------|--------|---------|--------|------------------|---------------|--------|",
+  ];
 
   for (const r of results) {
-    const status = r.success ? "✓ SUCCESS" : "✗ FAILED";
-    lines.push(`| ${r.state} | ${status} | ${r.judgeCount} |`);
-    totalJudges += r.judgeCount;
+    const status = r.success ? "✅" : "❌";
+    const verdict = `${verdictEmoji[r.qualityVerdict]} ${r.qualityVerdict}`;
+    const pages = `${r.pages.succeeded}/${r.pages.failed}`;
+    const report = r.reportPath ? path.basename(r.reportPath) : "—";
+    lines.push(
+      `| ${r.state} | ${status} | ${verdict} | ${r.judgeCount} | ${pages} | ${r.duplicatesRemoved} | ${report} |`,
+    );
   }
 
+  // Aggregate totals
   lines.push("");
   lines.push("## Aggregate Totals");
   lines.push("");
-  lines.push(`- States processed: ${results.length}`);
-  lines.push(`- States succeeded: ${succeeded.length}`);
-  lines.push(`- States failed: ${failed.length}`);
-  lines.push(`- Total judges extracted: ${totalJudges}`);
+  lines.push(`- **States processed**: ${stats.statesProcessed}`);
+  lines.push(`- **States succeeded**: ${stats.statesSucceeded}`);
+  lines.push(`- **States failed**: ${stats.statesFailed}`);
+  lines.push(`- **Total judges**: ${stats.totalJudges}`);
+  lines.push(`- **Total pages**: ${stats.totalPages}`);
+  lines.push(`- **Failed pages**: ${stats.totalFailedPages}`);
+  lines.push(`- **Duplicates removed**: ${stats.totalDuplicatesRemoved}`);
 
-  if (failed.length > 0) {
+  // Failed state details
+  const failures = results.filter((r) => !r.success);
+  if (failures.length > 0) {
     lines.push("");
     lines.push("## Failed States");
     lines.push("");
-    for (const r of failed) {
-      lines.push(`### ${r.state}`);
-      lines.push(`Error: ${r.error || "Unknown error"}`);
+    for (const f of failures) {
+      lines.push(`### ${f.state}`);
+      lines.push("");
+      lines.push(`**Error**: ${f.error || "Unknown"}`);
       lines.push("");
     }
   }
 
-  fs.writeFileSync(filePath, lines.join("\n"), "utf-8");
+  // Court type breakdown
+  if (Object.keys(stats.courtTypeCounts).length > 0) {
+    lines.push("");
+    lines.push("## Court Type Breakdown (all states)");
+    lines.push("");
+    lines.push("| Court Type | Judges |");
+    lines.push("|------------|--------|");
+    const sorted = Object.entries(stats.courtTypeCounts).sort(
+      ([, a], [, b]) => b - a,
+    );
+    for (const [type, count] of sorted) {
+      lines.push(`| ${type} | ${count} |`);
+    }
+  }
+
+  fs.writeFileSync(filePath, lines.join("\n") + "\n", "utf-8");
   console.log(`\nCombined summary: ${filePath}`);
 }
 
@@ -494,6 +824,7 @@ async function runEnrichedPipeline(
         deterministic: entry.deterministic,
         selectorHint: entry.selectorHint,
         extractionPromptFile: stateConfig.extractionPromptFile,
+        stateAbbreviation: stateConfig.abbreviation,
       });
 
       console.log(`  Extracted: ${result.judges.length} judge(s)`);
@@ -524,6 +855,7 @@ async function runEnrichedPipeline(
       const expandedRecords = expandEnrichedRecords(
         enrichResult.enriched,
         entry,
+        stateConfig.abbreviation,
       );
       allRecords.push(...expandedRecords);
 
@@ -568,6 +900,7 @@ async function runEnrichedPipeline(
 function expandEnrichedRecords(
   records: EnrichedJudgeRecord[],
   entry: CourtUrlEntry,
+  stateAbbreviation?: string,
 ): EnrichedJudgeRecord[] {
   const expanded: EnrichedJudgeRecord[] = [];
 
@@ -577,7 +910,7 @@ function expandEnrichedRecords(
 
   for (const record of records) {
     const normalizedName = normalizeJudgeName(record.fullName);
-    const courtType = canonicalizeCourtType(record.courtType);
+    const courtType = canonicalizeCourtType(record.courtType, stateAbbreviation);
 
     // Create normalized base record
     const baseRecord: EnrichedJudgeRecord = {
@@ -619,6 +952,7 @@ async function runExtractionPipeline(
   courtUrls: CourtUrlEntry[],
   checkpoint: Checkpoint,
   flags: CliFlags,
+  stateConfig?: StateConfig,
 ): Promise<CsvJudgeRecord[]> {
   const allRecords: CsvJudgeRecord[] = [];
   const completedSet = new Set(checkpoint.completedUrls);
@@ -679,12 +1013,13 @@ async function runExtractionPipeline(
         url: entry.url,
         deterministic: entry.deterministic,
         selectorHint: entry.selectorHint,
+        stateAbbreviation: stateConfig?.abbreviation,
       });
 
       console.log(`  Extracted: ${result.judges.length} judge(s)`);
 
       // Normalize and expand to CSV records
-      const records = expandToCsvRecords(result.judges, entry);
+      const records = expandToCsvRecords(result.judges, entry, stateConfig?.abbreviation);
       allRecords.push(...records);
 
       // Update checkpoint
@@ -722,6 +1057,7 @@ async function runExtractionPipeline(
 function expandToCsvRecords(
   judges: JudgeRecord[],
   entry: CourtUrlEntry,
+  stateAbbreviation?: string,
 ): CsvJudgeRecord[] {
   const records: CsvJudgeRecord[] = [];
 
@@ -733,7 +1069,7 @@ function expandToCsvRecords(
 
   for (const judge of judges) {
     const normalizedName = normalizeJudgeName(judge.name);
-    const courtType = canonicalizeCourtType(judge.courtType);
+    const courtType = canonicalizeCourtType(judge.courtType, stateAbbreviation);
 
     // If judge has a specific county, use it
     if (judge.county) {

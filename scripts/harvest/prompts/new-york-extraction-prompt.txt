@@ -69,6 +69,14 @@ When extracting judges, always use the county name (not borough name) for NYC ju
 - If you cannot determine a field with confidence, leave it as null
 - Do NOT fabricate or hallucinate data — only extract what is explicitly on the page
 
+## Division Extraction
+
+- Division in New York refers to a specialized assignment within a court (e.g., Commercial Division, Integrated Domestic Violence Part (IDV), Tax Certiorari Part)
+- "Appellate Division" is a COURT NAME in New York, NOT a division value — do NOT use it as the division field
+- Appellate Division department numbers (1st, 2nd, 3rd, 4th) are structural — do NOT use as division
+- If a judge's listing indicates a specialized assignment or part, extract it as the `division` field
+- If no division is stated, set `division` to null
+
 ## Expected Output Format
 
 Return a JSON array of judge records:
@@ -79,6 +87,7 @@ Return a JSON array of judge records:
     "name": "First Last",
     "courtType": "Appellate Division",
     "county": null,
+    "division": null,
     "selectionMethod": "appointed",
     "bioUrl": "https://www.nycourts.gov/courts/ad1/justices/jane-doe.shtml",
     "isChiefJudge": false

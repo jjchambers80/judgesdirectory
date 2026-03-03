@@ -10,6 +10,8 @@
 import { PrismaClient } from "@prisma/client";
 import slugify from "slugify";
 import type { StateConfig, CourtEntry } from "./state-config-schema";
+import { resolveCountyAlias } from "./normalizer";
+import type { UnresolvedCountyWarning } from "./normalizer";
 
 const prisma = new PrismaClient();
 
@@ -51,12 +53,22 @@ export async function seedStateCourts(config: StateConfig): Promise<void> {
     countyMap.set(county.name.toLowerCase().trim(), county);
   }
 
-  // Warn about missing counties
+  // County alias map from config (default: empty)
+  const aliases = config.countyAliases ?? {};
+  const unresolvedWarnings: UnresolvedCountyWarning[] = [];
+
+  // Warn about missing counties (after alias resolution)
   const missingCounties = new Set<string>();
   for (const court of config.courts) {
     for (const countyName of court.counties) {
-      if (!countyMap.has(countyName.toLowerCase().trim())) {
-        missingCounties.add(countyName);
+      const resolution = resolveCountyAlias(countyName, aliases);
+      if (resolution.aliasApplied) {
+        console.log(
+          `  ALIAS: "${countyName}" → "${resolution.canonical}"`,
+        );
+      }
+      if (!countyMap.has(resolution.canonical.toLowerCase().trim())) {
+        missingCounties.add(resolution.canonical);
       }
     }
   }
@@ -64,6 +76,20 @@ export async function seedStateCourts(config: StateConfig): Promise<void> {
     console.warn(
       `  WARN: ${missingCounties.size} county(ies) not found in DB for ${config.state}: ${Array.from(missingCounties).join(", ")}`,
     );
+    for (const countyName of missingCounties) {
+      unresolvedWarnings.push({
+        countyName,
+        stateAbbreviation: config.abbreviation,
+        affectedRecordCount: config.courts.filter((c) =>
+          c.counties.some(
+            (cn) =>
+              resolveCountyAlias(cn, aliases).canonical.toLowerCase().trim() ===
+              countyName.toLowerCase().trim(),
+          ),
+        ).length,
+        stage: "court-seeding",
+      });
+    }
   }
 
   let created = 0;
@@ -76,7 +102,8 @@ export async function seedStateCourts(config: StateConfig): Promise<void> {
     if (isTrialLevel && court.counties.length > 0) {
       // Trial/specialized courts: one court record per county
       for (const countyName of court.counties) {
-        const county = countyMap.get(countyName.toLowerCase().trim());
+        const resolution = resolveCountyAlias(countyName, aliases);
+        const county = countyMap.get(resolution.canonical.toLowerCase().trim());
         if (!county) {
           continue; // Already warned above
         }
@@ -104,8 +131,9 @@ export async function seedStateCourts(config: StateConfig): Promise<void> {
       let homeCounty: (typeof state.counties)[0] | undefined;
 
       if (court.counties.length > 0) {
-        // Use first county in list as home county
-        homeCounty = countyMap.get(court.counties[0].toLowerCase().trim());
+        // Use first county in list as home county (after alias resolution)
+        const resolution = resolveCountyAlias(court.counties[0], aliases);
+        homeCounty = countyMap.get(resolution.canonical.toLowerCase().trim());
       } else {
         // Statewide court — use first county in state as admin home
         homeCounty = state.counties[0];

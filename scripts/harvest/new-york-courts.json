@@ -8,6 +8,12 @@
     "maxRetries": 3
   },
   "extractionPromptFile": "prompts/new-york-extraction-prompt.txt",
+  "countyAliases": {
+    "Manhattan": "New York",
+    "Brooklyn": "Kings",
+    "Staten Island": "Richmond",
+    "Saint Lawrence": "St. Lawrence"
+  },
   "courts": [
     {
       "url": "https://www.nycourts.gov/ctapps/",

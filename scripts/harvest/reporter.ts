@@ -69,6 +69,225 @@ export interface EnrichedReportStats {
 }
 
 // ---------------------------------------------------------------------------
+// Quality Gate (per contract: quality-gate.ts)
+// ---------------------------------------------------------------------------
+
+export type Severity = "PASS" | "WARNING" | "CRITICAL";
+
+export interface QualityMetric {
+  name: string;
+  value: number;
+  displayValue: string;
+  severity: Severity;
+  threshold: string;
+}
+
+export interface QualityGateResult {
+  verdict: Severity;
+  metrics: QualityMetric[];
+  markdown: string;
+}
+
+export interface QualityGateInput {
+  totalPages: number;
+  failedPages: number;
+  zeroJudgePages: number;
+  totalRecords: number;
+  trialRecordsMissingCounty: number;
+  totalTrialRecords: number;
+  recordsMissingCoreFields: number;
+  zodFailures: number;
+  totalRawAttempts: number;
+}
+
+const QUALITY_THRESHOLDS = {
+  failedPageRate: { warning: 0.10, critical: 0.25 },
+  zeroJudgePageRate: { warning: 0.15, critical: 0.30 },
+  missingCountyRate: { warning: 0.20, critical: 0.40 },
+  coreFieldIncompleteness: { warning: 0.02, critical: 0.05 },
+  zodFailureRate: { warning: 0.10, critical: 0.20 },
+} as const;
+
+function evaluateMetric(
+  name: string,
+  numerator: number,
+  denominator: number,
+  thresholds: { warning: number; critical: number },
+): QualityMetric {
+  const value = denominator > 0 ? numerator / denominator : 0;
+  const pct = (value * 100).toFixed(1);
+  const displayValue = `${pct}% (${numerator}/${denominator})`;
+
+  let severity: Severity = "PASS";
+  if (value > thresholds.critical) {
+    severity = "CRITICAL";
+  } else if (value > thresholds.warning) {
+    severity = "WARNING";
+  }
+
+  const threshold = `>${(thresholds.warning * 100).toFixed(0)}% warn, >${(thresholds.critical * 100).toFixed(0)}% critical`;
+
+  return { name, value, displayValue, severity, threshold };
+}
+
+/**
+ * Evaluate all quality gate metrics and produce a verdict.
+ */
+export function evaluateQualityGate(input: QualityGateInput): QualityGateResult {
+  const metrics: QualityMetric[] = [
+    evaluateMetric(
+      "Failed page rate",
+      input.failedPages,
+      input.totalPages,
+      QUALITY_THRESHOLDS.failedPageRate,
+    ),
+    evaluateMetric(
+      "Zero-judge page rate",
+      input.zeroJudgePages,
+      input.totalPages,
+      QUALITY_THRESHOLDS.zeroJudgePageRate,
+    ),
+    evaluateMetric(
+      "Missing county (trial courts)",
+      input.trialRecordsMissingCounty,
+      input.totalTrialRecords,
+      QUALITY_THRESHOLDS.missingCountyRate,
+    ),
+    evaluateMetric(
+      "Core field incompleteness",
+      input.recordsMissingCoreFields,
+      input.totalRecords,
+      QUALITY_THRESHOLDS.coreFieldIncompleteness,
+    ),
+    evaluateMetric(
+      "Zod validation failure rate",
+      input.zodFailures,
+      input.totalRawAttempts,
+      QUALITY_THRESHOLDS.zodFailureRate,
+    ),
+  ];
+
+  // Overall verdict = worst severity
+  const severityOrder: Record<Severity, number> = {
+    PASS: 0,
+    WARNING: 1,
+    CRITICAL: 2,
+  };
+  const verdict = metrics.reduce<Severity>(
+    (worst, m) =>
+      severityOrder[m.severity] > severityOrder[worst] ? m.severity : worst,
+    "PASS",
+  );
+
+  const markdown = formatQualityGateMarkdown(verdict, metrics);
+
+  return { verdict, metrics, markdown };
+}
+
+/**
+ * Format the quality gate result as a Markdown section.
+ */
+function formatQualityGateMarkdown(
+  verdict: Severity,
+  metrics: QualityMetric[],
+): string {
+  const lines: string[] = [];
+
+  if (verdict === "PASS") {
+    lines.push("## ✅ Quality Gate — PASS", "");
+    lines.push("All proxy metrics are within acceptable thresholds.", "");
+    return lines.join("\n");
+  }
+
+  const emoji = verdict === "CRITICAL" ? "🔴" : "⚠️";
+  lines.push(`## ${emoji} Quality Gate — ${verdict}`, "");
+  lines.push(
+    "This harvest has potential data quality concerns that may indicate accuracy below the 90% spot-check threshold.",
+    "",
+  );
+
+  const flagged = metrics.filter((m) => m.severity !== "PASS");
+  lines.push("| Metric | Value | Threshold | Severity |");
+  lines.push("|--------|-------|-----------|----------|");
+  for (const m of flagged) {
+    const icon = m.severity === "CRITICAL" ? "🔴" : "🟡";
+    lines.push(
+      `| ${m.name} | ${m.displayValue} | ${m.threshold} | ${icon} ${m.severity} |`,
+    );
+  }
+
+  lines.push("");
+  const actions: string[] = [];
+  for (const m of flagged) {
+    if (m.name.includes("Failed page")) {
+      actions.push("check failed page URLs for site structure changes");
+    }
+    if (m.name.includes("Zero-judge")) {
+      actions.push("review zero-judge pages for extraction prompt issues");
+    }
+    if (m.name.includes("county")) {
+      actions.push(
+        "verify county alias map and extraction prompt county instructions",
+      );
+    }
+    if (m.name.includes("Core field")) {
+      actions.push("review extraction prompt for name/court type parsing");
+    }
+    if (m.name.includes("Zod")) {
+      actions.push("check LLM output format against Zod schema expectations");
+    }
+  }
+  if (actions.length > 0) {
+    lines.push(`**Action**: ${actions.join("; ")}.`, "");
+  }
+
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Freshness formatting (per contract: freshness-tracker.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * Format a freshness result as a quality report Markdown section.
+ */
+export function formatFreshnessSection(result: {
+  hasManifest: boolean;
+  lastCompletedAt: string | null;
+  daysSinceHarvest: number | null;
+  isStale: boolean;
+  lastJudgeCount: number | null;
+}): string {
+  const lines: string[] = [];
+  lines.push("## Data Freshness", "");
+
+  if (!result.hasManifest) {
+    lines.push("No previous harvest on record.", "");
+    return lines.join("\n");
+  }
+
+  const date = result.lastCompletedAt
+    ? new Date(result.lastCompletedAt).toISOString().slice(0, 10)
+    : "unknown";
+  const days = result.daysSinceHarvest ?? 0;
+
+  if (result.isStale) {
+    lines.push(
+      `⚠️ Last harvest: ${date} (${days} days ago — exceeds 90-day threshold)`,
+      "",
+    );
+  } else {
+    lines.push(`Last harvest: ${date} (${days} days ago)`, "");
+  }
+
+  if (result.lastJudgeCount !== null) {
+    lines.push(`Previous judge count: ${result.lastJudgeCount}`, "");
+  }
+
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -124,6 +343,29 @@ function buildReport(stats: ReportStats): string {
         .replace(/\b\w/g, (c) => c.toUpperCase())
     : "Florida";
   lines.push(`# ${stateName} Judge Harvest Report — ${timestamp}`);
+  lines.push("");
+
+  // Quality gate evaluation
+  const zeroJudgePages = successful.filter((r) => r.judgesFound === 0).length;
+  const trialRecords = finalRecords.filter(
+    (r) => !["Supreme Court", "District Court of Appeal", "Court of Appeal", "Court of Appeals", "Appellate Division", "Court of Criminal Appeals"].includes(r["Court Type"]),
+  );
+  const trialMissingCounty = trialRecords.filter((r) => !r.County || r.County === "").length;
+  const missingCore = finalRecords.filter(
+    (r) => !r["Judge Name"] || !r["Court Type"],
+  ).length;
+  const qualityGateResult = evaluateQualityGate({
+    totalPages: courtUrls.length,
+    failedPages: failed.length,
+    zeroJudgePages,
+    totalRecords: finalRecords.length,
+    trialRecordsMissingCounty: trialMissingCounty,
+    totalTrialRecords: trialRecords.length,
+    recordsMissingCoreFields: missingCore,
+    zodFailures: 0, // Basic pipeline doesn't track Zod failures
+    totalRawAttempts: rawCount,
+  });
+  lines.push(qualityGateResult.markdown);
   lines.push("");
 
   // Summary section
@@ -281,12 +523,13 @@ function printSummary(stats: ReportStats): void {
 
 /**
  * Generate an enriched report with field coverage statistics.
+ * Returns file path and quality gate verdict.
  */
 export function generateEnrichedReport(
   stats: EnrichedReportStats,
   outputDir: string,
-): string {
-  const report = buildEnrichedReport(stats);
+): { filePath: string; qualityVerdict: Severity } {
+  const { report, qualityVerdict } = buildEnrichedReport(stats);
 
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
@@ -300,14 +543,14 @@ export function generateEnrichedReport(
   fs.writeFileSync(filePath, report, "utf-8");
   printEnrichedSummary(stats);
 
-  return filePath;
+  return { filePath, qualityVerdict };
 }
 
 // ---------------------------------------------------------------------------
 // Enriched report builder
 // ---------------------------------------------------------------------------
 
-function buildEnrichedReport(stats: EnrichedReportStats): string {
+function buildEnrichedReport(stats: EnrichedReportStats): { report: string; qualityVerdict: Severity } {
   const {
     courtUrls,
     checkpoint,
@@ -331,6 +574,35 @@ function buildEnrichedReport(stats: EnrichedReportStats): string {
         .replace(/\b\w/g, (c) => c.toUpperCase())
     : "Florida";
   lines.push(`# ${stateName} Judge Enriched Harvest Report — ${timestamp}`);
+  lines.push("");
+
+  // Quality gate evaluation
+  const zeroJudgePages = successful.filter((r) => r.judgesFound === 0).length;
+  const appellateCourtTypes = [
+    "Supreme Court", "District Court of Appeal", "Court of Appeal",
+    "Court of Appeals", "Appellate Division", "Court of Criminal Appeals",
+  ];
+  const trialRecords = finalRecords.filter(
+    (r) => !appellateCourtTypes.includes(r.courtType),
+  );
+  const trialMissingCounty = trialRecords.filter(
+    (r) => !r.county || r.county === "",
+  ).length;
+  const missingCore = finalRecords.filter(
+    (r) => !r.fullName || !r.courtType,
+  ).length;
+  const qualityGateResult = evaluateQualityGate({
+    totalPages: courtUrls.length,
+    failedPages: failed.length,
+    zeroJudgePages,
+    totalRecords: finalRecords.length,
+    trialRecordsMissingCounty: trialMissingCounty,
+    totalTrialRecords: trialRecords.length,
+    recordsMissingCoreFields: missingCore,
+    zodFailures: 0, // Zod failures tracked at extraction level
+    totalRawAttempts: rawCount,
+  });
+  lines.push(qualityGateResult.markdown);
   lines.push("");
 
   // Summary section
@@ -530,7 +802,7 @@ function buildEnrichedReport(stats: EnrichedReportStats): string {
     lines.push("");
   }
 
-  return lines.join("\n");
+  return { report: lines.join("\n"), qualityVerdict: qualityGateResult.verdict };
 }
 
 function printEnrichedSummary(stats: EnrichedReportStats): void {
