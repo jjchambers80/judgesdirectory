@@ -37,6 +37,8 @@ export const JudgeRecordSchema = z.object({
   bioPageUrl: z
     .string()
     .nullable()
+    .optional()
+    .default(null)
     .describe("URL to individual bio/profile page if linked"),
   isChiefJudge: z
     .boolean()

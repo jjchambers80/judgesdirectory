@@ -14,7 +14,7 @@
   },
   "courts": [
     {
-      "url": "https://www.txcourts.gov/supreme/",
+      "url": "https://www.txcourts.gov/supreme/about-the-court/justices/",
       "courtType": "Supreme Court",
       "level": "supreme",
       "label": "Supreme Court of Texas",
@@ -22,7 +22,7 @@
       "notes": "Civil court of last resort — 9 justices"
     },
     {
-      "url": "https://www.txcourts.gov/cca/",
+      "url": "https://www.txcourts.gov/cca/about-the-court/judges/",
       "courtType": "Court of Criminal Appeals",
       "level": "supreme",
       "label": "Court of Criminal Appeals",
@@ -30,7 +30,7 @@
       "notes": "Criminal court of last resort — 9 judges. Texas uniquely has two supreme-level courts."
     },
     {
-      "url": "https://www.txcourts.gov/1stcoa/",
+      "url": "https://www.txcourts.gov/1stcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "1st Court of Appeals",
@@ -49,7 +49,7 @@
       ]
     },
     {
-      "url": "https://www.txcourts.gov/2ndcoa/",
+      "url": "https://www.txcourts.gov/2ndcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "2nd Court of Appeals",
@@ -72,7 +72,7 @@
       ]
     },
     {
-      "url": "https://www.txcourts.gov/3rdcoa/",
+      "url": "https://www.txcourts.gov/3rdcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "3rd Court of Appeals",
@@ -111,7 +111,7 @@
       ]
     },
     {
-      "url": "https://www.txcourts.gov/4thcoa/",
+      "url": "https://www.txcourts.gov/4thcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "4th Court of Appeals",
@@ -147,7 +147,7 @@
       ]
     },
     {
-      "url": "https://www.txcourts.gov/5thcoa/",
+      "url": "https://www.txcourts.gov/5thcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "5th Court of Appeals",
@@ -155,7 +155,7 @@
       "counties": ["Collin", "Dallas", "Grayson", "Hunt", "Kaufman", "Rockwall"]
     },
     {
-      "url": "https://www.txcourts.gov/6thcoa/",
+      "url": "https://www.txcourts.gov/6thcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "6th Court of Appeals",
@@ -183,7 +183,7 @@
       ]
     },
     {
-      "url": "https://www.txcourts.gov/7thcoa/",
+      "url": "https://www.txcourts.gov/7thcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "7th Court of Appeals",
@@ -238,7 +238,7 @@
       ]
     },
     {
-      "url": "https://www.txcourts.gov/8thcoa/",
+      "url": "https://www.txcourts.gov/8thcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "8th Court of Appeals",
@@ -266,7 +266,7 @@
       ]
     },
     {
-      "url": "https://www.txcourts.gov/9thcoa/",
+      "url": "https://www.txcourts.gov/9thcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "9th Court of Appeals",
@@ -285,7 +285,7 @@
       ]
     },
     {
-      "url": "https://www.txcourts.gov/10thcoa/",
+      "url": "https://www.txcourts.gov/10thcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "10th Court of Appeals",
@@ -312,7 +312,7 @@
       ]
     },
     {
-      "url": "https://www.txcourts.gov/11thcoa/",
+      "url": "https://www.txcourts.gov/11thcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "11th Court of Appeals",
@@ -344,7 +344,7 @@
       ]
     },
     {
-      "url": "https://www.txcourts.gov/12thcoa/",
+      "url": "https://www.txcourts.gov/12thcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "12th Court of Appeals",
@@ -369,7 +369,7 @@
       ]
     },
     {
-      "url": "https://www.txcourts.gov/13thcoa/",
+      "url": "https://www.txcourts.gov/13thcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "13th Court of Appeals",
@@ -396,7 +396,7 @@
       ]
     },
     {
-      "url": "https://www.txcourts.gov/14thcoa/",
+      "url": "https://www.txcourts.gov/14thcoa/about-the-court/justices/",
       "courtType": "Court of Appeals",
       "level": "appellate",
       "label": "14th Court of Appeals",

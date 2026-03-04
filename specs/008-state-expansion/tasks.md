@@ -83,9 +83,9 @@
 
 **Independent Test**: Run `--state {state} --seed-courts-only` for each state. Verify Court records appear with correct county assignments. No "missing court" errors on subsequent harvest.
 
-- [ ] T023 [US5] Seed Texas courts by running `--state texas --seed-courts-only` via scripts/harvest/index.ts — verify 16+ Court records created matching TX config court hierarchy with correct county assignments across 254 counties
-- [ ] T024 [P] [US5] Seed California courts by running `--state california --seed-courts-only` via scripts/harvest/index.ts — verify Court records created for Supreme Court, 6 Courts of Appeal, and 58 Superior Courts with 1:1 county mapping
-- [ ] T025 [P] [US5] Seed New York courts by running `--state new-york --seed-courts-only` via scripts/harvest/index.ts — verify Court records created for Court of Appeals, 4 Appellate Division Departments, Supreme Court, and County Courts with NYC borough-to-county alias resolution (Manhattan→New York, Brooklyn→Kings, etc.)
+- [x] T023 [US5] Seed Texas courts by running `--state texas --seed-courts-only` via scripts/harvest/index.ts — verify 16+ Court records created matching TX config court hierarchy with correct county assignments across 254 counties
+- [x] T024 [P] [US5] Seed California courts by running `--state california --seed-courts-only` via scripts/harvest/index.ts — verify Court records created for Supreme Court, 6 Courts of Appeal, and 58 Superior Courts with 1:1 county mapping
+- [x] T025 [P] [US5] Seed New York courts by running `--state new-york --seed-courts-only` via scripts/harvest/index.ts — verify Court records created for Court of Appeals, 4 Appellate Division Departments, Supreme Court, and County Courts with NYC borough-to-county alias resolution (Manhattan→New York, Brooklyn→Kings, etc.)
 
 **Checkpoint**: All 3 states' court structures seeded in database — harvest can now assign judges to courts
 
@@ -97,11 +97,11 @@
 
 **Independent Test**: Run `--state texas`. Verify output CSV has judges from ≥3 court levels. Cross-reference 20 random records against txcourts.gov. Import CSV through admin panel.
 
-- [ ] T026 [US1] Execute Texas harvest with `--state texas` via scripts/harvest/index.ts — verify pipeline completes, CSV written to output/texas/, quality report and harvest manifest generated
-- [ ] T027 [US1] Review Texas quality report — verify quality gate section present, check failed page rate, zero-judge page rate, county coverage, court type breakdown; verify any court entries with fetchMethod "browser" or "manual" appear as skipped in the report (EC-007)
-- [ ] T028 [US1] Spot-check 20 random Texas records against txcourts.gov source URLs — verify judge name, court type, county assignment match source page (target: ≥18/20 correct = 90%+)
-- [ ] T029 [US1] Validate Texas output CSV contains ≥200 appellate judges (Supreme Court + CCA + Courts of Appeals), correct CSV column format (Judge Name, Court Type, County, State, Source URL, Selection Method), all records have source URLs per FR-022, and verify 5 random records have correctly normalized court type names per FR-017 (e.g., no abbreviations like "Ct. App.")
-- [ ] T029a [US1] Import Texas CSV through scripts/import/index.ts — verify <5% error rows per SC-007; confirm records appear in verification queue
+- [x] T026 [US1] Execute Texas harvest with `--state texas` via scripts/harvest/index.ts — verify pipeline completes, CSV written to output/texas/, quality report and harvest manifest generated
+- [x] T027 [US1] Review Texas quality report — verify quality gate section present, check failed page rate, zero-judge page rate, county coverage, court type breakdown; verify any court entries with fetchMethod "browser" or "manual" appear as skipped in the report (EC-007)
+- [x] T028 [US1] Spot-check 20 random Texas records against txcourts.gov source URLs — verify judge name, court type, county assignment match source page (target: ≥18/20 correct = 90%+)
+- [x] T029 [US1] Validate Texas output CSV contains ≥200 appellate judges (Supreme Court + CCA + Courts of Appeals), correct CSV column format (Judge Name, Court Type, County, State, Source URL, Selection Method), all records have source URLs per FR-022, and verify 5 random records have correctly normalized court type names per FR-017 (e.g., no abbreviations like "Ct. App.")
+- [x] T029a [US1] Import Texas CSV through scripts/import/index.ts — verify <5% error rows per SC-007; confirm records appear in verification queue
 
 **Checkpoint**: Texas harvest validated — MVP milestone complete (SC-002)
 

@@ -394,9 +394,15 @@ function buildReport(stats: ReportStats): string {
 
   const sortOrder = [
     "Supreme Court",
+    "Court of Criminal Appeals",
+    "Court of Appeals",
     "District Court of Appeal",
+    "Appellate Division",
     "Circuit Court",
+    "Superior Court",
     "County Court",
+    "District Court",
+    "Family Court",
   ];
   for (const ct of sortOrder) {
     const count = courtTypeCounts.get(ct) ?? 0;
@@ -708,13 +714,25 @@ function buildEnrichedReport(stats: EnrichedReportStats): { report: string; qual
 
   const sortOrder = [
     "Supreme Court",
+    "Court of Criminal Appeals",
+    "Court of Appeals",
     "District Court of Appeal",
+    "Appellate Division",
     "Circuit Court",
+    "Superior Court",
     "County Court",
+    "District Court",
+    "Family Court",
   ];
   for (const ct of sortOrder) {
     const count = courtTypeCounts.get(ct) ?? 0;
     if (count > 0) {
+      lines.push(`| ${ct} | ${count} |`);
+    }
+  }
+  // Any other court types not in sort order
+  for (const [ct, count] of Array.from(courtTypeCounts)) {
+    if (!sortOrder.includes(ct)) {
       lines.push(`| ${ct} | ${count} |`);
     }
   }
