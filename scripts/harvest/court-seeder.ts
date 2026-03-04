@@ -63,9 +63,7 @@ export async function seedStateCourts(config: StateConfig): Promise<void> {
     for (const countyName of court.counties) {
       const resolution = resolveCountyAlias(countyName, aliases);
       if (resolution.aliasApplied) {
-        console.log(
-          `  ALIAS: "${countyName}" → "${resolution.canonical}"`,
-        );
+        console.log(`  ALIAS: "${countyName}" → "${resolution.canonical}"`);
       }
       if (!countyMap.has(resolution.canonical.toLowerCase().trim())) {
         missingCounties.add(resolution.canonical);

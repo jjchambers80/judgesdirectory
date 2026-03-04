@@ -67,7 +67,7 @@ export interface UnresolvedCountyWarning {
  */
 export function resolveCountyAlias(
   countyName: string,
-  aliases: CountyAliasMap
+  aliases: CountyAliasMap,
 ): CountyResolution {
   const normalized = countyName.trim();
   const key = normalized.toLowerCase();
@@ -92,7 +92,7 @@ export function resolveCountyAlias(
  */
 export function resolveCountyAliases(
   counties: string[],
-  aliases: CountyAliasMap
+  aliases: CountyAliasMap,
 ): CountyResolution[] {
   return counties.map((name) => resolveCountyAlias(name, aliases));
 }

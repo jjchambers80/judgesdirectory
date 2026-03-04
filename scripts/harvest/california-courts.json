@@ -13,7 +13,7 @@
   },
   "courts": [
     {
-      "url": "https://www.courts.ca.gov/supremecourt.htm",
+      "url": "https://supreme.courts.ca.gov/about-court/justices-court",
       "courtType": "Supreme Court",
       "level": "supreme",
       "label": "Supreme Court of California",

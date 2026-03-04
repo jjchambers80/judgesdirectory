@@ -65,8 +65,11 @@ This intent is the raw material for every revenue stream below.
 
 **Thresholds**:
 - AdSense: No minimum (can start immediately)
-- Mediavine: 50,000 sessions/month
+- Mediavine Journey: 5,000–10,000 sessions/month (starter program launched May 2024; accepts sites as low as 3K sessions)
+- Mediavine (full): 50,000 sessions/month
 - Raptive (formerly AdThrive): 100,000 pageviews/month
+
+**Volatility note**: Display ad revenue is inherently volatile — daily swings of 35–100% are normal (e.g., $100 one day, $36 the next). This is acceptable for passive income but creates planning challenges. Sponsored listings (Revenue Stream 3) provide stability as a counterbalance.
 
 **Ad placement strategy** (trust-preserving):
 - No ads above the fold on judge profile pages — the profile content comes first
@@ -171,6 +174,10 @@ These numbers are realistic for legal intent traffic. VoterRecords.com achieves 
 
 A criminal defense attorney in Miami-Dade County spends $2,000–$10,000/month on Google Ads. A $99/month placement on the page where their potential clients are already researching the judge assigned to their case is trivially cheap for the firm and pure margin for us.
 
+**Benchmark**: Sober Nation (rehab directory) charges ~$129/month for featured listings. Our pricing is in line with proven directory economics.
+
+**Stability advantage**: Unlike display ads (which can swing 35–100% daily), sponsored listings provide predictable MRR. 20 law firms at $99/month = ~$2K stable MRR.
+
 ### Revenue math
 
 | Counties Active | Avg Slots Sold | Avg Price | Monthly Revenue |
@@ -260,7 +267,8 @@ PHASE 1: Build & Index (Now → Traffic)
 └── Goal: 10,000+ indexed pages, organic impressions growing
 
 PHASE 2: First Revenue (Month 1–3 of traffic)
-├── Turn on: AdSense + 2–3 legal affiliate partners
+├── Turn on: AdSense → Mediavine Journey (at 5K sessions)
+├── Add: 2–3 legal affiliate partners
 ├── Revenue: $500–$5,000/month
 └── Goal: Validate CTR on affiliate widgets, measure RPM
 
@@ -278,6 +286,12 @@ PHASE 5: Data Product (Year 2)
 ├── Launch: API access, bulk data licensing
 ├── Revenue: $5,000–$25,000/month (additive)
 └── Goal: 10+ paying data customers, enterprise deals
+
+PHASE 6: Strategic Options (Year 2+)
+├── Consider: Direct lead generation (capture forms → sell leads to law firms)
+├── Consider: SaaS product funnel (court date tracker, case reminder tool, attorney matching marketplace)
+├── Revenue: Variable — depends on product-market fit
+└── Goal: Evaluate whether directory traffic supports a higher-margin product
 ```
 
 ---

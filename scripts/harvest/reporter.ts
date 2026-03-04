@@ -101,11 +101,11 @@ export interface QualityGateInput {
 }
 
 const QUALITY_THRESHOLDS = {
-  failedPageRate: { warning: 0.10, critical: 0.25 },
-  zeroJudgePageRate: { warning: 0.15, critical: 0.30 },
-  missingCountyRate: { warning: 0.20, critical: 0.40 },
+  failedPageRate: { warning: 0.1, critical: 0.25 },
+  zeroJudgePageRate: { warning: 0.15, critical: 0.3 },
+  missingCountyRate: { warning: 0.2, critical: 0.4 },
   coreFieldIncompleteness: { warning: 0.02, critical: 0.05 },
-  zodFailureRate: { warning: 0.10, critical: 0.20 },
+  zodFailureRate: { warning: 0.1, critical: 0.2 },
 } as const;
 
 function evaluateMetric(
@@ -133,7 +133,9 @@ function evaluateMetric(
 /**
  * Evaluate all quality gate metrics and produce a verdict.
  */
-export function evaluateQualityGate(input: QualityGateInput): QualityGateResult {
+export function evaluateQualityGate(
+  input: QualityGateInput,
+): QualityGateResult {
   const metrics: QualityMetric[] = [
     evaluateMetric(
       "Failed page rate",
@@ -348,9 +350,19 @@ function buildReport(stats: ReportStats): string {
   // Quality gate evaluation
   const zeroJudgePages = successful.filter((r) => r.judgesFound === 0).length;
   const trialRecords = finalRecords.filter(
-    (r) => !["Supreme Court", "District Court of Appeal", "Court of Appeal", "Court of Appeals", "Appellate Division", "Court of Criminal Appeals"].includes(r["Court Type"]),
+    (r) =>
+      ![
+        "Supreme Court",
+        "District Court of Appeal",
+        "Court of Appeal",
+        "Court of Appeals",
+        "Appellate Division",
+        "Court of Criminal Appeals",
+      ].includes(r["Court Type"]),
   );
-  const trialMissingCounty = trialRecords.filter((r) => !r.County || r.County === "").length;
+  const trialMissingCounty = trialRecords.filter(
+    (r) => !r.County || r.County === "",
+  ).length;
   const missingCore = finalRecords.filter(
     (r) => !r["Judge Name"] || !r["Court Type"],
   ).length;
@@ -556,7 +568,10 @@ export function generateEnrichedReport(
 // Enriched report builder
 // ---------------------------------------------------------------------------
 
-function buildEnrichedReport(stats: EnrichedReportStats): { report: string; qualityVerdict: Severity } {
+function buildEnrichedReport(stats: EnrichedReportStats): {
+  report: string;
+  qualityVerdict: Severity;
+} {
   const {
     courtUrls,
     checkpoint,
@@ -585,8 +600,12 @@ function buildEnrichedReport(stats: EnrichedReportStats): { report: string; qual
   // Quality gate evaluation
   const zeroJudgePages = successful.filter((r) => r.judgesFound === 0).length;
   const appellateCourtTypes = [
-    "Supreme Court", "District Court of Appeal", "Court of Appeal",
-    "Court of Appeals", "Appellate Division", "Court of Criminal Appeals",
+    "Supreme Court",
+    "District Court of Appeal",
+    "Court of Appeal",
+    "Court of Appeals",
+    "Appellate Division",
+    "Court of Criminal Appeals",
   ];
   const trialRecords = finalRecords.filter(
     (r) => !appellateCourtTypes.includes(r.courtType),
@@ -820,7 +839,10 @@ function buildEnrichedReport(stats: EnrichedReportStats): { report: string; qual
     lines.push("");
   }
 
-  return { report: lines.join("\n"), qualityVerdict: qualityGateResult.verdict };
+  return {
+    report: lines.join("\n"),
+    qualityVerdict: qualityGateResult.verdict,
+  };
 }
 
 function printEnrichedSummary(stats: EnrichedReportStats): void {

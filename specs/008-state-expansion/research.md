@@ -19,10 +19,12 @@ All 12 decisions from [007-state-expansion/research.md](../007-state-expansion/r
 **Rationale**: County aliases are state-scoped geographic facts. "Manhattan" always maps to "New York" county regardless of which court page produced the name. Per-CourtEntry duplication would be error-prone and redundant. The existing court type canonicalization already uses a state-level registry pattern in `normalizer.ts` (`STATE_COURT_TYPE_REGISTRY` keyed by state abbreviation). County alias resolution follows the same pattern.
 
 **Alternatives Considered**:
+
 - Per-CourtEntry: Would allow court-specific overrides, but county names are geographic facts — same alias must produce the same canonical name everywhere. Rejected.
 - Separate JSON file per state: Over-engineered for 2-5 entries per state. Rejected.
 
 **Schema change**:
+
 ```typescript
 countyAliases: z.record(z.string(), z.string()).optional().default({}),
 ```
@@ -34,6 +36,7 @@ countyAliases: z.record(z.string(), z.string()).optional().default({}),
 **Rationale**: Every known alias is 1:1. Multiple variants for the same canonical county are expressed as separate keys with the same value. O(1) lookup. Matches the pattern already used for court type mappings in `normalizer.ts`.
 
 **Alternatives Considered**:
+
 - Array of `{ aliases: string[], canonical: string }`: Adds nesting without benefit; reverse lookup is O(n×m) vs O(1). Rejected.
 
 ## Decision 3: County Alias Resolution — Pipeline Stage
@@ -41,12 +44,14 @@ countyAliases: z.record(z.string(), z.string()).optional().default({}),
 **Decision**: Resolve aliases at **two points** — during court seeding AND during normalization (post-extraction).
 
 **Rationale**:
+
 1. **Court seeding**: The seeder matches config county names to DB records via `countyMap.get(name.toLowerCase().trim())`. Without alias resolution, "DeWitt" in config won't match "De Witt" in DB. First line of defense.
 2. **Normalization**: After LLM/deterministic extraction, the extracted county field may contain variant names scraped from pages (e.g., "Manhattan" from NYC court pages). Alias resolution acts as a safety net before dedup and CSV output.
 
 Pipeline flow: `Config → Seeder (resolve aliases in counties[]) → Extraction → Normalizer (resolve aliases in extracted county) → Dedup → CSV → Reporter (warn on unresolved)`
 
 **Alternatives Considered**:
+
 - Normalization only: Leaves seeder broken for mismatched config county names. Rejected.
 - Court seeding only: Leaves variant names in CSV output. Rejected.
 
@@ -54,27 +59,27 @@ Pipeline flow: `Config → Seeder (resolve aliases in counties[]) → Extraction
 
 ### New York
 
-| Variant | Canonical (DB) | Source |
-|---------|----------------|--------|
-| Manhattan | New York | NYC borough → county |
-| Brooklyn | Kings | NYC borough → county |
-| Staten Island | Richmond | NYC borough → county |
-| Saint Lawrence | St. Lawrence | Punctuation variant |
+| Variant        | Canonical (DB) | Source               |
+| -------------- | -------------- | -------------------- |
+| Manhattan      | New York       | NYC borough → county |
+| Brooklyn       | Kings          | NYC borough → county |
+| Staten Island  | Richmond       | NYC borough → county |
+| Saint Lawrence | St. Lawrence   | Punctuation variant  |
 
 Note: Bronx → Bronx and Queens → Queens are identity mappings (no alias needed).
 
 ### Texas
 
-| Variant | Canonical (DB) | Source |
-|---------|----------------|--------|
-| Dewitt | DeWitt | Capitalization variant |
-| De Witt | DeWitt | Space variant |
+| Variant | Canonical (DB) | Source                 |
+| ------- | -------------- | ---------------------- |
+| Dewitt  | DeWitt         | Capitalization variant |
+| De Witt | DeWitt         | Space variant          |
 
 ### California
 
-| Variant | Canonical (DB) | Source |
-|---------|----------------|--------|
-| San Buenaventura | Ventura | Official city name vs common county name |
+| Variant          | Canonical (DB) | Source                                   |
+| ---------------- | -------------- | ---------------------------------------- |
+| San Buenaventura | Ventura        | Official city name vs common county name |
 
 California's 58 counties otherwise have clean names matching Census data.
 
@@ -87,6 +92,7 @@ California's 58 counties otherwise have clean names matching Census data.
 **Rationale**: The checkpoint file tracks in-progress URL-level state for resume support. Its `lastUpdated` field records when any URL was processed, not when a full run completed. Critically, `--reset` deletes the checkpoint — which would destroy the freshness timestamp. Overloading the checkpoint conflates "where did I stop?" with "when did I last finish?"
 
 Manifest format:
+
 ```json
 {
   "lastCompletedAt": "2026-03-01T06:15:41.892Z",
@@ -100,6 +106,7 @@ Manifest format:
 Written atomically at the end of `runSingleState()` after CSV + report are successfully written. Readable at startup with `JSON.parse`.
 
 **Alternatives Considered**:
+
 - Add `completedAt` to Checkpoint: Checkpoint is reset by `--reset`, destroying the timestamp. Semantically wrong. Rejected.
 - Parse quality report filename for timestamp: Brittle regex on human-readable strings. Doesn't distinguish completed vs interrupted run. Rejected.
 
@@ -108,12 +115,14 @@ Written atomically at the end of `runSingleState()` after CSV + report are succe
 **Decision**: Surface data age **both on stdout at startup** and **in the quality report**.
 
 **Rationale**:
+
 1. **Stdout at startup**: Operator sees immediately which states are stale before processing begins. For `--all`, print a table of all states with data age before processing.
 2. **Quality report**: A "## Data Freshness" section showing last harvest date and days elapsed. Prominently flagged when > 90 days. Creates a permanent record.
 
 The 90-day threshold is stored as a named constant (`DATA_FRESHNESS_THRESHOLD_DAYS = 90`) for future tunability.
 
 **Alternatives Considered**:
+
 - Report only: Operators need the warning before the run, not only in output. Rejected.
 - Stdout only: No permanent record for async review. Rejected.
 
@@ -123,19 +132,20 @@ The 90-day threshold is stored as a named constant (`DATA_FRESHNESS_THRESHOLD_DA
 
 **Decision**: Use five proxy metrics with independent thresholds. Any metric breaching its threshold flags the state.
 
-| Metric | Warning (🟡) | Critical (🔴) | Rationale |
-|--------|-------------|---------------|-----------|
-| Failed page rate | > 10% | > 25% | Missing entire court's worth of judges |
-| Zero-judge page rate | > 15% | > 30% | Page structure changed or silent extraction failure |
-| Missing county rate (trial courts) | > 20% | > 40% | Trial judges must be county-attributed for directory value |
-| Core field incompleteness (fullName/courtType) | > 2% | > 5% | Mandatory identity fields — FL baseline is 99%+ |
-| Zod validation failure rate | > 10% | > 20% | LLM producing malformed output |
+| Metric                                         | Warning (🟡) | Critical (🔴) | Rationale                                                  |
+| ---------------------------------------------- | ------------ | ------------- | ---------------------------------------------------------- |
+| Failed page rate                               | > 10%        | > 25%         | Missing entire court's worth of judges                     |
+| Zero-judge page rate                           | > 15%        | > 30%         | Page structure changed or silent extraction failure        |
+| Missing county rate (trial courts)             | > 20%        | > 40%         | Trial judges must be county-attributed for directory value |
+| Core field incompleteness (fullName/courtType) | > 2%         | > 5%          | Mandatory identity fields — FL baseline is 99%+            |
+| Zod validation failure rate                    | > 10%        | > 20%         | LLM producing malformed output                             |
 
 Overall severity = maximum of any individual metric's severity.
 
 Thresholds calibrated against Florida baseline (0% failed pages, 91.5% county coverage, 99.2% fullName).
 
 **Alternatives Considered**:
+
 - Single composite score: Masks which dimension is failing. Rejected.
 - Field coverage only: Misses structural failures (zero-judge pages look fine if remaining judges have good coverage). Rejected.
 
@@ -144,17 +154,19 @@ Thresholds calibrated against Florida baseline (0% failed pages, 91.5% county co
 **Decision**: A prominent `## ⚠️ Quality Gate` section placed **immediately after the report header**, before Summary. Three severity levels.
 
 When concerns exist:
+
 ```markdown
 ## ⚠️ Quality Gate — WARNING
 
-| Metric | Value | Threshold | Severity |
-|--------|-------|-----------|----------|
+| Metric               | Value        | Threshold | Severity   |
+| -------------------- | ------------ | --------- | ---------- |
 | Zero-judge page rate | 22.2% (6/27) | >15% warn | 🟡 WARNING |
 
 **Action**: Review zero-judge pages for site structure changes.
 ```
 
 When passing:
+
 ```markdown
 ## ✅ Quality Gate — PASS
 
@@ -164,6 +176,7 @@ All proxy metrics are within acceptable thresholds.
 Also echo verdict to stdout alongside existing harvest summary.
 
 **Alternatives Considered**:
+
 - Inline annotations throughout report: Scatters quality signals. Rejected.
 - Exit code gating: Too aggressive for a "soft" gate per FR-024. A future `--strict-quality` flag could opt in. Rejected.
 
@@ -174,6 +187,7 @@ Also echo verdict to stdout alongside existing harvest summary.
 **Decision**: Add a `## Division Extraction` section to each state prompt and the generic prompt with state-specific guidance.
 
 **Current state**: The pipeline already fully supports `division` end-to-end:
+
 - Zod extraction schema has `division: z.string().nullable()` ✅
 - `EnrichedJudgeRecord` has `division: string | null` ✅
 - CSV output includes `Division` column ✅
@@ -196,15 +210,16 @@ Also echo verdict to stdout alongside existing harvest summary.
 Also add `"division": null` to example JSON output in each prompt for output shape consistency.
 
 **Alternatives Considered**:
+
 - Rely on `buildRosterPrompt` template alone: LLM won't disambiguate structural vs subject-matter divisions without guidance. Rejected.
 
 ## Decision 10: Division — Court Types with Division Data
 
-| Court Level | Division Likelihood | Examples |
-|-------------|-------------------|----------|
-| Trial courts | **High** | Criminal, Civil, Family, Juvenile, Probate, Commercial |
-| Intermediate appellate | **Very low** — only structural | Not subject-matter |
-| Courts of last resort | **None** | N/A |
+| Court Level            | Division Likelihood            | Examples                                               |
+| ---------------------- | ------------------------------ | ------------------------------------------------------ |
+| Trial courts           | **High**                       | Criminal, Civil, Family, Juvenile, Probate, Commercial |
+| Intermediate appellate | **Very low** — only structural | Not subject-matter                                     |
+| Courts of last resort  | **None**                       | N/A                                                    |
 
 Prompt guidance should focus extraction on trial-level pages and explicitly instruct the LLM to NOT populate `division` for appellate/supreme courts' numbered divisions.
 
@@ -251,17 +266,17 @@ The `results[]` accumulator in the `--all` branch passes these to an enhanced `w
 
 ## Summary of Implementation Changes
 
-| File | Change | Decisions |
-|------|--------|-----------|
-| `state-config-schema.ts` | Add `countyAliases` to `StateConfigSchema` | 1, 2 |
-| `normalizer.ts` | Add `resolveCountyAlias()` before county DB match | 3 |
-| `court-seeder.ts` | Add alias lookup before `countyMap.get()` | 3 |
-| `texas-courts.json` | Add `countyAliases` with TX variants | 4 |
-| `california-courts.json` | Add `countyAliases` with CA variants | 4 |
-| `new-york-courts.json` | Add `countyAliases` with NY variants | 4 |
-| `index.ts` | Write harvest manifest after run; read at startup for freshness; enhance `runSingleState` return type; improve `writeCombinedSummary` | 5, 6, 12, 13 |
-| `reporter.ts` | Add quality gate section; add data freshness section; add combined verdict | 7, 8 |
-| `prompts/texas-extraction-prompt.txt` | Add Division Extraction section + `division` in example JSON | 9 |
-| `prompts/california-extraction-prompt.txt` | Add Division Extraction section + `division` in example JSON | 9 |
-| `prompts/new-york-extraction-prompt.txt` | Add Division Extraction section + `division` in example JSON | 9 |
-| `prompts/generic-extraction.txt` | Add division extraction rule + `division` in example JSON | 9 |
+| File                                       | Change                                                                                                                                | Decisions    |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `state-config-schema.ts`                   | Add `countyAliases` to `StateConfigSchema`                                                                                            | 1, 2         |
+| `normalizer.ts`                            | Add `resolveCountyAlias()` before county DB match                                                                                     | 3            |
+| `court-seeder.ts`                          | Add alias lookup before `countyMap.get()`                                                                                             | 3            |
+| `texas-courts.json`                        | Add `countyAliases` with TX variants                                                                                                  | 4            |
+| `california-courts.json`                   | Add `countyAliases` with CA variants                                                                                                  | 4            |
+| `new-york-courts.json`                     | Add `countyAliases` with NY variants                                                                                                  | 4            |
+| `index.ts`                                 | Write harvest manifest after run; read at startup for freshness; enhance `runSingleState` return type; improve `writeCombinedSummary` | 5, 6, 12, 13 |
+| `reporter.ts`                              | Add quality gate section; add data freshness section; add combined verdict                                                            | 7, 8         |
+| `prompts/texas-extraction-prompt.txt`      | Add Division Extraction section + `division` in example JSON                                                                          | 9            |
+| `prompts/california-extraction-prompt.txt` | Add Division Extraction section + `division` in example JSON                                                                          | 9            |
+| `prompts/new-york-extraction-prompt.txt`   | Add Division Extraction section + `division` in example JSON                                                                          | 9            |
+| `prompts/generic-extraction.txt`           | Add division extraction rule + `division` in example JSON                                                                             | 9            |

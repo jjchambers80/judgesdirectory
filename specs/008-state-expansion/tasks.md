@@ -113,11 +113,11 @@
 
 **Independent Test**: Run `--state california`. Verify output includes all 3 court levels with correct county mappings. Cross-reference 20 random records against courts.ca.gov.
 
-- [ ] T030 [US2] Execute California harvest with `--state california` via scripts/harvest/index.ts — verify pipeline completes with deterministic extraction for structured pages (FR-020), CSV and quality report generated. Log wall-clock time — CA is the largest state and most likely to test the <30 min single-state performance target
-- [ ] T031 [US2] Review California quality report — verify quality gate section, check 58-county coverage for Superior Courts, appellate district assignments, deterministic vs LLM extraction breakdown; verify any court entries with fetchMethod "browser" or "manual" appear as skipped in the report (EC-007)
-- [ ] T032 [US2] Spot-check 20 random California records against courts.ca.gov source URLs — verify judge name, court type, county assignment match source page (target: ≥18/20 correct = 90%+)
-- [ ] T033 [US2] Validate California output CSV contains ≥1,500 judges with all 58 Superior Court counties represented, correct court type names (verify 5 random records have normalized names per FR-017), and source URLs per FR-022
-- [ ] T033a [US2] Import California CSV through scripts/import/index.ts — verify <5% error rows per SC-007; confirm records appear in verification queue
+- [x] T030 [US2] Execute California harvest with `--state california` via scripts/harvest/index.ts — verify pipeline completes with deterministic extraction for structured pages (FR-020), CSV and quality report generated. Log wall-clock time — CA is the largest state and most likely to test the <30 min single-state performance target
+- [x] T031 [US2] Review California quality report — verify quality gate section, check 58-county coverage for Superior Courts, appellate district assignments, deterministic vs LLM extraction breakdown; verify any court entries with fetchMethod "browser" or "manual" appear as skipped in the report (EC-007)
+- [x] T032 [US2] Spot-check 20 random California records against courts.ca.gov source URLs — verify judge name, court type, county assignment match source page (target: ≥18/20 correct = 90%+)
+- [x] T033 [US2] Validate California output CSV contains ≥1,500 judges with all 58 Superior Court counties represented, correct court type names (verify 5 random records have normalized names per FR-017), and source URLs per FR-022
+- [x] T033a [US2] Import California CSV through scripts/import/index.ts — verify <5% error rows per SC-007; confirm records appear in verification queue
 
 **Checkpoint**: California harvest validated (SC-003) — combined TX+CA should yield 1,700+ judges
 
@@ -198,31 +198,37 @@
 ### Parallel Opportunities
 
 **Phase 2 — Batch 1** (no dependencies):
+
 ```
 T002 (schema)  |  T008 (manifest schema)  |  T015–T018 (prompts, all [P])
 ```
 
 **Phase 2 — Batch 2** (depends on Batch 1):
+
 ```
 T003–T005 (JSON configs, all [P])  |  T006–T007 (alias resolution)  |  T009 (manifest read/write)  |  T012 (quality gate logic)  |  T019 (division verify)
 ```
 
 **Phase 2 — Batch 3** (depends on Batch 2):
+
 ```
 T010–T011 (freshness)  |  T013–T014 (quality gate render/integrate)  |  T020 (StateRunResult)
 ```
 
 **Phase 2 — Batch 4** (depends on Batch 3):
+
 ```
 T021–T022 (combined report)
 ```
 
 **Phase 3** — TX, CA, NY court seeding can run in parallel:
+
 ```
 T023 (TX seed)  |  T024 (CA seed)  |  T025 (NY seed)
 ```
 
 **Phases 4–6** — State harvests can run in parallel (if capacity allows):
+
 ```
 T026–T029 (TX harvest)  |  T030–T033 (CA harvest)  |  T034–T037 (NY harvest)
 ```

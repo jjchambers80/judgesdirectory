@@ -18,15 +18,15 @@
  */
 export const QUALITY_THRESHOLDS = {
   /** Pages that failed to fetch or extract ÷ total pages */
-  failedPageRate: { warning: 0.10, critical: 0.25 },
+  failedPageRate: { warning: 0.1, critical: 0.25 },
   /** Pages with 0 judges extracted (no errors) ÷ total pages */
-  zeroJudgePageRate: { warning: 0.15, critical: 0.30 },
+  zeroJudgePageRate: { warning: 0.15, critical: 0.3 },
   /** Trial court records missing county ÷ total trial records */
-  missingCountyRate: { warning: 0.20, critical: 0.40 },
+  missingCountyRate: { warning: 0.2, critical: 0.4 },
   /** Records missing fullName or courtType ÷ total records */
   coreFieldIncompleteness: { warning: 0.02, critical: 0.05 },
   /** Zod validation failures ÷ total raw records attempted */
-  zodFailureRate: { warning: 0.10, critical: 0.20 },
+  zodFailureRate: { warning: 0.1, critical: 0.2 },
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -99,7 +99,7 @@ function evaluateMetric(
   name: string,
   numerator: number,
   denominator: number,
-  thresholds: { warning: number; critical: number }
+  thresholds: { warning: number; critical: number },
 ): QualityMetric {
   const value = denominator > 0 ? numerator / denominator : 0;
   const pct = (value * 100).toFixed(1);
@@ -124,38 +124,38 @@ function evaluateMetric(
  * @returns QualityGateResult with verdict, metrics, and Markdown
  */
 export function evaluateQualityGate(
-  input: QualityGateInput
+  input: QualityGateInput,
 ): QualityGateResult {
   const metrics: QualityMetric[] = [
     evaluateMetric(
       "Failed page rate",
       input.failedPages,
       input.totalPages,
-      QUALITY_THRESHOLDS.failedPageRate
+      QUALITY_THRESHOLDS.failedPageRate,
     ),
     evaluateMetric(
       "Zero-judge page rate",
       input.zeroJudgePages,
       input.totalPages,
-      QUALITY_THRESHOLDS.zeroJudgePageRate
+      QUALITY_THRESHOLDS.zeroJudgePageRate,
     ),
     evaluateMetric(
       "Missing county (trial courts)",
       input.trialRecordsMissingCounty,
       input.totalTrialRecords,
-      QUALITY_THRESHOLDS.missingCountyRate
+      QUALITY_THRESHOLDS.missingCountyRate,
     ),
     evaluateMetric(
       "Core field incompleteness",
       input.recordsMissingCoreFields,
       input.totalRecords,
-      QUALITY_THRESHOLDS.coreFieldIncompleteness
+      QUALITY_THRESHOLDS.coreFieldIncompleteness,
     ),
     evaluateMetric(
       "Zod validation failure rate",
       input.zodFailures,
       input.totalRawAttempts,
-      QUALITY_THRESHOLDS.zodFailureRate
+      QUALITY_THRESHOLDS.zodFailureRate,
     ),
   ];
 
@@ -168,7 +168,7 @@ export function evaluateQualityGate(
   const verdict = metrics.reduce<Severity>(
     (worst, m) =>
       severityOrder[m.severity] > severityOrder[worst] ? m.severity : worst,
-    "PASS"
+    "PASS",
   );
 
   // Generate Markdown
@@ -182,7 +182,7 @@ export function evaluateQualityGate(
  */
 function formatQualityGateMarkdown(
   verdict: Severity,
-  metrics: QualityMetric[]
+  metrics: QualityMetric[],
 ): string {
   const lines: string[] = [];
 
@@ -196,7 +196,7 @@ function formatQualityGateMarkdown(
   lines.push(`## ${emoji} Quality Gate — ${verdict}`, "");
   lines.push(
     "This harvest has potential data quality concerns that may indicate accuracy below the 90% spot-check threshold.",
-    ""
+    "",
   );
 
   // Table of flagged metrics
@@ -206,7 +206,7 @@ function formatQualityGateMarkdown(
   for (const m of flagged) {
     const icon = m.severity === "CRITICAL" ? "🔴" : "🟡";
     lines.push(
-      `| ${m.name} | ${m.displayValue} | ${m.threshold} | ${icon} ${m.severity} |`
+      `| ${m.name} | ${m.displayValue} | ${m.threshold} | ${icon} ${m.severity} |`,
     );
   }
 
@@ -222,7 +222,7 @@ function formatQualityGateMarkdown(
     }
     if (m.name.includes("county")) {
       actions.push(
-        "verify county alias map and extraction prompt county instructions"
+        "verify county alias map and extraction prompt county instructions",
       );
     }
     if (m.name.includes("Core field")) {

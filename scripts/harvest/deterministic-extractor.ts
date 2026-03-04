@@ -52,12 +52,12 @@ export function tryDeterministicExtraction(
     },
     {
       name: "table-roster",
-      match: () => true, // generic fallback
+      match: (u) => u.includes("flcourts.gov") || u.includes("flcourts.org"),
       extract: extractFromTable,
     },
     {
       name: "list-roster",
-      match: () => true,
+      match: (u) => u.includes("flcourts.gov") || u.includes("flcourts.org"),
       extract: extractFromList,
     },
   ];
@@ -122,9 +122,45 @@ export function extractWithSelectorHint(
   // This matches California's central roster page
   let currentCounty: string | null = null;
 
-  $scope.find("table").each((_, table) => {
-    const $table = $(table);
+  // Helper: extract county name from header text like
+  //   "Superior Court of California, County of Alameda"
+  //   "County of Los Angeles" or just "Alameda County" or "Alameda"
+  const extractCountyFromHeader = (headerText: string): string => {
+    // "...County of {Name}" pattern (e.g. "Superior Court of California, County of Alameda")
+    const countyOfMatch = headerText.match(/County\s+of\s+(.+?)$/i);
+    if (countyOfMatch) return countyOfMatch[1].trim();
 
+    // "{Name} County" pattern
+    const nameCountyMatch = headerText.match(/^(.+?)\s+County$/i);
+    if (nameCountyMatch) return nameCountyMatch[1].trim();
+
+    // Fallback: strip "Superior Court of California, " prefix if present
+    const stripped = headerText
+      .replace(/^Superior Court of California,?\s*/i, "")
+      .trim();
+    return stripped || headerText;
+  };
+
+  // When selectorHint="table", $scope IS the table elements.
+  // Use $scope.each() to iterate the matched tables themselves,
+  // then also search for nested tables with $scope.find("table").
+  const $tables = $scope.filter("table");
+  const $nestedTables = $scope.find("table");
+  // Combine: the scope elements that are tables + any nested tables
+  const seenTables = new Set<unknown>();
+  const tableList: ReturnType<cheerio.CheerioAPI>[] = [];
+  $tables.each((_, el) => {
+    seenTables.add(el);
+    tableList.push($(el));
+  });
+  $nestedTables.each((_, el) => {
+    if (!seenTables.has(el)) {
+      seenTables.add(el);
+      tableList.push($(el));
+    }
+  });
+
+  for (const $table of tableList) {
     $table.find("tr").each((_, row) => {
       const $row = $(row);
 
@@ -132,13 +168,13 @@ export function extractWithSelectorHint(
       const th = $row.find("th");
       if (th.length > 0) {
         const headerText = th.text().trim();
-        // County headers are typically just the county name
+        // County headers: skip if it contains "judge" or is too long
         if (
           headerText &&
           !headerText.toLowerCase().includes("judge") &&
-          headerText.length < 60
+          headerText.length < 100
         ) {
-          currentCounty = headerText.replace(/\s*county$/i, "").trim();
+          currentCounty = extractCountyFromHeader(headerText);
         }
       }
 
@@ -181,12 +217,30 @@ export function extractWithSelectorHint(
         }
       });
     });
-  });
+  }
 
   // Strategy 2: If no table matches, try general name patterns in scoped area
+  // Also tracks county context from nearby header elements
   if (judges.length === 0) {
+    let fallbackCounty: string | null = null;
+
     $scope.find("*").each((_, el) => {
       const text = $(el).text().trim();
+      if (!text) return;
+
+      // Track county context from header-like elements
+      const tagName = (el as any).tagName?.toLowerCase() as string | undefined;
+      if (tagName === "th" || /^h[1-6]$/.test(tagName || "")) {
+        if (
+          text.length < 100 &&
+          !text.toLowerCase().includes("judge") &&
+          /county/i.test(text)
+        ) {
+          fallbackCounty = extractCountyFromHeader(text);
+          return;
+        }
+      }
+
       const honMatch = text.match(/^(?:Hon\.\s*|Honorable\s+)(.+)$/i);
       if (honMatch && !$(el).children().length) {
         const name = normalizeName(honMatch[1]);
@@ -197,7 +251,7 @@ export function extractWithSelectorHint(
         judges.push({
           name,
           courtType: courtType as JudgeRecord["courtType"],
-          county: null,
+          county: fallbackCounty,
           division: null,
           selectionMethod: null,
           bioPageUrl: link,

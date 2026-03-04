@@ -27,7 +27,12 @@ import {
 
 export const JudgeRecordSchema = z.object({
   name: z.string().describe("Full name in 'First Last' format"),
-  courtType: z.string().min(1).describe("Court type name (e.g., 'Supreme Court', 'Court of Appeals', 'Superior Court')"),
+  courtType: z
+    .string()
+    .min(1)
+    .describe(
+      "Court type name (e.g., 'Supreme Court', 'Court of Appeals', 'Superior Court')",
+    ),
   county: z
     .string()
     .nullable()
@@ -297,7 +302,10 @@ export async function extractJudges(
   const parsed = safeJsonParse(jsonStr);
 
   // Normalize LLM output before validation (fixes courtType variations)
-  const normalized = normalizeExtractionResult(parsed, context.stateAbbreviation);
+  const normalized = normalizeExtractionResult(
+    parsed,
+    context.stateAbbreviation,
+  );
 
   // Validate with Zod
   const result = ExtractionResultSchema.parse(normalized);
@@ -480,7 +488,10 @@ function normalizeCourtType(value: string, stateAbbreviation?: string): string {
  * Normalize extraction result before Zod validation.
  * Fixes common LLM output variations.
  */
-function normalizeExtractionResult(data: unknown, stateAbbreviation?: string): unknown {
+function normalizeExtractionResult(
+  data: unknown,
+  stateAbbreviation?: string,
+): unknown {
   if (!data || typeof data !== "object") return data;
 
   const obj = data as Record<string, unknown>;

@@ -76,7 +76,7 @@ export interface AggregateStats {
  * @returns AggregateStats with combined totals
  */
 export function computeAggregateStats(
-  results: StateRunResult[]
+  results: StateRunResult[],
 ): AggregateStats {
   const succeeded = results.filter((r) => r.success);
   const failed = results.filter((r) => !r.success);
@@ -95,7 +95,7 @@ export function computeAggregateStats(
       verdictPriority[r.qualityVerdict] > verdictPriority[worst]
         ? r.qualityVerdict
         : worst,
-    "PASS"
+    "PASS",
   );
 
   return {
@@ -107,7 +107,7 @@ export function computeAggregateStats(
     totalFailedPages: results.reduce((sum, r) => sum + r.pages.failed, 0),
     totalDuplicatesRemoved: succeeded.reduce(
       (sum, r) => sum + r.duplicatesRemoved,
-      0
+      0,
     ),
     courtTypeCounts,
     overallVerdict: worstVerdict,
@@ -129,7 +129,7 @@ export function computeAggregateStats(
  */
 export function generateCombinedReport(
   results: StateRunResult[],
-  timestamp: string
+  timestamp: string,
 ): string {
   const stats = computeAggregateStats(results);
   const verdictEmoji = {
@@ -166,7 +166,7 @@ export function generateCombinedReport(
     const pages = `${r.pages.succeeded}/${r.pages.failed}`;
     const report = r.reportPath ? `[report](${r.reportPath})` : "—";
     lines.push(
-      `| ${r.state} | ${status} | ${verdict} | ${r.judgeCount} | ${pages} | ${report} |`
+      `| ${r.state} | ${status} | ${verdict} | ${r.judgeCount} | ${pages} | ${report} |`,
     );
   }
 
@@ -175,7 +175,12 @@ export function generateCombinedReport(
   if (failures.length > 0) {
     lines.push("", "## Failed States", "");
     for (const f of failures) {
-      lines.push(`### ${f.state}`, "", `**Error**: ${f.error || "Unknown"}`, "");
+      lines.push(
+        `### ${f.state}`,
+        "",
+        `**Error**: ${f.error || "Unknown"}`,
+        "",
+      );
     }
   }
 
@@ -185,7 +190,7 @@ export function generateCombinedReport(
     lines.push("| Court Type | Judges |");
     lines.push("|------------|--------|");
     const sorted = Object.entries(stats.courtTypeCounts).sort(
-      ([, a], [, b]) => b - a
+      ([, a], [, b]) => b - a,
     );
     for (const [type, count] of sorted) {
       lines.push(`| ${type} | ${count} |`);
@@ -206,7 +211,7 @@ export function generateCombinedReport(
 export function writeCombinedSummary(
   outputDir: string,
   results: StateRunResult[],
-  timestamp: string
+  timestamp: string,
 ): string {
   // Implementation: generate report → write to output/combined-summary-{timestamp}.md
   throw new Error("Contract stub — implement in scripts/harvest/index.ts");

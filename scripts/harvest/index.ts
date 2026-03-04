@@ -61,7 +61,11 @@ import { enrichWithBioPages } from "./bio-enricher";
 import { enrichAllWithBallotpedia } from "./ballotpedia-enricher";
 import { normalizeJudgeName, canonicalizeCourtType } from "./normalizer";
 import { deduplicateJudges, deduplicateEnrichedJudges } from "./deduplicator";
-import { generateReport, generateEnrichedReport, type Severity } from "./reporter";
+import {
+  generateReport,
+  generateEnrichedReport,
+  type Severity,
+} from "./reporter";
 import {
   getLLMConfig,
   validateLLMConfig,
@@ -138,10 +142,7 @@ const MANIFEST_FILENAME = "harvest-manifest.json";
  * Read and parse a harvest manifest for a state.
  * @returns Parsed HarvestManifest or null if file doesn't exist / is invalid.
  */
-function readManifest(
-  outputDir: string,
-  slug: string,
-): HarvestManifest | null {
+function readManifest(outputDir: string, slug: string): HarvestManifest | null {
   const manifestPath = path.join(outputDir, slug, MANIFEST_FILENAME);
   if (!fs.existsSync(manifestPath)) return null;
 
@@ -150,10 +151,14 @@ function readManifest(
     const parsed = JSON.parse(raw);
     const result = HarvestManifestSchema.safeParse(parsed);
     if (result.success) return result.data;
-    console.warn(`  WARN: Invalid manifest at ${manifestPath}: ${result.error.message}`);
+    console.warn(
+      `  WARN: Invalid manifest at ${manifestPath}: ${result.error.message}`,
+    );
     return null;
   } catch (err) {
-    console.warn(`  WARN: Failed to read manifest at ${manifestPath}: ${err instanceof Error ? err.message : String(err)}`);
+    console.warn(
+      `  WARN: Failed to read manifest at ${manifestPath}: ${err instanceof Error ? err.message : String(err)}`,
+    );
     return null;
   }
 }
@@ -224,25 +229,16 @@ function checkFreshness(outputDir: string, slug: string): FreshnessResult {
 /**
  * Print freshness table to stdout for all discovered states.
  */
-function printFreshnessTable(
-  outputDir: string,
-  stateSlugs: string[],
-): void {
+function printFreshnessTable(outputDir: string, stateSlugs: string[]): void {
   const results = stateSlugs.map((s) => checkFreshness(outputDir, s));
 
   console.log("\n===== Data Freshness =====\n");
-  console.log(
-    "| State | Last Harvest | Days Ago | Judges | Status |",
-  );
-  console.log(
-    "|-------|-------------|----------|--------|--------|",
-  );
+  console.log("| State | Last Harvest | Days Ago | Judges | Status |");
+  console.log("|-------|-------------|----------|--------|--------|");
 
   for (const r of results) {
     if (!r.hasManifest) {
-      console.log(
-        `| ${r.state} | — | — | — | 🆕 No prior harvest |`,
-      );
+      console.log(`| ${r.state} | — | — | — | 🆕 No prior harvest |`);
     } else {
       const date = r.lastCompletedAt
         ? new Date(r.lastCompletedAt).toISOString().slice(0, 10)
@@ -476,7 +472,11 @@ async function runSingleState(
       state: slug,
       success: true,
       judgeCount: 0,
-      pages: { total: courtUrls.length, succeeded: courtUrls.length, failed: 0 },
+      pages: {
+        total: courtUrls.length,
+        succeeded: courtUrls.length,
+        failed: 0,
+      },
       courtTypeCounts: {},
       duplicatesRemoved: 0,
       reportPath: "",
@@ -910,7 +910,10 @@ function expandEnrichedRecords(
 
   for (const record of records) {
     const normalizedName = normalizeJudgeName(record.fullName);
-    const courtType = canonicalizeCourtType(record.courtType, stateAbbreviation);
+    const courtType = canonicalizeCourtType(
+      record.courtType,
+      stateAbbreviation,
+    );
 
     // Create normalized base record
     const baseRecord: EnrichedJudgeRecord = {
@@ -931,8 +934,14 @@ function expandEnrichedRecords(
       continue;
     }
 
-    // Trial/specialized judges without specific county: expand to all counties
-    if (entry.counties.length > 0) {
+    // Trial/specialized judges without specific county:
+    // - Deterministic entries already handled county assignment during extraction,
+    //   so a null county means the judge genuinely has no county — don't expand.
+    // - LLM-extracted entries may lack county info; expand to all counties.
+    if (entry.deterministic) {
+      // Deterministic extraction assigned counties directly; skip expansion
+      expanded.push(baseRecord);
+    } else if (entry.counties.length > 0) {
       for (const county of entry.counties) {
         expanded.push({ ...baseRecord, county });
       }
@@ -1019,7 +1028,11 @@ async function runExtractionPipeline(
       console.log(`  Extracted: ${result.judges.length} judge(s)`);
 
       // Normalize and expand to CSV records
-      const records = expandToCsvRecords(result.judges, entry, stateConfig?.abbreviation);
+      const records = expandToCsvRecords(
+        result.judges,
+        entry,
+        stateConfig?.abbreviation,
+      );
       allRecords.push(...records);
 
       // Update checkpoint

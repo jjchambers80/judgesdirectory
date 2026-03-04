@@ -19,9 +19,9 @@ The StateConfig schema (defined in `state-config-schema.ts`) gains one new field
 
 ### New Field
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `countyAliases` | `Record<string, string>` | No | `{}` | Maps variant county names to canonical DB names. Key = variant (case-insensitive lookup), Value = canonical name. |
+| Field           | Type                     | Required | Default | Description                                                                                                       |
+| --------------- | ------------------------ | -------- | ------- | ----------------------------------------------------------------------------------------------------------------- |
+| `countyAliases` | `Record<string, string>` | No       | `{}`    | Maps variant county names to canonical DB names. Key = variant (case-insensitive lookup), Value = canonical name. |
 
 ### Validation Rules (new)
 
@@ -60,14 +60,14 @@ A per-state file tracking the last completed harvest run. Written to `output/{st
 
 ### Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `lastCompletedAt` | ISO 8601 string | Yes | Timestamp of the last successful run completion |
-| `judgeCount` | number | Yes | Total judges in the final output CSV |
-| `reportFile` | string | Yes | Filename of the quality report generated |
-| `pagesTargeted` | number | Yes | Total roster pages in the state config |
-| `pagesFailed` | number | Yes | Pages that failed to fetch or extract |
-| `qualityVerdict` | enum | Yes | `"PASS"` \| `"WARNING"` \| `"CRITICAL"` |
+| Field             | Type            | Required | Description                                     |
+| ----------------- | --------------- | -------- | ----------------------------------------------- |
+| `lastCompletedAt` | ISO 8601 string | Yes      | Timestamp of the last successful run completion |
+| `judgeCount`      | number          | Yes      | Total judges in the final output CSV            |
+| `reportFile`      | string          | Yes      | Filename of the quality report generated        |
+| `pagesTargeted`   | number          | Yes      | Total roster pages in the state config          |
+| `pagesFailed`     | number          | Yes      | Pages that failed to fetch or extract           |
+| `qualityVerdict`  | enum            | Yes      | `"PASS"` \| `"WARNING"` \| `"CRITICAL"`         |
 
 ### Validation Rules
 
@@ -111,17 +111,17 @@ Return type from `runSingleState()` for multi-state orchestration. Replaces the 
 
 ### Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `state` | string | State slug (e.g., "texas") |
-| `success` | boolean | Whether the harvest completed without fatal errors |
-| `judgeCount` | number | Total judges in final CSV |
-| `pages` | `{ total, succeeded, failed }` | Page-level fetch stats |
-| `courtTypeCounts` | `Record<string, number>` | Judge count per court type |
-| `duplicatesRemoved` | number | Records removed by dedup |
-| `reportPath` | string | Path to the per-state quality report |
-| `qualityVerdict` | enum | `"PASS"` \| `"WARNING"` \| `"CRITICAL"` |
-| `error` | string \| null | Error message if failed |
+| Field               | Type                           | Description                                        |
+| ------------------- | ------------------------------ | -------------------------------------------------- |
+| `state`             | string                         | State slug (e.g., "texas")                         |
+| `success`           | boolean                        | Whether the harvest completed without fatal errors |
+| `judgeCount`        | number                         | Total judges in final CSV                          |
+| `pages`             | `{ total, succeeded, failed }` | Page-level fetch stats                             |
+| `courtTypeCounts`   | `Record<string, number>`       | Judge count per court type                         |
+| `duplicatesRemoved` | number                         | Records removed by dedup                           |
+| `reportPath`        | string                         | Path to the per-state quality report               |
+| `qualityVerdict`    | enum                           | `"PASS"` \| `"WARNING"` \| `"CRITICAL"`            |
+| `error`             | string \| null                 | Error message if failed                            |
 
 ### TypeScript Interface
 
@@ -147,21 +147,21 @@ Output of the quality gate evaluation function in `reporter.ts`.
 
 ### Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `verdict` | enum | `"PASS"` \| `"WARNING"` \| `"CRITICAL"` |
-| `metrics` | `QualityMetric[]` | Individual metric evaluations |
-| `markdown` | string | Pre-rendered Markdown section for the report |
+| Field      | Type              | Description                                  |
+| ---------- | ----------------- | -------------------------------------------- |
+| `verdict`  | enum              | `"PASS"` \| `"WARNING"` \| `"CRITICAL"`      |
+| `metrics`  | `QualityMetric[]` | Individual metric evaluations                |
+| `markdown` | string            | Pre-rendered Markdown section for the report |
 
 ### QualityMetric
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `name` | string | Metric name (e.g., "Failed page rate") |
-| `value` | number | Actual value (0.0–1.0) |
-| `displayValue` | string | Human-readable (e.g., "22.2% (6/27)") |
-| `severity` | enum | `"PASS"` \| `"WARNING"` \| `"CRITICAL"` |
-| `threshold` | string | Threshold description (e.g., ">10% warn, >25% critical") |
+| Field          | Type   | Description                                              |
+| -------------- | ------ | -------------------------------------------------------- |
+| `name`         | string | Metric name (e.g., "Failed page rate")                   |
+| `value`        | number | Actual value (0.0–1.0)                                   |
+| `displayValue` | string | Human-readable (e.g., "22.2% (6/27)")                    |
+| `severity`     | enum   | `"PASS"` \| `"WARNING"` \| `"CRITICAL"`                  |
+| `threshold`    | string | Threshold description (e.g., ">10% warn, >25% critical") |
 
 ### TypeScript Interfaces
 

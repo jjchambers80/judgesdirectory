@@ -106,3 +106,17 @@ Differentiators to emphasize (aligned with current specs/architecture):
 2. **Intent**: Are visitors looking for representation, or just information?
 3. **Pricing**: Are local firms willing to pay for contextual placements?
 4. **Quality threshold**: What “accuracy bar” is required before advertisers will buy?
+5. **Unmet needs**: What do users wish the directory offered that it doesn't?
+
+## Post-Launch Feedback Collection Plan
+
+After FL launch, post in relevant communities to surface unmet needs and monetization angles:
+
+| Community | Why | Post Angle |
+|---|---|---|
+| r/legal, r/lawyers, r/lawschool | Primary users (attorneys researching judges) | "Built a free judge directory — what would make it more useful?" |
+| r/florida, r/miami, r/orlando | Local users with active cases | "Created a Florida judges lookup tool — feedback welcome" |
+| r/journalism, r/localnews | Journalists covering court cases | "Free resource for court reporters — what data would help?" |
+| r/civics, r/politicaldiscussion | Civic transparency angle | "Transparent judge info project — what should we track?" |
+
+**Goal**: Feedback often reveals monetization opportunities (e.g., "I wish I could track when my judge's term ends" → premium alert feature).

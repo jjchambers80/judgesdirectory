@@ -76,7 +76,7 @@ export interface FreshnessResult {
  */
 export function readManifest(
   outputDir: string,
-  stateSlug: string
+  stateSlug: string,
 ): HarvestManifest | null {
   // Implementation: fs.readFileSync → JSON.parse → HarvestManifestSchema.safeParse
   throw new Error("Contract stub — implement in scripts/harvest/index.ts");
@@ -93,7 +93,7 @@ export function readManifest(
 export function writeManifest(
   outputDir: string,
   stateSlug: string,
-  manifest: HarvestManifest
+  manifest: HarvestManifest,
 ): void {
   // Implementation: JSON.stringify → write to tmp → rename to final path
   throw new Error("Contract stub — implement in scripts/harvest/index.ts");
@@ -108,7 +108,7 @@ export function writeManifest(
  */
 export function checkFreshness(
   outputDir: string,
-  stateSlug: string
+  stateSlug: string,
 ): FreshnessResult {
   // Implementation:
   // 1. Read manifest (may be null)
@@ -127,7 +127,7 @@ export function checkFreshness(
  */
 export function checkAllFreshness(
   outputDir: string,
-  stateSlugs: string[]
+  stateSlugs: string[],
 ): FreshnessResult[] {
   return stateSlugs.map((slug) => checkFreshness(outputDir, slug));
 }
