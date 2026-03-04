@@ -21,7 +21,8 @@
       "level": "supreme",
       "label": "New York Court of Appeals",
       "counties": [],
-      "notes": "Court of last resort — 7 judges (Chief Judge + 6 Associate Judges)"
+      "fetchMethod": "browser",
+      "notes": "Court of last resort — 7 judges (Chief Judge + 6 Associate Judges). Cloudflare Turnstile blocks all programmatic access."
     },
     {
       "url": "https://www.nycourts.gov/courts/ad1/Justicesofthecourt.shtml",
@@ -29,7 +30,9 @@
       "level": "appellate",
       "label": "Appellate Division — 1st Department",
       "department": 1,
-      "counties": ["New York", "Bronx"]
+      "counties": ["New York", "Bronx"],
+      "fetchMethod": "browser",
+      "notes": "Cloudflare Turnstile blocks all programmatic access to nycourts.gov."
     },
     {
       "url": "https://www.nycourts.gov/courts/ad2/justices.shtml",
@@ -37,6 +40,8 @@
       "level": "appellate",
       "label": "Appellate Division — 2nd Department",
       "department": 2,
+      "fetchMethod": "browser",
+      "notes": "Cloudflare Turnstile blocks all programmatic access to nycourts.gov.",
       "counties": [
         "Kings",
         "Queens",
@@ -56,6 +61,8 @@
       "level": "appellate",
       "label": "Appellate Division — 3rd Department",
       "department": 3,
+      "fetchMethod": "browser",
+      "notes": "Cloudflare Turnstile blocks all programmatic access to nycourts.gov.",
       "counties": [
         "Albany",
         "Broome",
@@ -98,6 +105,8 @@
       "level": "appellate",
       "label": "Appellate Division — 4th Department",
       "department": 4,
+      "fetchMethod": "browser",
+      "notes": "Cloudflare Turnstile blocks all programmatic access to nycourts.gov.",
       "counties": [
         "Allegany",
         "Cattaraugus",

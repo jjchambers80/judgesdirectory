@@ -129,13 +129,13 @@
 
 **Independent Test**: Run `--state new-york`. Verify NYC borough→county alias resolution works. Verify "Supreme Court" correctly mapped as trial court. Cross-reference 20 random records against nycourts.gov.
 
-- [ ] T034 [US3] Execute New York harvest with `--state new-york` via scripts/harvest/index.ts — verify pipeline completes, county alias resolution resolves Manhattan/Brooklyn/Staten Island to canonical county names, CSV and quality report generated
-- [ ] T035 [US3] Review New York quality report — verify quality gate section, check 62-county coverage, NYC borough-to-county resolution log, Appellate Division department assignments; verify any court entries with fetchMethod "browser" or "manual" appear as skipped in the report (EC-007)
-- [ ] T036 [US3] Spot-check 20 random New York records against nycourts.gov source URLs — verify judge name, court type, county assignment, correct handling of NY "Supreme Court" as trial court (target: ≥18/20 correct = 90%+)
-- [ ] T037 [US3] Validate New York output CSV contains ≥1,000 judges with NYC boroughs mapped to canonical counties, Appellate Division departments captured, source URLs per FR-022, and verify 5 random records have correctly normalized court type names per FR-017 (e.g., "Appellate Division" not "App. Div.")
-- [ ] T037a [US3] Import New York CSV through scripts/import/index.ts — verify <5% error rows per SC-007; confirm records appear in verification queue
+- [x] T034 [US3] Execute New York harvest with `--state new-york` via scripts/harvest/index.ts — **BLOCKED: All nycourts.gov pages behind Cloudflare Turnstile (JS challenge). All 11 court entries skipped with fetchMethod:browser. Pipeline completes cleanly with 0 judges. Requires browser-based Cloudflare bypass (separate feature).**
+- [x] T035 [US3] Review New York quality report — **N/A: 0 judges extracted due to Cloudflare block. No quality report generated.**
+- [x] T036 [US3] Spot-check New York records — **N/A: No records to validate.**
+- [x] T037 [US3] Validate New York output CSV — **N/A: No CSV generated. ≥1,000 target CANNOT be met without Cloudflare bypass.**
+- [x] T037a [US3] Import New York CSV — **N/A: No data to import.**
 
-**Checkpoint**: New York harvest validated (SC-004) — combined TX+CA+NY should yield 2,700+ judges (SC-005)
+**Checkpoint**: New York harvest blocked by Cloudflare Turnstile (SC-004 deferred) — combined TX+CA yields ~1,875 judges. NY requires browser-based Cloudflare bypass feature.
 
 ---
 
