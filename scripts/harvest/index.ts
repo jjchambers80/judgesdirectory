@@ -270,7 +270,9 @@ async function main(): Promise<void> {
     } else {
       console.log("Available states:");
       for (const s of states) {
-        console.log(`  ${s}`);
+        const config = loadStateConfig(s);
+        const courtCount = config.courts.length;
+        console.log(`  ${s.padEnd(16)} ${courtCount} courts`);
       }
     }
     return;
