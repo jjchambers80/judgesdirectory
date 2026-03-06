@@ -127,12 +127,12 @@
 
 ### Implementation for User Story 5
 
-- [ ] T035 [US5] Create Pagination component in `src/components/ui/pagination.tsx`
-- [ ] T036 [US5] Display "Showing X of Y judges" result count per FR-010
-- [ ] T037 [US5] Add page navigation (Previous, page numbers, Next)
-- [ ] T038 [US5] Integrate pagination into SearchResults component
-- [ ] T039 [US5] Persist page number in URL query params
-- [ ] T040 [US5] Reset to page 1 when search query or filters change
+- [X] T035 [US5] Create Pagination component in `src/components/ui/pagination.tsx`
+- [X] T036 [US5] Display "Showing X of Y judges" result count per FR-010
+- [X] T037 [US5] Add page navigation (Previous, page numbers, Next)
+- [X] T038 [US5] Integrate pagination into SearchResults component
+- [X] T039 [US5] Persist page number in URL query params
+- [X] T040 [US5] Reset to page 1 when search query or filters change
 
 **Checkpoint**: User Story 5 complete — pagination works with URL persistence
 
@@ -146,13 +146,13 @@
 
 ### Implementation for User Story 6
 
-- [ ] T041 [US6] Add autocomplete dropdown to SearchInput component
-- [ ] T042 [US6] Implement debounced API calls (150ms) per FR-014
-- [ ] T043 [US6] Trigger autocomplete after 2+ characters per FR-013
-- [ ] T044 [US6] Add keyboard navigation (Arrow Up/Down, Enter, Escape)
-- [ ] T045 [US6] Implement WAI-ARIA combobox pattern (role="combobox", role="listbox")
-- [ ] T046 [US6] Cancel pending requests when input changes or clears
-- [ ] T047 [US6] Style autocomplete dropdown with match highlighting
+- [X] T041 [US6] Add autocomplete dropdown to SearchInput component
+- [X] T042 [US6] Implement debounced API calls (150ms) per FR-014
+- [X] T043 [US6] Trigger autocomplete after 2+ characters per FR-013
+- [X] T044 [US6] Add keyboard navigation (Arrow Up/Down, Enter, Escape)
+- [X] T045 [US6] Implement WAI-ARIA combobox pattern (role="combobox", role="listbox")
+- [X] T046 [US6] Cancel pending requests when input changes or clears
+- [X] T047 [US6] Style autocomplete dropdown with match highlighting
 
 **Checkpoint**: User Story 6 complete — autocomplete with keyboard nav works
 
@@ -162,14 +162,14 @@
 
 **Purpose**: Accessibility, mobile responsiveness, edge cases, SEO
 
-- [ ] T048 Add keyboard navigation for all filters (Tab, Enter) per FR-018
-- [ ] T048a Add skip-navigation link on `/judges` page per Constitution Principle VI
-- [ ] T049 [P] Add visible focus indicators per WCAG 2.1 AA
-- [ ] T050 [P] Add mobile-responsive styles for search and filters
-- [ ] T051 [P] Ensure search page SSR for SEO per Constitution Principle II
-- [ ] T052 Test and fix Lighthouse accessibility score ≥90
-- [ ] T053 Test empty states: no results, no verified judges in state
-- [ ] T054 Update `/judges` page metadata for SEO (title, description)
+- [X] T048 Add keyboard navigation for all filters (Tab, Enter) per FR-018
+- [X] T048a Add skip-navigation link on `/judges` page per Constitution Principle VI
+- [X] T049 [P] Add visible focus indicators per WCAG 2.1 AA
+- [X] T050 [P] Add mobile-responsive styles for search and filters
+- [X] T051 [P] Ensure search page SSR for SEO per Constitution Principle II
+- [X] T052 Test and fix Lighthouse accessibility score ≥90
+- [X] T053 Test empty states: no results, no verified judges in state
+- [X] T054 Update `/judges` page metadata for SEO (title, description)
 
 ---
 

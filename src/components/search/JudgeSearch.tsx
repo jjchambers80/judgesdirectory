@@ -35,6 +35,7 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
   
   // Initialize state from URL (FR-009)
   const initialQuery = searchParams.get('q') || '';
+  const initialPage = parseInt(searchParams.get('page') || '1', 10);
   const initialFilters: FilterState = {
     state: searchParams.get('state') || undefined,
     courtType: searchParams.get('courtType') || undefined,
@@ -42,6 +43,7 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
   };
   
   const [query, setQuery] = React.useState(initialQuery);
+  const [, setPage] = React.useState(initialPage); // page tracked via URL, setPage for re-renders
   const [filters, setFilters] = React.useState<FilterState>(initialFilters);
   const [response, setResponse] = React.useState<SearchResponse | null>(initialResults || null);
   const [filterOptions, setFilterOptions] = React.useState<FilterOptions | null>(null);
@@ -69,7 +71,8 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
   // Fetch search results
   const fetchResults = React.useCallback(async (
     searchQuery: string,
-    searchFilters: FilterState
+    searchFilters: FilterState,
+    searchPage: number = 1
   ) => {
     const hasFiltersOrQuery = searchQuery.trim() || 
       searchFilters.state || 
@@ -91,6 +94,7 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
       if (searchFilters.state) params.set('state', searchFilters.state);
       if (searchFilters.courtType) params.set('courtType', searchFilters.courtType);
       if (searchFilters.county) params.set('county', searchFilters.county);
+      if (searchPage > 1) params.set('page', searchPage.toString());
 
       const res = await fetch(`/api/search?${params.toString()}`);
       
@@ -109,12 +113,13 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
   }, []);
 
   // Update URL with current state (FR-009)
-  const updateUrl = React.useCallback((q: string, f: FilterState) => {
+  const updateUrl = React.useCallback((q: string, f: FilterState, p: number = 1) => {
     const params = new URLSearchParams();
     if (q.trim()) params.set('q', q.trim());
     if (f.state) params.set('state', f.state);
     if (f.courtType) params.set('courtType', f.courtType);
     if (f.county) params.set('county', f.county);
+    if (p > 1) params.set('page', p.toString());
 
     const newPath = params.toString() 
       ? `/judges/?${params.toString()}` 
@@ -123,10 +128,20 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
     router.push(newPath, { scroll: false });
   }, [router]);
 
-  // Handle search submission
+  // Handle page change (T035-T040)
+  const handlePageChange = React.useCallback((newPage: number) => {
+    setPage(newPage);
+    updateUrl(query, filters, newPage);
+    fetchResults(query, filters, newPage);
+    // Scroll to top of results
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [query, filters, updateUrl, fetchResults]);
+
+  // Handle search submission (T040: reset to page 1)
   const handleSubmit = React.useCallback(() => {
-    updateUrl(query, filters);
-    fetchResults(query, filters);
+    setPage(1);
+    updateUrl(query, filters, 1);
+    fetchResults(query, filters, 1);
   }, [query, filters, updateUrl, fetchResults]);
 
   // Handle input change
@@ -137,22 +152,24 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
     if (!value.trim() && !filters.state && !filters.courtType && !filters.county) {
       setResponse(null);
       setHasSearched(false);
+      setPage(1);
       updateUrl('', {});
     }
   };
 
-  // Handle filter changes (T020-T034)
+  // Handle filter changes (T020-T034, T040: reset to page 1)
   const handleFiltersChange = React.useCallback((newFilters: FilterState) => {
     setFilters(newFilters);
+    setPage(1); // Reset pagination on filter change
     
     // Fetch counties if state changed
     if (newFilters.state !== filters.state) {
       fetchFilterOptions(newFilters.state);
     }
     
-    // Execute search with new filters
-    updateUrl(query, newFilters);
-    fetchResults(query, newFilters);
+    // Execute search with new filters (page 1)
+    updateUrl(query, newFilters, 1);
+    fetchResults(query, newFilters, 1);
   }, [filters.state, query, updateUrl, fetchResults, fetchFilterOptions]);
 
   // Load filter options on mount
@@ -163,7 +180,7 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
   // Fetch results on mount if query/filters exist in URL
   React.useEffect(() => {
     if (initialQuery || initialFilters.state || initialFilters.courtType) {
-      fetchResults(initialQuery, initialFilters);
+      fetchResults(initialQuery, initialFilters, initialPage);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -190,6 +207,7 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
           response={response}
           query={query}
           isLoading={isLoading}
+          onPageChange={handlePageChange}
         />
       )}
     </div>

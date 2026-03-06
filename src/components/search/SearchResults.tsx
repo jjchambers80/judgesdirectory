@@ -13,6 +13,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Pagination } from '@/components/ui/pagination';
 import type { SearchResult, SearchResponse } from '@/lib/search';
 
 interface SearchResultsProps {
@@ -22,6 +23,8 @@ interface SearchResultsProps {
   query: string;
   /** Whether results are loading */
   isLoading?: boolean;
+  /** Called when page changes (T038) */
+  onPageChange?: (page: number) => void;
   /** Additional CSS classes */
   className?: string;
 }
@@ -157,6 +160,7 @@ export function SearchResults({
   response,
   query,
   isLoading = false,
+  onPageChange,
   className,
 }: SearchResultsProps) {
   if (isLoading) {
@@ -171,7 +175,7 @@ export function SearchResults({
     return null;
   }
 
-  const { results, total } = response;
+  const { results, total, page, totalPages, limit } = response;
 
   if (results.length === 0) {
     return (
@@ -181,11 +185,15 @@ export function SearchResults({
     );
   }
 
+  // Calculate showing range (FR-010)
+  const startResult = (page - 1) * limit + 1;
+  const endResult = Math.min(page * limit, total);
+
   return (
     <div className={className}>
-      {/* Result count */}
+      {/* Result count (T036) */}
       <p className="text-sm text-muted-foreground mb-4">
-        {total === 1 ? '1 judge found' : `${total.toLocaleString()} judges found`}
+        Showing {startResult.toLocaleString()}–{endResult.toLocaleString()} of {total.toLocaleString()} judges
       </p>
       
       {/* Results list */}
@@ -194,6 +202,16 @@ export function SearchResults({
           <ResultCard key={result.id} result={result} query={query} />
         ))}
       </div>
+
+      {/* Pagination (T037, T038) */}
+      {totalPages > 1 && onPageChange && (
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          className="mt-6"
+        />
+      )}
     </div>
   );
 }
