@@ -1,0 +1,357 @@
+openapi: 3.0.3
+info:
+  title: Judges Directory Search API
+  description: API for searching and filtering judges in the directory
+  version: 1.0.0
+  contact:
+    name: JudgesDirectory Team
+
+servers:
+  - url: /api
+    description: Relative to application root
+
+paths:
+  /search:
+    get:
+      operationId: searchJudges
+      summary: Search judges by name and filters
+      description: |
+        Full-text search on judge names with optional filters by state, county, 
+        and court type. Only returns judges with status VERIFIED.
+        
+        Supports autocomplete (use limit=5 for suggestions) and full search.
+      tags:
+        - Search
+      parameters:
+        - name: q
+          in: query
+          description: Search query for judge name (partial match, case-insensitive)
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+            example: "Martinez"
+        - name: state
+          in: query
+          description: Filter by state abbreviation
+          required: false
+          schema:
+            type: string
+            pattern: "^[A-Z]{2}$"
+            example: "CA"
+        - name: county
+          in: query
+          description: Filter by county slug (requires state filter)
+          required: false
+          schema:
+            type: string
+            example: "los-angeles"
+        - name: courtType
+          in: query
+          description: Filter by court type
+          required: false
+          schema:
+            type: string
+            example: "Supreme Court"
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Results per page (use 5 for autocomplete)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+              examples:
+                search-results:
+                  summary: Typical search response
+                  value:
+                    results:
+                      - id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                        fullName: "John Martinez"
+                        slug: "john-martinez"
+                        court:
+                          type: "Superior Court"
+                          slug: "superior-court"
+                          county:
+                            name: "Los Angeles"
+                            slug: "los-angeles"
+                            state:
+                              name: "California"
+                              abbreviation: "CA"
+                              slug: "california"
+                    total: 42
+                    page: 1
+                    limit: 20
+                    totalPages: 3
+                    filters:
+                      q: "Martinez"
+                      state: "CA"
+                autocomplete:
+                  summary: Autocomplete response (limit=5)
+                  value:
+                    results:
+                      - id: "a1b2c3d4-..."
+                        fullName: "John Martinez"
+                        slug: "john-martinez"
+                        court:
+                          type: "Superior Court"
+                          slug: "superior-court"
+                          county:
+                            name: "Los Angeles"
+                            slug: "los-angeles"
+                            state:
+                              name: "California"
+                              abbreviation: "CA"
+                              slug: "california"
+                    total: 42
+                    page: 1
+                    limit: 5
+                    totalPages: 9
+                    filters:
+                      q: "mar"
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /search/filters:
+    get:
+      operationId: getFilterOptions
+      summary: Get available filter options
+      description: |
+        Returns available values for search filters (states, court types).
+        Pass state parameter to get counties for cascading filter.
+      tags:
+        - Search
+      parameters:
+        - name: state
+          in: query
+          description: State abbreviation to get counties for
+          required: false
+          schema:
+            type: string
+            pattern: "^[A-Z]{2}$"
+      responses:
+        '200':
+          description: Filter options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterOptions'
+              examples:
+                all-filters:
+                  summary: Without state parameter
+                  value:
+                    states:
+                      - name: "California"
+                        abbreviation: "CA"
+                        slug: "california"
+                      - name: "Florida"
+                        abbreviation: "FL"
+                        slug: "florida"
+                      - name: "Texas"
+                        abbreviation: "TX"
+                        slug: "texas"
+                    courtTypes:
+                      - "Circuit Court"
+                      - "Court of Appeal"
+                      - "District Court of Appeal"
+                      - "Superior Court"
+                      - "Supreme Court"
+                with-state:
+                  summary: With state=CA parameter
+                  value:
+                    states:
+                      - name: "California"
+                        abbreviation: "CA"
+                        slug: "california"
+                    courtTypes:
+                      - "Court of Appeal"
+                      - "Superior Court"
+                      - "Supreme Court"
+                    counties:
+                      - name: "Alameda"
+                        slug: "alameda"
+                      - name: "Los Angeles"
+                        slug: "los-angeles"
+
+components:
+  schemas:
+    SearchResponse:
+      type: object
+      required:
+        - results
+        - total
+        - page
+        - limit
+        - totalPages
+        - filters
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+        total:
+          type: integer
+          description: Total number of matching judges
+          example: 42
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        limit:
+          type: integer
+          description: Results per page
+          example: 20
+        totalPages:
+          type: integer
+          description: Total pages available
+          example: 3
+        filters:
+          type: object
+          description: Active filters echoed back
+          properties:
+            q:
+              type: string
+            state:
+              type: string
+            county:
+              type: string
+            courtType:
+              type: string
+
+    SearchResult:
+      type: object
+      required:
+        - id
+        - fullName
+        - slug
+        - court
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Judge UUID
+        fullName:
+          type: string
+          description: Judge's full name
+          example: "John Martinez"
+        slug:
+          type: string
+          description: URL slug for judge profile
+          example: "john-martinez"
+        court:
+          $ref: '#/components/schemas/CourtInfo'
+
+    CourtInfo:
+      type: object
+      required:
+        - type
+        - slug
+        - county
+      properties:
+        type:
+          type: string
+          description: Court type
+          example: "Superior Court"
+        slug:
+          type: string
+          description: Court slug
+          example: "superior-court"
+        county:
+          $ref: '#/components/schemas/CountyInfo'
+
+    CountyInfo:
+      type: object
+      required:
+        - name
+        - slug
+        - state
+      properties:
+        name:
+          type: string
+          example: "Los Angeles"
+        slug:
+          type: string
+          example: "los-angeles"
+        state:
+          $ref: '#/components/schemas/StateInfo'
+
+    StateInfo:
+      type: object
+      required:
+        - name
+        - abbreviation
+        - slug
+      properties:
+        name:
+          type: string
+          example: "California"
+        abbreviation:
+          type: string
+          example: "CA"
+        slug:
+          type: string
+          example: "california"
+
+    FilterOptions:
+      type: object
+      required:
+        - states
+        - courtTypes
+      properties:
+        states:
+          type: array
+          items:
+            $ref: '#/components/schemas/StateInfo'
+        courtTypes:
+          type: array
+          items:
+            type: string
+          example: ["Circuit Court", "Supreme Court"]
+        counties:
+          type: array
+          description: Only present when state parameter is provided
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              slug:
+                type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: "INVALID_PARAMETER"
+        message:
+          type: string
+          example: "Invalid state abbreviation: 'XX'"
+
+tags:
+  - name: Search
+    description: Judge search and discovery endpoints
