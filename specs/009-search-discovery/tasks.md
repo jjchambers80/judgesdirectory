@@ -29,7 +29,10 @@
 **⚠️ CRITICAL**: No UI work can begin until this phase is complete
 
 - [ ] T004 Create search API route in `src/app/api/search/route.ts` with GET handler
+- [ ] T004a Validate/sanitize search API parameters (limit max 100, page >= 1, sanitize q)
 - [ ] T005 Implement Prisma query builder in `src/lib/search.ts` (buildSearchQuery function)
+- [ ] T005a Add input normalization (unicode, apostrophes, hyphens) before query per edge case
+- [ ] T005b Add `ORDER BY similarity(fullName, query) DESC` for relevance ranking per SC-003
 - [ ] T006 Add VERIFIED-only filter to search query (Constitution Principle I)
 - [ ] T007 Create filters API route in `src/app/api/search/filters/route.ts` (states, courtTypes)
 - [ ] T008 Add response envelope with pagination metadata (total, page, limit, totalPages)
@@ -160,6 +163,7 @@
 **Purpose**: Accessibility, mobile responsiveness, edge cases, SEO
 
 - [ ] T048 Add keyboard navigation for all filters (Tab, Enter) per FR-018
+- [ ] T048a Add skip-navigation link on `/judges` page per Constitution Principle VI
 - [ ] T049 [P] Add visible focus indicators per WCAG 2.1 AA
 - [ ] T050 [P] Add mobile-responsive styles for search and filters
 - [ ] T051 [P] Ensure search page SSR for SEO per Constitution Principle II
@@ -235,4 +239,4 @@ graph LR
 4. **Enhancement (P6)**: Autocomplete is enhancement layer
 5. **Polish**: Accessibility and mobile last but critical
 
-**Estimated Total**: 54 tasks across 9 phases
+**Estimated Total**: 58 tasks across 9 phases

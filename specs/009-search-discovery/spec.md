@@ -126,8 +126,8 @@ As a user types in the search box, they see autocomplete suggestions that help t
 - **FR-001**: System MUST provide a search input field accessible from the `/judges` page
 - **FR-002**: System MUST search judge names using case-insensitive partial matching
 - **FR-003**: System MUST return search results within 500ms for queries against the full dataset
-- **FR-004**: System MUST provide a state filter dropdown populated with all 51 states/territories
-- **FR-005**: System MUST provide a court type filter dropdown (Supreme Court, Appellate Court, Circuit Court, County Court, District Court)
+- **FR-004**: System MUST provide a state filter dropdown populated with all states and DC
+- **FR-005**: System MUST provide a court type filter dropdown dynamically populated from distinct court types in the database
 - **FR-006**: System MUST provide a county filter dropdown that activates when a state is selected
 - **FR-007**: System MUST support combining search query with multiple filters (AND logic)
 - **FR-008**: System MUST paginate results with 20 judges per page
