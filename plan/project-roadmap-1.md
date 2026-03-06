@@ -1,8 +1,8 @@
 ---
 goal: JudgesDirectory Project Roadmap and Feature Status
-version: 1.0
+version: 1.1
 date_created: 2026-03-01
-last_updated: 2026-03-01
+last_updated: 2026-03-05
 owner: JudgesDirectory Team
 status: "In progress"
 tags: ["roadmap", "feature", "architecture", "migration"]
@@ -16,7 +16,7 @@ This document serves as the consolidated project roadmap for judgesdirectory.org
 
 **Project Vision**: Build the authoritative, source-attributed, search-engine-optimized directory of judges in the United States.
 
-**Current Milestone**: Florida pilot complete — 950+ judges harvested, import/verification pipeline operational.
+**Current Milestone**: Multi-state expansion complete — 2,818 judges across CA (1,777), FL (944), TX (97). NY blocked by Cloudflare.
 
 ## 1. Requirements & Constraints
 
@@ -107,20 +107,22 @@ This document serves as the consolidated project roadmap for judgesdirectory.org
 
 ---
 
-### Implementation Phase 5: State Expansion (PLANNED)
+### Implementation Phase 5: State Expansion (COMPLETED)
 
 - GOAL-005: Extend harvesting infrastructure to additional states, starting with high-value targets (Texas, California, New York) using the proven Florida pattern.
 
-| Task     | Description                                            | Completed | Date |
-| -------- | ------------------------------------------------------ | --------- | ---- |
-| TASK-033 | Create state-agnostic harvester configuration schema   |           |      |
-| TASK-034 | Texas court structure mapping + URL curation           |           |      |
-| TASK-035 | California court structure mapping + URL curation      |           |      |
-| TASK-036 | New York court structure mapping + URL curation        |           |      |
-| TASK-037 | Multi-state CLI orchestration (--state flag)           |           |      |
-| TASK-038 | State-specific extraction prompts for court variations |           |      |
+| Task     | Description                                            | Completed | Date       |
+| -------- | ------------------------------------------------------ | --------- | ---------- |
+| TASK-033 | Create state-agnostic harvester configuration schema   | ✅        | 2026-03-05 |
+| TASK-034 | Texas court structure mapping + URL curation           | ✅        | 2026-03-05 |
+| TASK-035 | California court structure mapping + URL curation      | ✅        | 2026-03-05 |
+| TASK-036 | New York court structure mapping + URL curation        | ✅        | 2026-03-05 |
+| TASK-037 | Multi-state CLI orchestration (--state flag)           | ✅        | 2026-03-05 |
+| TASK-038 | State-specific extraction prompts for court variations | ✅        | 2026-03-05 |
 
-**Spec Reference**: Not yet created — requires `specs/005-state-expansion/`
+**Spec Reference**: [specs/008-state-expansion/](../specs/008-state-expansion/)
+
+**Results**: CA: 1,777 judges | FL: 944 judges | TX: 97 judges (appellate only) | NY: 0 (Cloudflare blocked — see [docs/research/new-york-cloudflare-block.md](../docs/research/new-york-cloudflare-block.md))
 
 ---
 
@@ -242,13 +244,13 @@ This document serves as the consolidated project roadmap for judgesdirectory.org
 | 2     | Theme Toggle        | ✅ Completed | [002-theme-toggle](../specs/002-theme-toggle/)                   |
 | 3     | Data Ingestion      | ✅ Completed | [003-data-ingestion](../specs/003-data-ingestion/)               |
 | 4     | Florida Harvest     | ✅ Completed | [004-florida-judge-harvest](../specs/004-florida-judge-harvest/) |
-| 5     | State Expansion     | 📋 Planned   | TBD                                                              |
+| 5     | State Expansion     | ✅ Completed | [008-state-expansion](../specs/008-state-expansion/)             |
 | 6     | Search & Discovery  | 📋 Planned   | TBD                                                              |
 | 7     | Display Ads         | 📋 Planned   | TBD                                                              |
 | 8     | Attorney Placements | 📋 Planned   | TBD                                                              |
 
-**Short Term (Now)**: Operationalize Florida data — import, verify, publish judge profiles at scale.
+**Short Term (Now)**: Add search functionality to make 2,800+ judges discoverable; verify CA batch (1,769 NEEDS_REVIEW).
 
-**Medium Term (Q2 2026)**: Expand to 3 pilot states (Texas, California, New York) to reach 5,000+ verified judges.
+**Medium Term (Q2 2026)**: Resolve NY Cloudflare block; expand to 5 more states to reach 10,000+ judges.
 
-**Long Term (Q3+ 2026)**: Enable search, introduce monetization, expand to nationwide coverage.
+**Long Term (Q3+ 2026)**: Enable monetization (ads, attorney placements), expand to nationwide coverage.
