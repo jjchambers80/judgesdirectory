@@ -20,8 +20,8 @@ Verify the pg_trgm index was created:
 ```bash
 # Connect to database
 npx prisma db execute --stdin <<EOF
-SELECT indexname, indexdef 
-FROM pg_indexes 
+SELECT indexname, indexdef
+FROM pg_indexes
 WHERE tablename = 'judges' AND indexname LIKE '%trgm%';
 EOF
 ```
@@ -53,41 +53,41 @@ curl "http://localhost:3000/api/search/filters?state=FL" | jq
 
 Navigate to `http://localhost:3000/judges` and verify:
 
-| Step | Action | Expected Result |
-|------|--------|-----------------|
-| 1 | Page loads | Search input visible at top |
-| 2 | Type "Smith" in search | Results appear within 300ms |
-| 3 | Click state dropdown | Shows CA, FL, TX (states with data) |
-| 4 | Select "California" | Results filter to CA judges only |
-| 5 | Select "Florida" from state | County dropdown becomes available |
-| 6 | Select "Miami-Dade" county | Results filter to Miami-Dade |
-| 7 | Click "Clear filters" | All filters reset, full results shown |
-| 8 | Scroll to bottom | Pagination controls visible |
-| 9 | Click "Page 2" | Next 20 results load |
-| 10 | Copy URL and paste in new tab | Same filters and page preserved |
+| Step | Action                        | Expected Result                       |
+| ---- | ----------------------------- | ------------------------------------- |
+| 1    | Page loads                    | Search input visible at top           |
+| 2    | Type "Smith" in search        | Results appear within 300ms           |
+| 3    | Click state dropdown          | Shows CA, FL, TX (states with data)   |
+| 4    | Select "California"           | Results filter to CA judges only      |
+| 5    | Select "Florida" from state   | County dropdown becomes available     |
+| 6    | Select "Miami-Dade" county    | Results filter to Miami-Dade          |
+| 7    | Click "Clear filters"         | All filters reset, full results shown |
+| 8    | Scroll to bottom              | Pagination controls visible           |
+| 9    | Click "Page 2"                | Next 20 results load                  |
+| 10   | Copy URL and paste in new tab | Same filters and page preserved       |
 
 ### 4. Keyboard Navigation
 
 Test accessibility:
 
-| Action | Expected Behavior |
-|--------|-------------------|
-| Tab through page | Focus moves through search → filters → results |
+| Action                     | Expected Behavior                                 |
+| -------------------------- | ------------------------------------------------- |
+| Tab through page           | Focus moves through search → filters → results    |
 | Type in search, press Down | Autocomplete dropdown appears, first item focused |
-| Press Down/Up in dropdown | Selection moves through suggestions |
-| Press Enter on suggestion | Judge profile page loads |
-| Press Escape | Autocomplete closes |
-| Tab to filter, press Enter | Dropdown opens |
+| Press Down/Up in dropdown  | Selection moves through suggestions               |
+| Press Enter on suggestion  | Judge profile page loads                          |
+| Press Escape               | Autocomplete closes                               |
+| Tab to filter, press Enter | Dropdown opens                                    |
 
 ### 5. Performance Check
 
 Use browser DevTools Network tab:
 
-| Request | Target | Acceptable Max |
-|---------|--------|----------------|
-| `/api/search?q=...` | <200ms | 500ms |
-| `/api/search/filters` | <100ms | 200ms |
-| Autocomplete request | <100ms | 200ms |
+| Request               | Target | Acceptable Max |
+| --------------------- | ------ | -------------- |
+| `/api/search?q=...`   | <200ms | 500ms          |
+| `/api/search/filters` | <100ms | 200ms          |
+| Autocomplete request  | <100ms | 200ms          |
 
 ### 6. Mobile Responsiveness
 
@@ -101,11 +101,11 @@ Test at 375px viewport width (iPhone SE):
 
 ### 7. Empty States
 
-| Scenario | Expected Message |
-|----------|------------------|
-| Search "xyzzzz" (no matches) | "No judges found matching 'xyzzzz'" |
+| Scenario                             | Expected Message                                  |
+| ------------------------------------ | ------------------------------------------------- |
+| Search "xyzzzz" (no matches)         | "No judges found matching 'xyzzzz'"               |
 | Filter state with no verified judges | "No verified judges in [State]. Check back soon." |
-| Clear all filters on empty search | Returns to paginated list of all judges |
+| Clear all filters on empty search    | Returns to paginated list of all judges           |
 
 ## Success Criteria Checklist
 
@@ -123,6 +123,7 @@ Test at 375px viewport width (iPhone SE):
 ### Search returns no results
 
 1. Check that judges exist with `status = VERIFIED`:
+
    ```sql
    SELECT COUNT(*) FROM judges WHERE status = 'VERIFIED';
    ```
@@ -135,6 +136,7 @@ Test at 375px viewport width (iPhone SE):
 ### Autocomplete is slow
 
 1. Check index exists:
+
    ```sql
    SELECT indexname FROM pg_indexes WHERE indexname LIKE '%trgm%';
    ```
@@ -147,6 +149,7 @@ Test at 375px viewport width (iPhone SE):
 ### Filters show empty dropdowns
 
 Check that filter options endpoint returns data:
+
 ```bash
 curl "http://localhost:3000/api/search/filters" | jq '.states | length'
 ```

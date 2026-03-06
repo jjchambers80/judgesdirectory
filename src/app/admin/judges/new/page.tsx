@@ -149,7 +149,7 @@ export default function AdminJudgeNewPage() {
 
   const inputClasses = (field: string) =>
     cn(
-      "block w-full px-3 py-2 border rounded-md mt-1",
+      "block w-full px-3 py-2 border rounded-md mt-1 bg-background text-foreground placeholder:text-muted-foreground",
       fieldError(field) ? "border-input-border-error" : "border-input",
     );
 
@@ -251,9 +251,9 @@ export default function AdminJudgeNewPage() {
                 onClick={() => setShowNewCourt(!showNewCourt)}
                 disabled={!selectedCountyId}
                 className={cn(
-                  "px-3 py-2 border border-input rounded-md bg-background whitespace-nowrap text-sm",
+                  "px-3 py-2 border border-input rounded-md bg-background text-foreground whitespace-nowrap text-sm",
                   selectedCountyId
-                    ? "cursor-pointer"
+                    ? "cursor-pointer hover:bg-muted transition-colors"
                     : "cursor-not-allowed opacity-50",
                 )}
               >

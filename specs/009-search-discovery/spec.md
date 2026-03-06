@@ -5,7 +5,7 @@
 **Status**: Draft  
 **Input**: User description: "Search & Discovery - Add judge search functionality with autocomplete, filters by state/county/court type, and relevance ranking"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Quick Judge Name Search (Priority: P1)
 
@@ -119,7 +119,7 @@ As a user types in the search box, they see autocomplete suggestions that help t
 - What happens when user clears search while typing?
   - Cancel pending autocomplete requests; reset to default state
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -149,7 +149,7 @@ As a user types in the search box, they see autocomplete suggestions that help t
 - **Search Result**: Judge record with id, fullName, court.name, court.county.state.name, slug for navigation
 - **Pagination State**: Current page number, page size (20), total result count
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

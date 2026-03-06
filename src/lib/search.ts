@@ -1,12 +1,12 @@
 /**
  * Search & Discovery
  * Feature: 009-search-discovery
- * 
+ *
  * TypeScript types and query builders for judge search functionality.
  */
 
-import { Prisma, JudgeStatus } from '@prisma/client';
-import { prisma } from './db';
+import { Prisma, JudgeStatus } from "@prisma/client";
+import { prisma } from "./db";
 
 // =============================================================================
 // Types
@@ -99,21 +99,23 @@ export interface FilterOptions {
  * per edge case specification
  */
 export function normalizeSearchQuery(query: string): string {
-  if (!query) return '';
-  
-  return query
-    // Normalize unicode characters (e.g., accented characters)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    // Preserve apostrophes but normalize different quote styles (O'Brien)
-    .replace(/[''`]/g, "'")
-    // Preserve hyphens for hyphenated names (Mary-Ann)
-    .replace(/–|—/g, '-')
-    // Remove other special characters but keep letters, numbers, spaces, apostrophes, hyphens
-    .replace(/[^\w\s'-]/g, '')
-    // Collapse multiple spaces
-    .replace(/\s+/g, ' ')
-    .trim();
+  if (!query) return "";
+
+  return (
+    query
+      // Normalize unicode characters (e.g., accented characters)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      // Preserve apostrophes but normalize different quote styles (O'Brien)
+      .replace(/[''`]/g, "'")
+      // Preserve hyphens for hyphenated names (Mary-Ann)
+      .replace(/–|—/g, "-")
+      // Remove other special characters but keep letters, numbers, spaces, apostrophes, hyphens
+      .replace(/[^\w\s'-]/g, "")
+      // Collapse multiple spaces
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 // =============================================================================
@@ -150,10 +152,12 @@ const searchResultSelect = {
  * Build Prisma where clause from search parameters.
  * Always filters to VERIFIED judges only (Constitution Principle I).
  */
-export function buildSearchWhereClause(params: SearchParams): Prisma.JudgeWhereInput {
+export function buildSearchWhereClause(
+  params: SearchParams,
+): Prisma.JudgeWhereInput {
   const { q, state, county, courtType } = params;
   const normalizedQuery = q ? normalizeSearchQuery(q) : undefined;
-  
+
   const where: Prisma.JudgeWhereInput = {
     // Constitution Principle I: Only VERIFIED judges in public results
     status: JudgeStatus.VERIFIED,
@@ -163,7 +167,7 @@ export function buildSearchWhereClause(params: SearchParams): Prisma.JudgeWhereI
   if (normalizedQuery) {
     where.fullName = {
       contains: normalizedQuery,
-      mode: 'insensitive',
+      mode: "insensitive",
     };
   }
 
@@ -177,7 +181,7 @@ export function buildSearchWhereClause(params: SearchParams): Prisma.JudgeWhereI
   // County filter (requires joining through court)
   if (county) {
     where.court = {
-      ...where.court as object,
+      ...(where.court as object),
       county: {
         slug: county,
       },
@@ -187,9 +191,9 @@ export function buildSearchWhereClause(params: SearchParams): Prisma.JudgeWhereI
   // State filter (requires joining through court -> county)
   if (state) {
     where.court = {
-      ...where.court as object,
+      ...(where.court as object),
       county: {
-        ...(where.court as { county?: object })?.county as object,
+        ...((where.court as { county?: object })?.county as object),
         state: {
           abbreviation: state.toUpperCase(),
         },
@@ -204,11 +208,13 @@ export function buildSearchWhereClause(params: SearchParams): Prisma.JudgeWhereI
  * Execute search query with pagination.
  * Uses pg_trgm similarity for relevance ranking when query is present.
  */
-export async function executeSearch(params: SearchParams): Promise<SearchResponse> {
+export async function executeSearch(
+  params: SearchParams,
+): Promise<SearchResponse> {
   const page = Math.max(1, params.page || 1);
   const limit = Math.min(100, Math.max(1, params.limit || 20));
   const skip = (page - 1) * limit;
-  
+
   const where = buildSearchWhereClause(params);
   const normalizedQuery = params.q ? normalizeSearchQuery(params.q) : undefined;
 
@@ -221,7 +227,7 @@ export async function executeSearch(params: SearchParams): Promise<SearchRespons
       skip,
       take: limit,
       // Order by name for consistent results (similarity ordering done via raw query when needed)
-      orderBy: { fullName: 'asc' },
+      orderBy: { fullName: "asc" },
     }),
   ]);
 
@@ -235,19 +241,19 @@ export async function executeSearch(params: SearchParams): Promise<SearchRespons
     results = results.sort((a, b) => {
       const aName = a.fullName.toLowerCase();
       const bName = b.fullName.toLowerCase();
-      
+
       // Prioritize exact matches at start of name
       const aStartsWith = aName.startsWith(queryLower);
       const bStartsWith = bName.startsWith(queryLower);
       if (aStartsWith && !bStartsWith) return -1;
       if (!aStartsWith && bStartsWith) return 1;
-      
+
       // Then prioritize word boundaries
-      const aWordMatch = aName.split(' ').some(w => w.startsWith(queryLower));
-      const bWordMatch = bName.split(' ').some(w => w.startsWith(queryLower));
+      const aWordMatch = aName.split(" ").some((w) => w.startsWith(queryLower));
+      const bWordMatch = bName.split(" ").some((w) => w.startsWith(queryLower));
       if (aWordMatch && !bWordMatch) return -1;
       if (!aWordMatch && bWordMatch) return 1;
-      
+
       // Fall back to alphabetical
       return aName.localeCompare(bName);
     });
@@ -276,7 +282,9 @@ export async function executeSearch(params: SearchParams): Promise<SearchRespons
  * Get available filter options (states, court types, and optionally counties).
  * Only returns values that have at least one VERIFIED judge.
  */
-export async function getFilterOptions(stateAbbr?: string): Promise<FilterOptions> {
+export async function getFilterOptions(
+  stateAbbr?: string,
+): Promise<FilterOptions> {
   // Get states with verified judges
   const statesPromise = prisma.state.findMany({
     where: {
@@ -297,7 +305,7 @@ export async function getFilterOptions(stateAbbr?: string): Promise<FilterOption
       abbreviation: true,
       slug: true,
     },
-    orderBy: { name: 'asc' },
+    orderBy: { name: "asc" },
   });
 
   // Get distinct court types with verified judges
@@ -308,8 +316,8 @@ export async function getFilterOptions(stateAbbr?: string): Promise<FilterOption
       },
     },
     select: { type: true },
-    distinct: ['type'],
-    orderBy: { type: 'asc' },
+    distinct: ["type"],
+    orderBy: { type: "asc" },
   });
 
   // Get counties if state specified
@@ -329,7 +337,7 @@ export async function getFilterOptions(stateAbbr?: string): Promise<FilterOption
           name: true,
           slug: true,
         },
-        orderBy: { name: 'asc' },
+        orderBy: { name: "asc" },
       })
     : Promise.resolve(undefined);
 
@@ -361,7 +369,9 @@ export interface ValidationResult {
  * Validate and sanitize search parameters.
  * Returns cleaned params with validation errors.
  */
-export function validateSearchParams(raw: Record<string, string | undefined>): ValidationResult {
+export function validateSearchParams(
+  raw: Record<string, string | undefined>,
+): ValidationResult {
   const errors: string[] = [];
   const params: SearchParams = {};
 
@@ -369,7 +379,7 @@ export function validateSearchParams(raw: Record<string, string | undefined>): V
   if (raw.q !== undefined) {
     const q = raw.q.trim();
     if (q.length > 100) {
-      errors.push('Query too long (max 100 characters)');
+      errors.push("Query too long (max 100 characters)");
     } else if (q.length > 0) {
       params.q = q;
     }
@@ -381,7 +391,7 @@ export function validateSearchParams(raw: Record<string, string | undefined>): V
     if (state.length === 2 && /^[A-Z]{2}$/.test(state)) {
       params.state = state;
     } else if (state.length > 0) {
-      errors.push('Invalid state abbreviation');
+      errors.push("Invalid state abbreviation");
     }
   }
 

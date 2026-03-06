@@ -193,7 +193,7 @@ export default function AdminImportPage() {
             id="import-state-select"
             value=""
             onChange={(e) => handleStateSelect(e.target.value)}
-            className="px-3 py-2 border border-input rounded-md w-full max-w-96"
+            className="px-3 py-2 border border-input rounded-md bg-background text-foreground w-full max-w-96"
           >
             <option value="">Choose a state…</option>
             {states.map((s) => (

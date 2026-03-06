@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
 /**
  * SearchResults Component
  * Feature: 009-search-discovery (US1)
- * 
+ *
  * Displays search results as a list of judge cards with:
  * - Judge name with search term highlighting
  * - Court type and location context
  * - Click to navigate to judge profile
  */
 
-import * as React from 'react';
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
-import { Pagination } from '@/components/ui/pagination';
-import type { SearchResult, SearchResponse } from '@/lib/search';
+import * as React from "react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/ui/pagination";
+import type { SearchResult, SearchResponse } from "@/lib/search";
 
 interface SearchResultsProps {
   /** Search response data */
@@ -34,11 +34,11 @@ interface SearchResultsProps {
  */
 function highlightMatch(text: string, query: string): React.ReactNode {
   if (!query || query.length < 1) return text;
-  
-  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escapedQuery})`, 'gi');
+
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escapedQuery})`, "gi");
   const parts = text.split(regex);
-  
+
   return parts.map((part, index) => {
     if (part.toLowerCase() === query.toLowerCase()) {
       return (
@@ -65,32 +65,33 @@ function buildJudgeUrl(result: SearchResult): string {
 /**
  * Individual result card component (T011)
  */
-function ResultCard({ 
-  result, 
-  query 
-}: { 
-  result: SearchResult; 
-  query: string; 
+function ResultCard({
+  result,
+  query,
+}: {
+  result: SearchResult;
+  query: string;
 }) {
   const profileUrl = buildJudgeUrl(result);
-  
+
   return (
     <Link
       href={profileUrl}
       className={cn(
-        'block p-4 rounded-lg border',
-        'bg-card hover:bg-accent transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        "block p-4 rounded-lg border",
+        "bg-card hover:bg-accent transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       )}
     >
       {/* Judge name with highlighting */}
       <h3 className="font-semibold text-foreground">
         {highlightMatch(result.fullName, query)}
       </h3>
-      
+
       {/* Court and location context (FR-015) */}
       <p className="text-sm text-muted-foreground mt-1">
-        {result.court.type} · {result.court.county.name}, {result.court.county.state.name}
+        {result.court.type} · {result.court.county.name},{" "}
+        {result.court.county.state.name}
       </p>
     </Link>
   );
@@ -116,11 +117,14 @@ function EmptyState({ query }: { query: string }) {
           d="M15.75 15.75l-2.489-2.489m0 0a3.375 3.375 0 10-4.773-4.773 3.375 3.375 0 004.773 4.773zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
       </svg>
-      <h3 className="mt-4 text-lg font-medium text-foreground">No judges found</h3>
+      <h3 className="mt-4 text-lg font-medium text-foreground">
+        No judges found
+      </h3>
       <p className="mt-2 text-sm text-muted-foreground">
         {query ? (
           <>
-            No verified judges match &ldquo;{query}&rdquo;. Try a different search term or{' '}
+            No verified judges match &ldquo;{query}&rdquo;. Try a different
+            search term or{" "}
             <Link href="/judges/" className="text-primary hover:underline">
               browse by state
             </Link>
@@ -128,7 +132,7 @@ function EmptyState({ query }: { query: string }) {
           </>
         ) : (
           <>
-            Enter a judge name to search or{' '}
+            Enter a judge name to search or{" "}
             <Link href="/judges/" className="text-primary hover:underline">
               browse by state
             </Link>
@@ -193,9 +197,10 @@ export function SearchResults({
     <div className={className}>
       {/* Result count (T036) */}
       <p className="text-sm text-muted-foreground mb-4">
-        Showing {startResult.toLocaleString()}–{endResult.toLocaleString()} of {total.toLocaleString()} judges
+        Showing {startResult.toLocaleString()}–{endResult.toLocaleString()} of{" "}
+        {total.toLocaleString()} judges
       </p>
-      
+
       {/* Results list */}
       <div className="space-y-3">
         {results.map((result) => (

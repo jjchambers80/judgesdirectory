@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
 /**
  * SearchFilters Component
  * Feature: 009-search-discovery (US2, US3, US4)
- * 
+ *
  * Filter dropdowns for state, court type, and county.
  * County filter is cascaded (enabled only when state is selected).
  */
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { FilterChip } from './FilterChip';
-import type { FilterOptions } from '@/lib/search';
+import * as React from "react";
+import { cn } from "@/lib/utils";
+import { FilterChip } from "./FilterChip";
+import type { FilterOptions } from "@/lib/search";
 
 interface FilterState {
   state?: string;
@@ -78,7 +78,7 @@ export function SearchFilters({
     const newFilters = { ...filters };
     delete newFilters[key];
     // If removing state, also remove county
-    if (key === 'state') {
+    if (key === "state") {
       delete newFilters.county;
     }
     onFiltersChange(newFilters);
@@ -89,29 +89,29 @@ export function SearchFilters({
   // Find labels for active filters
   const getStateLabel = () => {
     if (!filters.state || !options) return null;
-    const state = options.states.find(s => s.abbreviation === filters.state);
+    const state = options.states.find((s) => s.abbreviation === filters.state);
     return state?.name;
   };
 
   const getCountyLabel = () => {
     if (!filters.county || !options?.counties) return null;
-    const county = options.counties.find(c => c.slug === filters.county);
+    const county = options.counties.find((c) => c.slug === filters.county);
     return county?.name;
   };
 
   return (
-    <div className={cn('space-y-4', className)}>
+    <div className={cn("space-y-4", className)}>
       {/* Filter dropdowns */}
       <div className="flex flex-wrap gap-3">
         {/* State filter (US2) */}
         <select
-          value={filters.state || ''}
+          value={filters.state || ""}
           onChange={handleStateChange}
           disabled={isLoading || !options}
           className={cn(
-            'h-9 px-3 rounded-md border border-input bg-background text-sm',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            'disabled:cursor-not-allowed disabled:opacity-50',
+            "h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "disabled:cursor-not-allowed disabled:opacity-50",
           )}
           aria-label="Filter by state"
         >
@@ -125,13 +125,13 @@ export function SearchFilters({
 
         {/* Court type filter (US3) */}
         <select
-          value={filters.courtType || ''}
+          value={filters.courtType || ""}
           onChange={handleCourtTypeChange}
           disabled={isLoading || !options}
           className={cn(
-            'h-9 px-3 rounded-md border border-input bg-background text-sm',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            'disabled:cursor-not-allowed disabled:opacity-50',
+            "h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "disabled:cursor-not-allowed disabled:opacity-50",
           )}
           aria-label="Filter by court type"
         >
@@ -146,19 +146,19 @@ export function SearchFilters({
         {/* County filter (US4) - only enabled when state is selected */}
         <div className="relative">
           <select
-            value={filters.county || ''}
+            value={filters.county || ""}
             onChange={handleCountyChange}
             disabled={isLoading || !filters.state || !options?.counties}
             className={cn(
-              'h-9 px-3 rounded-md border border-input bg-background text-sm',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              'disabled:cursor-not-allowed disabled:opacity-50',
+              "h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "disabled:cursor-not-allowed disabled:opacity-50",
             )}
             aria-label="Filter by county"
-            title={!filters.state ? 'Select a state first' : undefined}
+            title={!filters.state ? "Select a state first" : undefined}
           >
             <option value="">
-              {!filters.state ? 'Select state first' : 'All Counties'}
+              {!filters.state ? "Select state first" : "All Counties"}
             </option>
             {options?.counties?.map((county) => (
               <option key={county.slug} value={county.slug}>
@@ -174,9 +174,9 @@ export function SearchFilters({
             type="button"
             onClick={handleClearAll}
             className={cn(
-              'h-9 px-3 rounded-md text-sm',
-              'text-muted-foreground hover:text-foreground',
-              'hover:bg-accent transition-colors',
+              "h-9 px-3 rounded-md text-sm",
+              "text-muted-foreground hover:text-foreground",
+              "hover:bg-accent transition-colors",
             )}
           >
             Clear all
@@ -190,19 +190,19 @@ export function SearchFilters({
           {filters.state && getStateLabel() && (
             <FilterChip
               label={getStateLabel()!}
-              onRemove={() => removeFilter('state')}
+              onRemove={() => removeFilter("state")}
             />
           )}
           {filters.courtType && (
             <FilterChip
               label={filters.courtType}
-              onRemove={() => removeFilter('courtType')}
+              onRemove={() => removeFilter("courtType")}
             />
           )}
           {filters.county && getCountyLabel() && (
             <FilterChip
               label={getCountyLabel()!}
-              onRemove={() => removeFilter('county')}
+              onRemove={() => removeFilter("county")}
             />
           )}
         </div>

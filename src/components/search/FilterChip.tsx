@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
 /**
  * FilterChip Component
  * Feature: 009-search-discovery (US2)
- * 
+ *
  * Active filter badge with remove action.
  */
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface FilterChipProps {
   /** Filter label (e.g., "California") */
@@ -23,8 +23,8 @@ export function FilterChip({ label, onRemove, className }: FilterChipProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm',
-        'bg-primary/10 text-primary border border-primary/20',
+        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm",
+        "bg-primary/10 text-primary border border-primary/20",
         className,
       )}
     >
@@ -43,7 +43,11 @@ export function FilterChip({ label, onRemove, className }: FilterChipProps) {
           strokeWidth={2}
           stroke="currentColor"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          />
         </svg>
       </button>
     </span>

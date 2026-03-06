@@ -92,7 +92,7 @@ export default function BulkCourtForm({ states }: BulkCourtFormProps) {
             value={selectedStateId}
             onChange={(e) => setSelectedStateId(e.target.value)}
             required
-            className="px-3 py-2 border border-input rounded-md w-full max-w-sm"
+            className="px-3 py-2 border border-input rounded-md bg-background text-foreground w-full max-w-sm"
           >
             <option value="">Select a state…</option>
             {states.map((s) => (
@@ -114,7 +114,7 @@ export default function BulkCourtForm({ states }: BulkCourtFormProps) {
             onChange={(e) => setCourtTypesInput(e.target.value)}
             placeholder="District Court, County Court, Justice of the Peace Court"
             required
-            className="px-3 py-2 border border-input rounded-md w-full"
+            className="px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground w-full"
           />
           <small className="text-muted-foreground">
             Max 10 court types per request

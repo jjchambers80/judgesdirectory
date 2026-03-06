@@ -79,7 +79,7 @@ export default function ColumnMapper({
                       value={targetValue}
                       onChange={(e) => handleChange(col, e.target.value)}
                       aria-label={`Mapping for ${col}`}
-                      className="px-2 py-1.5 border border-input rounded w-full max-w-64"
+                      className="px-2 py-1.5 border border-input rounded bg-background text-foreground w-full max-w-64"
                     >
                       {TARGET_FIELDS.map((f) => (
                         <option

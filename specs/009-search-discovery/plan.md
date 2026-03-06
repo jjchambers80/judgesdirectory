@@ -21,17 +21,17 @@ Add judge search functionality with full-text name search, filterable by state/c
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Principle | Status | Notes |
-|-----------|--------|-------|
-| I. Data Accuracy & Source Attribution | ✅ PASS | FR-012 requires only VERIFIED judges in results |
-| II. SEO-First Architecture | ✅ PASS | Search page will have SSR, URL state for indexable filtered views |
-| III. Legal Safety & Neutrality | ✅ PASS | No ratings/reviews/commentary in search results |
-| IV. State-by-State Expansion | ✅ PASS | Search enables discovery across all expanded states |
-| V. Simplicity & Incremental Discipline | ✅ PASS | Using PostgreSQL native search, no external service |
-| VI. Accessibility & WCAG Compliance | ✅ PASS | FR-018 requires keyboard navigation, SC-007 requires mobile support |
-| VII. Data Pipeline Integrity | N/A | No pipeline changes in this feature |
+| Principle                              | Status  | Notes                                                               |
+| -------------------------------------- | ------- | ------------------------------------------------------------------- |
+| I. Data Accuracy & Source Attribution  | ✅ PASS | FR-012 requires only VERIFIED judges in results                     |
+| II. SEO-First Architecture             | ✅ PASS | Search page will have SSR, URL state for indexable filtered views   |
+| III. Legal Safety & Neutrality         | ✅ PASS | No ratings/reviews/commentary in search results                     |
+| IV. State-by-State Expansion           | ✅ PASS | Search enables discovery across all expanded states                 |
+| V. Simplicity & Incremental Discipline | ✅ PASS | Using PostgreSQL native search, no external service                 |
+| VI. Accessibility & WCAG Compliance    | ✅ PASS | FR-018 requires keyboard navigation, SC-007 requires mobile support |
+| VII. Data Pipeline Integrity           | N/A     | No pipeline changes in this feature                                 |
 
 **Gate Status**: PASS — No violations requiring justification.
 

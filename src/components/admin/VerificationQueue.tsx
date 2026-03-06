@@ -194,7 +194,7 @@ export default function VerificationQueue({
           aria-label="Filter by status"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-2 py-1.5 border border-input rounded-md"
+          className="px-2 py-1.5 border border-input rounded-md bg-background text-foreground"
         >
           <option value="UNVERIFIED">Unverified</option>
           <option value="VERIFIED">Verified</option>
@@ -205,7 +205,7 @@ export default function VerificationQueue({
           aria-label="Filter by state"
           value={stateId}
           onChange={(e) => setStateId(e.target.value)}
-          className="px-2 py-1.5 border border-input rounded-md"
+          className="px-2 py-1.5 border border-input rounded-md bg-background text-foreground"
         >
           <option value="">All States</option>
           {states.map((s) => (
@@ -219,7 +219,7 @@ export default function VerificationQueue({
           aria-label="Filter by import batch"
           value={batchId}
           onChange={(e) => setBatchId(e.target.value)}
-          className="px-2 py-1.5 border border-input rounded-md"
+          className="px-2 py-1.5 border border-input rounded-md bg-background text-foreground"
         >
           <option value="">All Batches</option>
           {batches.map((b) => (
@@ -402,25 +402,25 @@ export default function VerificationQueue({
             disabled={pagination.page <= 1}
             onClick={() => fetchQueue(pagination.page - 1)}
             className={cn(
-              "px-3 py-1.5 border border-input rounded-md bg-background",
+              "px-3 py-1.5 border border-input rounded-md bg-background text-foreground",
               pagination.page <= 1
                 ? "cursor-not-allowed opacity-50"
-                : "cursor-pointer",
+                : "cursor-pointer hover:bg-muted transition-colors",
             )}
           >
             Previous
           </button>
-          <span className="px-2 py-1.5 text-sm">
+          <span className="px-2 py-1.5 text-sm text-foreground">
             Page {pagination.page} of {pagination.totalPages}
           </span>
           <button
             disabled={pagination.page >= pagination.totalPages}
             onClick={() => fetchQueue(pagination.page + 1)}
             className={cn(
-              "px-3 py-1.5 border border-input rounded-md bg-background",
+              "px-3 py-1.5 border border-input rounded-md bg-background text-foreground",
               pagination.page >= pagination.totalPages
                 ? "cursor-not-allowed opacity-50"
-                : "cursor-pointer",
+                : "cursor-pointer hover:bg-muted transition-colors",
             )}
           >
             Next

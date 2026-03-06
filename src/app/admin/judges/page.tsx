@@ -98,13 +98,13 @@ export default function AdminJudgesPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           aria-label="Search judges by name"
-          className="px-3 py-2 border border-input rounded-md flex-1"
+          className="px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground flex-1"
         />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           aria-label="Filter by status"
-          className="px-3 py-2 border border-input rounded-md"
+          className="px-3 py-2 border border-input rounded-md bg-background text-foreground"
         >
           <option value="">All Status</option>
           <option value="VERIFIED">Verified</option>
@@ -168,7 +168,7 @@ export default function AdminJudgesPage() {
                       <div className="flex gap-2 text-sm">
                         <button
                           onClick={() => handleVerify(judge.id, judge.status)}
-                          className="px-2 py-1 border border-input rounded bg-background cursor-pointer text-xs hover:bg-muted transition-colors"
+                          className="px-2 py-1 border border-input rounded bg-background text-foreground cursor-pointer text-xs hover:bg-muted transition-colors"
                         >
                           {judge.status === "VERIFIED" ? "Unverify" : "Verify"}
                         </button>
@@ -197,7 +197,7 @@ export default function AdminJudgesPage() {
                 onClick={() => fetchJudges(pagination.page - 1)}
                 disabled={pagination.page <= 1}
                 className={cn(
-                  "px-4 py-2 border border-input rounded-md text-sm",
+                  "px-4 py-2 border border-input rounded-md text-sm bg-background text-foreground",
                   pagination.page <= 1
                     ? "opacity-50 cursor-not-allowed"
                     : "cursor-pointer hover:bg-muted transition-colors",
@@ -209,7 +209,7 @@ export default function AdminJudgesPage() {
                 onClick={() => fetchJudges(pagination.page + 1)}
                 disabled={pagination.page >= pagination.totalPages}
                 className={cn(
-                  "px-4 py-2 border border-input rounded-md text-sm",
+                  "px-4 py-2 border border-input rounded-md text-sm bg-background text-foreground",
                   pagination.page >= pagination.totalPages
                     ? "opacity-50 cursor-not-allowed"
                     : "cursor-pointer hover:bg-muted transition-colors",

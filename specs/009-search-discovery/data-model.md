@@ -17,11 +17,12 @@ This feature does not introduce new database tables. It adds a database index fo
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- GIN index on judges.fullName for ILIKE queries
-CREATE INDEX CONCURRENTLY idx_judges_fullname_trgm 
+CREATE INDEX CONCURRENTLY idx_judges_fullname_trgm
 ON judges USING GIN (fullName gin_trgm_ops);
 ```
 
 **Why GIN over GiST?**
+
 - GIN indexes are faster for read-heavy workloads (search queries)
 - GiST is better for frequent updates; judge data is write-infrequent
 - GIN with `gin_trgm_ops` supports `ILIKE` with `%pattern%`
@@ -48,19 +49,19 @@ Input parameters for search API requests.
 interface SearchParams {
   /** Text query for judge name (partial match) */
   q?: string;
-  
+
   /** Filter by state abbreviation (e.g., "CA", "FL") */
   state?: string;
-  
+
   /** Filter by county slug */
   county?: string;
-  
+
   /** Filter by court type (e.g., "Supreme Court") */
   courtType?: string;
-  
+
   /** Page number (1-indexed), default 1 */
   page?: number;
-  
+
   /** Results per page, default 20, max 100 */
   limit?: number;
 }
@@ -74,13 +75,13 @@ Individual judge result in search response.
 interface SearchResult {
   /** Judge UUID */
   id: string;
-  
+
   /** Judge's full name */
   fullName: string;
-  
+
   /** URL slug for judge profile */
   slug: string;
-  
+
   /** Court information for context */
   court: {
     type: string;
@@ -106,19 +107,19 @@ Full response envelope from search API.
 interface SearchResponse {
   /** Array of matching judges */
   results: SearchResult[];
-  
+
   /** Total count of matches (for pagination) */
   total: number;
-  
+
   /** Current page number */
   page: number;
-  
+
   /** Results per page */
   limit: number;
-  
+
   /** Total pages available */
   totalPages: number;
-  
+
   /** Active filters echoed back */
   filters: {
     q?: string;
@@ -141,10 +142,10 @@ interface FilterOptions {
     abbreviation: string;
     slug: string;
   }>;
-  
+
   /** Court types (distinct values from database) */
   courtTypes: string[];
-  
+
   /** Counties in selected state (dynamic) */
   counties?: Array<{
     name: string;
@@ -159,8 +160,8 @@ interface FilterOptions {
 
 ```typescript
 const where: Prisma.JudgeWhereInput = {
-  status: 'VERIFIED',                    // Constitution Principle I
-  ...(q && { fullName: { contains: q, mode: 'insensitive' } }),
+  status: "VERIFIED", // Constitution Principle I
+  ...(q && { fullName: { contains: q, mode: "insensitive" } }),
   ...(courtType && { court: { type: courtType } }),
   ...(county && { court: { county: { slug: county } } }),
   ...(state && { court: { county: { state: { abbreviation: state } } } }),
@@ -169,10 +170,12 @@ const where: Prisma.JudgeWhereInput = {
 const [judges, total] = await Promise.all([
   prisma.judge.findMany({
     where,
-    select: { /* SearchResult fields */ },
+    select: {
+      /* SearchResult fields */
+    },
     skip: (page - 1) * limit,
     take: limit,
-    orderBy: { fullName: 'asc' },
+    orderBy: { fullName: "asc" },
   }),
   prisma.judge.count({ where }),
 ]);
@@ -182,10 +185,10 @@ const [judges, total] = await Promise.all([
 
 ```typescript
 const courtTypes = await prisma.court.findMany({
-  where: { judges: { some: { status: 'VERIFIED' } } },
+  where: { judges: { some: { status: "VERIFIED" } } },
   select: { type: true },
-  distinct: ['type'],
-  orderBy: { type: 'asc' },
+  distinct: ["type"],
+  orderBy: { type: "asc" },
 });
 ```
 
@@ -195,22 +198,22 @@ const courtTypes = await prisma.court.findMany({
 const counties = await prisma.county.findMany({
   where: {
     state: { abbreviation: stateAbbr },
-    courts: { some: { judges: { some: { status: 'VERIFIED' } } } },
+    courts: { some: { judges: { some: { status: "VERIFIED" } } } },
   },
   select: { name: true, slug: true },
-  orderBy: { name: 'asc' },
+  orderBy: { name: "asc" },
 });
 ```
 
 ## Performance Considerations
 
-| Query Pattern | Expected Performance | Index Used |
-|---------------|---------------------|------------|
-| Name search only | <100ms | `idx_judges_fullname_trgm` |
-| State filter only | <50ms | `idx_judges_status` + county join |
-| Name + state | <100ms | Combined scan |
-| Autocomplete (limit 5) | <50ms | `idx_judges_fullname_trgm` |
-| Full scan (no filters) | <200ms | `idx_judges_status` |
+| Query Pattern          | Expected Performance | Index Used                        |
+| ---------------------- | -------------------- | --------------------------------- |
+| Name search only       | <100ms               | `idx_judges_fullname_trgm`        |
+| State filter only      | <50ms                | `idx_judges_status` + county join |
+| Name + state           | <100ms               | Combined scan                     |
+| Autocomplete (limit 5) | <50ms                | `idx_judges_fullname_trgm`        |
+| Full scan (no filters) | <200ms               | `idx_judges_status`               |
 
 At 10,000+ judges, all queries should remain under 500ms target (SC-002).
 

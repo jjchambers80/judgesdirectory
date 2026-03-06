@@ -18,7 +18,7 @@ paths:
       description: |
         Full-text search on judge names with optional filters by state, county, 
         and court type. Only returns judges with status VERIFIED.
-        
+
         Supports autocomplete (use limit=5 for suggestions) and full search.
       tags:
         - Search
@@ -72,12 +72,12 @@ paths:
             maximum: 100
             default: 20
       responses:
-        '200':
+        "200":
           description: Search results
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SearchResponse'
+                $ref: "#/components/schemas/SearchResponse"
               examples:
                 search-results:
                   summary: Typical search response
@@ -126,12 +126,12 @@ paths:
                     totalPages: 9
                     filters:
                       q: "mar"
-        '400':
+        "400":
           description: Invalid parameters
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /search/filters:
     get:
@@ -151,12 +151,12 @@ paths:
             type: string
             pattern: "^[A-Z]{2}$"
       responses:
-        '200':
+        "200":
           description: Filter options
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FilterOptions'
+                $ref: "#/components/schemas/FilterOptions"
               examples:
                 all-filters:
                   summary: Without state parameter
@@ -209,7 +209,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/SearchResult'
+            $ref: "#/components/schemas/SearchResult"
         total:
           type: integer
           description: Total number of matching judges
@@ -260,7 +260,7 @@ components:
           description: URL slug for judge profile
           example: "john-martinez"
         court:
-          $ref: '#/components/schemas/CourtInfo'
+          $ref: "#/components/schemas/CourtInfo"
 
     CourtInfo:
       type: object
@@ -278,7 +278,7 @@ components:
           description: Court slug
           example: "superior-court"
         county:
-          $ref: '#/components/schemas/CountyInfo'
+          $ref: "#/components/schemas/CountyInfo"
 
     CountyInfo:
       type: object
@@ -294,7 +294,7 @@ components:
           type: string
           example: "los-angeles"
         state:
-          $ref: '#/components/schemas/StateInfo'
+          $ref: "#/components/schemas/StateInfo"
 
     StateInfo:
       type: object
@@ -322,7 +322,7 @@ components:
         states:
           type: array
           items:
-            $ref: '#/components/schemas/StateInfo'
+            $ref: "#/components/schemas/StateInfo"
         courtTypes:
           type: array
           items:

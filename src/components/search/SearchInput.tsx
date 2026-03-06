@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
 /**
  * SearchInput Component
  * Feature: 009-search-discovery (US1, US6)
- * 
+ *
  * Search input field with search icon and autocomplete dropdown.
  * Implements WAI-ARIA combobox pattern for accessibility.
  * T041-T047: Autocomplete with debounce, keyboard nav, and highlighting.
  */
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import type { SearchResult, SearchResponse } from '@/lib/search';
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import type { SearchResult, SearchResponse } from "@/lib/search";
 
 interface SearchInputProps {
   /** Current search query value */
@@ -31,30 +31,30 @@ interface SearchInputProps {
 
 // T044: Keyboard navigation constants
 const KEYS = {
-  ArrowDown: 'ArrowDown',
-  ArrowUp: 'ArrowUp',
-  Enter: 'Enter',
-  Escape: 'Escape',
+  ArrowDown: "ArrowDown",
+  ArrowUp: "ArrowUp",
+  Enter: "Enter",
+  Escape: "Escape",
 } as const;
 
 export function SearchInput({
   value,
   onChange,
   onSubmit,
-  placeholder = 'Search judges by name...',
+  placeholder = "Search judges by name...",
   className,
   autoFocus = false,
 }: SearchInputProps) {
   const router = useRouter();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const listboxRef = React.useRef<HTMLUListElement>(null);
-  
+
   // T041: Autocomplete state
   const [suggestions, setSuggestions] = React.useState<SearchResult[]>([]);
   const [isOpen, setIsOpen] = React.useState(false);
   const [selectedIndex, setSelectedIndex] = React.useState(-1);
   const [isLoading, setIsLoading] = React.useState(false);
-  
+
   // T046: AbortController for canceling pending requests
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
@@ -75,17 +75,17 @@ export function SearchInput({
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    
+
     abortControllerRef.current = new AbortController();
     setIsLoading(true);
 
     try {
       // Use same endpoint with limit=5 for autocomplete per research.md
-      const params = new URLSearchParams({ q: query, limit: '5' });
+      const params = new URLSearchParams({ q: query, limit: "5" });
       const res = await fetch(`/api/search?${params}`, {
         signal: abortControllerRef.current.signal,
       });
-      
+
       if (res.ok) {
         const data: SearchResponse = await res.json();
         setSuggestions(data.results);
@@ -94,8 +94,8 @@ export function SearchInput({
       }
     } catch (error) {
       // Ignore abort errors
-      if (error instanceof Error && error.name !== 'AbortError') {
-        console.error('Autocomplete error:', error);
+      if (error instanceof Error && error.name !== "AbortError") {
+        console.error("Autocomplete error:", error);
       }
     } finally {
       setIsLoading(false);
@@ -106,19 +106,22 @@ export function SearchInput({
   const debounceRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Handle input change with debouncing
-  const handleChange = React.useCallback((newValue: string) => {
-    onChange(newValue);
-    
-    // Clear previous debounce
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-    
-    // T042: 150ms debounce per FR-014
-    debounceRef.current = setTimeout(() => {
-      fetchSuggestions(newValue);
-    }, 150);
-  }, [onChange, fetchSuggestions]);
+  const handleChange = React.useCallback(
+    (newValue: string) => {
+      onChange(newValue);
+
+      // Clear previous debounce
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+
+      // T042: 150ms debounce per FR-014
+      debounceRef.current = setTimeout(() => {
+        fetchSuggestions(newValue);
+      }, 150);
+    },
+    [onChange, fetchSuggestions],
+  );
 
   // T044: Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -134,20 +137,20 @@ export function SearchInput({
       case KEYS.ArrowDown:
         e.preventDefault();
         if (isOpen) {
-          setSelectedIndex(prev => 
-            prev < suggestions.length - 1 ? prev + 1 : prev
+          setSelectedIndex((prev) =>
+            prev < suggestions.length - 1 ? prev + 1 : prev,
           );
         } else if (value.length >= 2) {
           // Open dropdown on ArrowDown if query exists
           fetchSuggestions(value);
         }
         break;
-        
+
       case KEYS.ArrowUp:
         e.preventDefault();
-        setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
         break;
-        
+
       case KEYS.Enter:
         e.preventDefault();
         if (selectedIndex >= 0 && suggestions[selectedIndex]) {
@@ -162,7 +165,7 @@ export function SearchInput({
           setIsOpen(false);
         }
         break;
-        
+
       case KEYS.Escape:
         e.preventDefault();
         setIsOpen(false);
@@ -182,18 +185,24 @@ export function SearchInput({
   // T047: Highlight matching text in suggestion
   const highlightMatch = (text: string, query: string): React.ReactNode => {
     if (!query.trim()) return text;
-    
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+
+    const regex = new RegExp(
+      `(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+      "gi",
+    );
     const parts = text.split(regex);
-    
-    return parts.map((part, i) => 
+
+    return parts.map((part, i) =>
       regex.test(part) ? (
-        <mark key={i} className="bg-yellow-200 dark:bg-yellow-800 rounded px-0.5">
+        <mark
+          key={i}
+          className="bg-yellow-200 dark:bg-yellow-800 rounded px-0.5"
+        >
           {part}
         </mark>
       ) : (
         part
-      )
+      ),
     );
   };
 
@@ -201,7 +210,7 @@ export function SearchInput({
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        inputRef.current && 
+        inputRef.current &&
         !inputRef.current.contains(e.target as Node) &&
         listboxRef.current &&
         !listboxRef.current.contains(e.target as Node)
@@ -209,9 +218,9 @@ export function SearchInput({
         setIsOpen(false);
       }
     };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Cleanup on unmount
@@ -224,7 +233,7 @@ export function SearchInput({
 
   // T045: WAI-ARIA combobox pattern
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn("relative", className)}>
       {/* Search Icon */}
       <svg
         className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10"
@@ -241,7 +250,7 @@ export function SearchInput({
           d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
         />
       </svg>
-      
+
       {/* T045: Input with combobox role */}
       <input
         ref={inputRef}
@@ -268,29 +277,29 @@ export function SearchInput({
         aria-label="Search judges by name"
         className={cn(
           // Base input styles
-          'h-10 w-full rounded-md border border-input bg-background pl-10 pr-10 text-sm',
+          "h-10 w-full rounded-md border border-input bg-background text-foreground pl-10 pr-10 text-sm",
           // Focus states
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           // Placeholder
-          'placeholder:text-muted-foreground',
+          "placeholder:text-muted-foreground",
           // Transitions
-          'transition-colors',
+          "transition-colors",
         )}
       />
-      
+
       {/* Loading indicator */}
       {isLoading && (
         <div className="absolute right-10 top-1/2 -translate-y-1/2">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
         </div>
       )}
-      
+
       {/* Clear button when value exists */}
       {value && !isLoading && (
         <button
           type="button"
           onClick={() => {
-            onChange('');
+            onChange("");
             setSuggestions([]);
             setIsOpen(false);
             inputRef.current?.focus();
@@ -313,7 +322,7 @@ export function SearchInput({
           </svg>
         </button>
       )}
-      
+
       {/* T041, T045: Autocomplete dropdown with listbox role */}
       {isOpen && suggestions.length > 0 && (
         <ul
@@ -322,8 +331,8 @@ export function SearchInput({
           role="listbox"
           aria-label="Search suggestions"
           className={cn(
-            'absolute z-50 mt-1 w-full rounded-md border border-input bg-popover shadow-lg',
-            'max-h-60 overflow-auto',
+            "absolute z-50 mt-1 w-full rounded-md border border-input bg-popover shadow-lg",
+            "max-h-60 overflow-auto",
           )}
         >
           {suggestions.map((judge, index) => (
@@ -339,10 +348,10 @@ export function SearchInput({
               }}
               onMouseEnter={() => setSelectedIndex(index)}
               className={cn(
-                'px-4 py-2 cursor-pointer text-sm',
-                'hover:bg-accent hover:text-accent-foreground',
-                index === selectedIndex && 'bg-accent text-accent-foreground',
-                index !== suggestions.length - 1 && 'border-b border-input/50',
+                "px-4 py-2 cursor-pointer text-sm",
+                "hover:bg-accent hover:text-accent-foreground",
+                index === selectedIndex && "bg-accent text-accent-foreground",
+                index !== suggestions.length - 1 && "border-b border-input/50",
               )}
             >
               <div className="font-medium">
