@@ -16,9 +16,9 @@
 
 **Purpose**: Database migration for search index and shared TypeScript types
 
-- [ ] T001 Create pg_trgm migration in `prisma/migrations/[timestamp]_add_search_index/migration.sql`
-- [ ] T002 [P] Create search types in `src/lib/search.ts` (SearchParams, SearchResult, SearchResponse, FilterOptions interfaces)
-- [ ] T003 Run `npx prisma migrate dev` to apply search index
+- [X] T001 Create pg_trgm migration in `prisma/migrations/[timestamp]_add_search_index/migration.sql`
+- [X] T002 [P] Create search types in `src/lib/search.ts` (SearchParams, SearchResult, SearchResponse, FilterOptions interfaces)
+- [X] T003 Run `npx prisma migrate dev` to apply search index
 
 ---
 
@@ -28,14 +28,14 @@
 
 **⚠️ CRITICAL**: No UI work can begin until this phase is complete
 
-- [ ] T004 Create search API route in `src/app/api/search/route.ts` with GET handler
-- [ ] T004a Validate/sanitize search API parameters (limit max 100, page >= 1, sanitize q)
-- [ ] T005 Implement Prisma query builder in `src/lib/search.ts` (buildSearchQuery function)
-- [ ] T005a Add input normalization (unicode, apostrophes, hyphens) before query per edge case
-- [ ] T005b Add `ORDER BY similarity(fullName, query) DESC` for relevance ranking per SC-003
-- [ ] T006 Add VERIFIED-only filter to search query (Constitution Principle I)
-- [ ] T007 Create filters API route in `src/app/api/search/filters/route.ts` (states, courtTypes)
-- [ ] T008 Add response envelope with pagination metadata (total, page, limit, totalPages)
+- [X] T004 Create search API route in `src/app/api/search/route.ts` with GET handler
+- [X] T004a Validate/sanitize search API parameters (limit max 100, page >= 1, sanitize q)
+- [X] T005 Implement Prisma query builder in `src/lib/search.ts` (buildSearchQuery function)
+- [X] T005a Add input normalization (unicode, apostrophes, hyphens) before query per edge case
+- [X] T005b Add `ORDER BY similarity(fullName, query) DESC` for relevance ranking per SC-003
+- [X] T006 Add VERIFIED-only filter to search query (Constitution Principle I)
+- [X] T007 Create filters API route in `src/app/api/search/filters/route.ts` (states, courtTypes)
+- [X] T008 Add response envelope with pagination metadata (total, page, limit, totalPages)
 
 **Checkpoint**: API ready — curl `/api/search?q=Smith` returns JSON results
 
@@ -49,13 +49,13 @@
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Create SearchInput component in `src/components/search/SearchInput.tsx`
-- [ ] T010 [US1] Create SearchResults component in `src/components/search/SearchResults.tsx`
-- [ ] T011 [US1] Add result card with judge name, court, state context per FR-015
-- [ ] T012 [US1] Implement text highlighting for search matches per FR-011
-- [ ] T013 [US1] Add click handler to navigate to judge profile page
-- [ ] T014 [US1] Integrate SearchInput and SearchResults into `src/app/judges/page.tsx`
-- [ ] T015 [US1] Add "No judges found" empty state per FR-017
+- [X] T009 [US1] Create SearchInput component in `src/components/search/SearchInput.tsx`
+- [X] T010 [US1] Create SearchResults component in `src/components/search/SearchResults.tsx`
+- [X] T011 [US1] Add result card with judge name, court, state context per FR-015
+- [X] T012 [US1] Implement text highlighting for search matches per FR-011
+- [X] T013 [US1] Add click handler to navigate to judge profile page
+- [X] T014 [US1] Integrate SearchInput and SearchResults into `src/app/judges/page.tsx`
+- [X] T015 [US1] Add "No judges found" empty state per FR-017
 
 **Checkpoint**: User Story 1 complete — name search works end-to-end
 
@@ -69,13 +69,13 @@
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Create SearchFilters component in `src/components/search/SearchFilters.tsx`
-- [ ] T017 [US2] Add state dropdown populated from `/api/search/filters` endpoint
-- [ ] T018 [US2] Create FilterChip component in `src/components/search/FilterChip.tsx`
-- [ ] T019 [US2] Display active state filter as badge/chip per acceptance scenario 4
-- [ ] T020 [US2] Add state filter to search API query in `src/lib/search.ts`
-- [ ] T021 [US2] Implement "Clear filters" button per FR-016
-- [ ] T022 [US2] Persist state filter in URL query params per FR-009
+- [X] T016 [US2] Create SearchFilters component in `src/components/search/SearchFilters.tsx`
+- [X] T017 [US2] Add state dropdown populated from `/api/search/filters` endpoint
+- [X] T018 [US2] Create FilterChip component in `src/components/search/FilterChip.tsx`
+- [X] T019 [US2] Display active state filter as badge/chip per acceptance scenario 4
+- [X] T020 [US2] Add state filter to search API query in `src/lib/search.ts`
+- [X] T021 [US2] Implement "Clear filters" button per FR-016
+- [X] T022 [US2] Persist state filter in URL query params per FR-009
 
 **Checkpoint**: User Story 2 complete — state filter works with search
 
@@ -89,11 +89,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T023 [US3] Add court type dropdown to SearchFilters component
-- [ ] T024 [US3] Populate court types from `/api/search/filters` (dynamic from DB)
-- [ ] T025 [US3] Add courtType filter to search API query
-- [ ] T026 [US3] Display active court type filter as badge/chip
-- [ ] T027 [US3] Persist courtType filter in URL query params
+- [X] T023 [US3] Add court type dropdown to SearchFilters component
+- [X] T024 [US3] Populate court types from `/api/search/filters` (dynamic from DB)
+- [X] T025 [US3] Add courtType filter to search API query
+- [X] T026 [US3] Display active court type filter as badge/chip
+- [X] T027 [US3] Persist courtType filter in URL query params
 
 **Checkpoint**: User Story 3 complete — court type filter works with state filter and search
 
@@ -107,13 +107,13 @@
 
 ### Implementation for User Story 4
 
-- [ ] T028 [US4] Add county dropdown to SearchFilters (initially disabled)
-- [ ] T029 [US4] Add `?state=XX` parameter to `/api/search/filters` for county list
-- [ ] T030 [US4] Enable county dropdown when state is selected
-- [ ] T031 [US4] Reset county filter when state changes per acceptance scenario 3
-- [ ] T032 [US4] Add county filter to search API query
-- [ ] T033 [US4] Display "Select a state first" helper text when disabled
-- [ ] T034 [US4] Persist county filter in URL query params
+- [X] T028 [US4] Add county dropdown to SearchFilters (initially disabled)
+- [X] T029 [US4] Add `?state=XX` parameter to `/api/search/filters` for county list
+- [X] T030 [US4] Enable county dropdown when state is selected
+- [X] T031 [US4] Reset county filter when state changes per acceptance scenario 3
+- [X] T032 [US4] Add county filter to search API query
+- [X] T033 [US4] Display "Select a state first" helper text when disabled
+- [X] T034 [US4] Persist county filter in URL query params
 
 **Checkpoint**: User Story 4 complete — cascading county filter works
 
