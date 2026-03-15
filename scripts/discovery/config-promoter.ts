@@ -169,6 +169,28 @@ export async function promoteToConfig(
     data: { promotedAt: new Date() },
   });
 
+  // Seed UrlHealth records for newly promoted URLs (Feature 012)
+  for (const entry of newEntries) {
+    try {
+      await prisma.urlHealth.upsert({
+        where: { url: entry.url },
+        create: {
+          url: entry.url,
+          domain: new URL(entry.url).hostname.replace(/^www\./, ""),
+          state: stateName,
+          stateAbbr: abbr,
+          healthScore: 0.5,
+          source: "DISCOVERED",
+        },
+        update: {},
+      });
+    } catch (err) {
+      console.warn(
+        `[Promoter] Failed to seed UrlHealth for ${entry.url}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
   return {
     state: stateName,
     configPath: `scripts/harvest/${slug}-courts.json`,

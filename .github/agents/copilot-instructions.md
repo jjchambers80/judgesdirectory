@@ -21,6 +21,8 @@ Auto-generated from all feature plans. Last updated: 2026-02-17
 - PostgreSQL via Prisma (existing — no schema changes) (011-lazy-load-results)
 - TypeScript (strict mode), Node.js 20+ + Next.js (SSR), Prisma ORM, Google Custom Search JSON API (`googleapis` npm package), OpenAI gpt-4o-mini (for classification), Zod (validation), cheerio/turndown (existing fetcher) (011-url-discovery-scrape-tracking)
 - PostgreSQL via Prisma ORM (existing `judgesdirectory` database) (011-url-discovery-scrape-tracking)
+- TypeScript (strict mode), Node.js + Next.js 14, Prisma ORM v6, Tailwind CSS, shadcn/ui (012-url-health)
+- PostgreSQL (existing, via Prisma) (012-url-health)
 
 - TypeScript 5.x on Node.js 20 LTS + Next.js 14 (App Router, SSR), Prisma ORM 5.x, next-sitemap, slugify (001-foundation)
 
@@ -40,9 +42,9 @@ npm test && npm run lint
 TypeScript 5.x on Node.js 20 LTS: Follow standard conventions
 
 ## Recent Changes
+- 012-url-health: Added TypeScript (strict mode), Node.js + Next.js 14, Prisma ORM v6, Tailwind CSS, shadcn/ui
 - 011-url-discovery-scrape-tracking: Added TypeScript (strict mode), Node.js 20+ + Next.js (SSR), Prisma ORM, Google Custom Search JSON API (`googleapis` npm package), OpenAI gpt-4o-mini (for classification), Zod (validation), cheerio/turndown (existing fetcher)
 - 011-lazy-load-results: Added TypeScript 5, React 18, Next.js 14.2 + Next.js (SSR + client components), Prisma ORM, Tailwind CSS 4, Radix UI (no new dependencies)
-- 010-global-footer: Added TypeScript 5.x (Next.js 14+ App Router) + Next.js, Tailwind CSS, existing theme-vars.css custom properties
 
 
 <!-- MANUAL ADDITIONS START -->

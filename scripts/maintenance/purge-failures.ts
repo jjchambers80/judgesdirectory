@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 /**
- * Purge resolved scrape failure records older than 90 days.
+ * Purge resolved scrape log records older than 90 days.
  *
  * Usage:
  *   npx tsx scripts/maintenance/purge-failures.ts
@@ -25,10 +25,10 @@ async function main() {
   const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000);
 
   console.log(
-    `[Purge] Searching for resolved failures older than ${RETENTION_DAYS} days (before ${cutoff.toISOString()})`,
+    `[Purge] Searching for resolved scrape logs older than ${RETENTION_DAYS} days (before ${cutoff.toISOString()})`,
   );
 
-  const count = await prisma.scrapeFailure.count({
+  const count = await prisma.scrapeLog.count({
     where: {
       resolvedAt: { not: null, lt: cutoff },
     },
@@ -42,19 +42,19 @@ async function main() {
 
   if (dryRun) {
     console.log(
-      `[Purge] [DRY-RUN] Would purge ${count} resolved failure record(s).`,
+      `[Purge] [DRY-RUN] Would purge ${count} resolved scrape log(s).`,
     );
     await prisma.$disconnect();
     return;
   }
 
-  const result = await prisma.scrapeFailure.deleteMany({
+  const result = await prisma.scrapeLog.deleteMany({
     where: {
       resolvedAt: { not: null, lt: cutoff },
     },
   });
 
-  console.log(`[Purge] Purged ${result.count} resolved failure record(s).`);
+  console.log(`[Purge] Purged ${result.count} resolved scrape log(s).`);
   await prisma.$disconnect();
 }
 

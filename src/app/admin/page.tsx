@@ -59,9 +59,9 @@ export default function AdminDashboard() {
           description="Discover and review court roster URLs for new states"
         />
         <AdminCard
-          href="/admin/failures/"
-          title="Scrape Failures"
-          description="Track and manage harvest scraping failures"
+          href="/admin/health/"
+          title="URL Health"
+          description="Monitor URL health scores, yield trends, and anomalies"
         />
       </div>
     </div>

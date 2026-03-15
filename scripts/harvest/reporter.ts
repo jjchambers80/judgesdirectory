@@ -66,6 +66,13 @@ export interface EnrichedReportStats {
   } | null;
   /** State slug for per-state reporting */
   stateSlug?: string;
+  /** Health scoring stats from this harvest run */
+  healthStats?: {
+    urlsProcessed: number;
+    scoresUpdated: number;
+    anomaliesDetected: number;
+    anomalyMessages: string[];
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -826,6 +833,26 @@ function buildEnrichedReport(stats: EnrichedReportStats): {
     lines.push("");
   }
 
+  // URL health scoring summary
+  if (stats.healthStats && stats.healthStats.scoresUpdated > 0) {
+    lines.push("## URL Health Summary");
+    lines.push("");
+    lines.push(`- URLs processed: ${stats.healthStats.urlsProcessed}`);
+    lines.push(`- Health scores updated: ${stats.healthStats.scoresUpdated}`);
+    lines.push(
+      `- Anomalies detected: ${stats.healthStats.anomaliesDetected}`,
+    );
+    if (stats.healthStats.anomalyMessages.length > 0) {
+      lines.push("");
+      lines.push("### Anomalies");
+      lines.push("");
+      for (const msg of stats.healthStats.anomalyMessages) {
+        lines.push(`- ${msg}`);
+      }
+    }
+    lines.push("");
+  }
+
   // Failed pages
   if (failed.length > 0) {
     lines.push("## Failed Pages");
@@ -887,5 +914,11 @@ function printEnrichedSummary(stats: EnrichedReportStats): void {
         ? ((count / stats.finalRecords.length) * 100).toFixed(0)
         : "0";
     console.log(`  ${field}: ${count} (${pct}%)`);
+  }
+
+  if (stats.healthStats && stats.healthStats.scoresUpdated > 0) {
+    console.log(
+      `Health: ${stats.healthStats.scoresUpdated} scores updated, ${stats.healthStats.anomaliesDetected} anomalies`,
+    );
   }
 }

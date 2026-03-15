@@ -142,6 +142,26 @@ export async function POST(request: NextRequest) {
     data: { promotedAt: new Date() },
   });
 
+  // Seed UrlHealth records for newly promoted URLs (Feature 012)
+  for (const entry of newEntries) {
+    try {
+      await prisma.urlHealth.upsert({
+        where: { url: entry.url },
+        create: {
+          url: entry.url,
+          domain: new URL(entry.url).hostname.replace(/^www\./, ""),
+          state: stateName,
+          stateAbbr: abbr,
+          healthScore: 0.5,
+          source: "DISCOVERED",
+        },
+        update: {},
+      });
+    } catch {
+      // Non-blocking: don't fail the promote if health seeding fails
+    }
+  }
+
   return NextResponse.json({
     state: stateName,
     configPath: `scripts/harvest/${slug}-courts.json`,

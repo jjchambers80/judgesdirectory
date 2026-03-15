@@ -42,11 +42,14 @@ import {
   buildCourtUrlEntries,
   discoverStates,
   stateSlug,
+  DELTA_STALE_DAYS,
   type CliFlags,
   type CsvJudgeRecord,
   type EnrichedJudgeRecord,
   type CourtUrlEntry,
   type Checkpoint,
+  type DeltaBucket,
+  type DeltaBucketResult,
 } from "./config";
 import type { StateConfig } from "./state-config-schema";
 import {
@@ -76,6 +79,11 @@ import {
   recordFailure,
   resolveFailuresForUrl,
 } from "./failure-tracker";
+import {
+  recordScrape,
+  recomputeHealthScores,
+  type RecordResult,
+} from "./health-recorder";
 
 // ---------------------------------------------------------------------------
 // File-based logging
@@ -464,9 +472,39 @@ async function runSingleState(
   // Load or create checkpoint (per-state)
   const checkpoint = loadCheckpoint(stateOutputDir, slug);
 
+  // Delta mode: prioritize URLs by health bucket
+  let urlsToProcess = courtUrls;
+  if (flags.delta) {
+    const { sortedUrls, buckets, skippedCount } = await prioritizeUrls(
+      courtUrls,
+      stateConfig.abbreviation,
+      flags,
+    );
+
+    console.log(
+      `[Health] Delta mode: ${courtUrls.length} URLs prioritized`,
+    );
+    for (const b of buckets) {
+      const tag = b.skipped ? ` [skipped: ${b.reason}]` : "";
+      const label =
+        b.bucket === "never-scraped"
+          ? "never scraped"
+          : b.bucket.replace("-", "+");
+      console.log(
+        `  Bucket (${label}): ${b.urls.length} URLs${tag}`,
+      );
+    }
+    console.log(
+      `[Health] Processing ${sortedUrls.length} URLs (${skippedCount} skipped)`,
+    );
+    console.log("");
+
+    urlsToProcess = sortedUrls;
+  }
+
   // Run extraction pipeline (with optional bio enrichment)
   const pipelineResult = await runEnrichedPipeline(
-    courtUrls,
+    urlsToProcess,
     checkpoint,
     flags,
     slug,
@@ -547,6 +585,7 @@ async function runSingleState(
       bioStats: pipelineResult.bioStats,
       ballotpediaStats,
       stateSlug: slug,
+      healthStats: pipelineResult.healthStats,
     },
     stateOutputDir,
   );
@@ -758,6 +797,132 @@ interface EnrichedPipelineResult {
     bioPagesFailed: number;
     fieldsEnriched: Record<string, number>;
   };
+  healthStats: {
+    urlsProcessed: number;
+    scoresUpdated: number;
+    anomaliesDetected: number;
+    anomalyMessages: string[];
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Delta URL prioritization (Feature 012)
+// ---------------------------------------------------------------------------
+
+/**
+ * Classify URLs into 5 priority buckets for delta-run ordering.
+ *
+ * Bucket priority (highest first):
+ *   1. stale-healthy  — score ≥ 0.7, last success > DELTA_STALE_DAYS ago
+ *   2. never-scraped  — no UrlHealth record or totalScrapes = 0
+ *   3. stale-moderate — score 0.3–0.7, last success > DELTA_STALE_DAYS ago
+ *   4. stale-unhealthy — score < 0.3, last success > DELTA_STALE_DAYS ago
+ *   5. fresh          — last success ≤ DELTA_STALE_DAYS ago
+ */
+async function prioritizeUrls(
+  courtUrls: CourtUrlEntry[],
+  stateAbbr: string,
+  flags: CliFlags,
+): Promise<{
+  sortedUrls: CourtUrlEntry[];
+  buckets: DeltaBucketResult[];
+  skippedCount: number;
+}> {
+  const { PrismaClient } = await import("@prisma/client");
+  const prisma = new PrismaClient();
+
+  try {
+    // Fetch all UrlHealth records for this state
+    const healthRecords = await prisma.urlHealth.findMany({
+      where: { stateAbbr: stateAbbr.toUpperCase() },
+      select: {
+        url: true,
+        healthScore: true,
+        totalScrapes: true,
+        lastSuccessAt: true,
+        active: true,
+      },
+    });
+
+    const healthByUrl = new Map(healthRecords.map((h) => [h.url, h]));
+    const now = new Date();
+    const staleThreshold = new Date(
+      now.getTime() - DELTA_STALE_DAYS * 24 * 60 * 60 * 1000,
+    );
+
+    // Classify each URL into a bucket
+    const bucketMap: Record<DeltaBucket, CourtUrlEntry[]> = {
+      "stale-healthy": [],
+      "never-scraped": [],
+      "stale-moderate": [],
+      "stale-unhealthy": [],
+      fresh: [],
+    };
+
+    for (const entry of courtUrls) {
+      const health = healthByUrl.get(entry.url);
+
+      if (!health || health.totalScrapes === 0) {
+        bucketMap["never-scraped"].push(entry);
+        continue;
+      }
+
+      const isFresh =
+        health.lastSuccessAt && health.lastSuccessAt > staleThreshold;
+
+      if (isFresh) {
+        bucketMap["fresh"].push(entry);
+      } else if (health.healthScore >= 0.7) {
+        bucketMap["stale-healthy"].push(entry);
+      } else if (health.healthScore >= 0.3) {
+        bucketMap["stale-moderate"].push(entry);
+      } else {
+        bucketMap["stale-unhealthy"].push(entry);
+      }
+    }
+
+    // Build bucket results and sorted URL list
+    const bucketOrder: DeltaBucket[] = [
+      "stale-healthy",
+      "never-scraped",
+      "stale-moderate",
+      "stale-unhealthy",
+      "fresh",
+    ];
+
+    const sortedUrls: CourtUrlEntry[] = [];
+    const buckets: DeltaBucketResult[] = [];
+    let skippedCount = 0;
+
+    for (const bucket of bucketOrder) {
+      const urls = bucketMap[bucket];
+      const urlStrings = urls.map((u) => u.url);
+
+      let skipped = false;
+      let reason: string | undefined;
+
+      if (bucket === "fresh") {
+        skipped = true;
+        reason = "fresh data";
+        skippedCount += urls.length;
+      } else if (
+        bucket === "stale-unhealthy" &&
+        flags.skipBroken
+      ) {
+        skipped = true;
+        reason = `--skip-broken (threshold: ${flags.skipBrokenThreshold})`;
+        skippedCount += urls.length;
+      } else {
+        sortedUrls.push(...urls);
+      }
+
+      buckets.push({ bucket, urls: urlStrings, skipped, reason });
+    }
+
+    return { sortedUrls, buckets, skippedCount };
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 async function runEnrichedPipeline(
@@ -776,6 +941,13 @@ async function runEnrichedPipeline(
     bioPagesSucceeded: 0,
     bioPagesFailed: 0,
     fieldsEnriched: {} as Record<string, number>,
+  };
+
+  const healthStats = {
+    urlsProcessed: 0,
+    scoresUpdated: 0,
+    anomaliesDetected: 0,
+    anomalyMessages: [] as string[],
   };
 
   let processed = 0;
@@ -847,6 +1019,15 @@ async function runEnrichedPipeline(
           `Zero judges extracted from ${entry.label}`,
         );
       } else {
+        // Record successful scrape with health tracking
+        await recordScrape({
+          url: entry.url,
+          state: stateConfig.state,
+          stateAbbr: stateConfig.abbreviation,
+          success: true,
+          judgesFound: result.judges.length,
+        });
+
         // Auto-resolve previous failures for this URL on successful extraction
         await resolveFailuresForUrl(entry.url);
       }
@@ -923,7 +1104,45 @@ async function runEnrichedPipeline(
         : ""),
   );
 
-  return { records: allRecords, bioStats };
+  // Batch health score recomputation — ensures all URL health profiles are
+  // up-to-date even if individual per-URL recording was skipped (e.g. resumed URLs).
+  try {
+    const { PrismaClient } = await import("@prisma/client");
+    const prisma = new PrismaClient();
+    const allUrlHealthIds = await prisma.urlHealth.findMany({
+      where: {
+        stateAbbr: stateConfig.abbreviation.toUpperCase(),
+      },
+      select: { id: true },
+    });
+    await prisma.$disconnect();
+
+    if (allUrlHealthIds.length > 0) {
+      const ids = allUrlHealthIds.map((r) => r.id);
+      const batchResult = await recomputeHealthScores(ids);
+      healthStats.scoresUpdated = batchResult.updated;
+      healthStats.anomaliesDetected = batchResult.anomalies.length;
+      healthStats.anomalyMessages = batchResult.anomalies.map(
+        (a) => `⚠️ ${a}`,
+      );
+
+      console.log(`\n[Health] === Health Summary ===`);
+      console.log(`  URLs processed: ${processed}`);
+      console.log(`  Health scores updated: ${batchResult.updated}`);
+      console.log(`  Anomalies detected: ${batchResult.anomalies.length}`);
+      for (const anomaly of batchResult.anomalies) {
+        console.log(`    ⚠️ ${anomaly}`);
+      }
+    }
+  } catch (err) {
+    console.warn(
+      `[Health] Batch recomputation failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
+  healthStats.urlsProcessed = processed;
+
+  return { records: allRecords, bioStats, healthStats };
 }
 
 // ---------------------------------------------------------------------------

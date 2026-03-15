@@ -38,6 +38,10 @@ export interface CliFlags {
   state: string | null;
   all: boolean;
   list: boolean;
+  // Health & delta flags (Feature 012)
+  delta: boolean;
+  skipBroken: boolean;
+  skipBrokenThreshold: number;
 }
 
 /** A single extracted court URL entry with metadata for the pipeline */
@@ -121,6 +125,47 @@ export interface EnrichedJudgeRecord {
 }
 
 // ---------------------------------------------------------------------------
+// Health & Delta types (Feature 012)
+// ---------------------------------------------------------------------------
+
+/** Health score computation weights — tunable without schema changes */
+export const HEALTH_WEIGHTS = {
+  successRate: 0.40,
+  yieldConsistency: 0.30,
+  freshness: 0.20,
+  volumeScore: 0.10,
+} as const;
+
+/** Number of recent scrape logs to consider for health score */
+export const HEALTH_WINDOW_SIZE = 10;
+
+/** Days after which a URL is considered stale for delta runs */
+export const DELTA_STALE_DAYS = 7;
+
+/** Freshness decay window in days (aligns with DATA_FRESHNESS_THRESHOLD_DAYS) */
+export const FRESHNESS_DECAY_DAYS = 90;
+
+/** Default expected yield for first-time URLs with no history */
+export const DEFAULT_EXPECTED_YIELD = 5;
+
+/** Anomaly detection threshold — yield drop percentage */
+export const ANOMALY_DROP_THRESHOLD = 0.5;
+
+export type DeltaBucket =
+  | "stale-healthy"
+  | "never-scraped"
+  | "stale-moderate"
+  | "stale-unhealthy"
+  | "fresh";
+
+export interface DeltaBucketResult {
+  bucket: DeltaBucket;
+  urls: string[];
+  skipped: boolean;
+  reason?: string;
+}
+
+// ---------------------------------------------------------------------------
 // Flag parsing
 // ---------------------------------------------------------------------------
 
@@ -137,6 +182,9 @@ export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
     state: null,
     all: false,
     list: false,
+    delta: false,
+    skipBroken: false,
+    skipBrokenThreshold: 0.2,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -195,6 +243,21 @@ export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
         break;
       case "--list":
         flags.list = true;
+        break;
+      case "--delta":
+        flags.delta = true;
+        break;
+      case "--skip-broken":
+        flags.skipBroken = true;
+        break;
+      case "--skip-broken-threshold":
+        if (argv[i + 1] && !argv[i + 1].startsWith("--")) {
+          flags.skipBroken = true;
+          flags.skipBrokenThreshold = parseFloat(argv[++i]);
+        } else {
+          console.error("Error: --skip-broken-threshold requires a number argument");
+          process.exit(1);
+        }
         break;
       default:
         console.error(`Unknown flag: ${argv[i]}`);

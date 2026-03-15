@@ -7,33 +7,31 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await request.json();
-  const { resolutionNotes } = body as { resolutionNotes?: string };
+  const { resolvedBy, resolutionNotes } = body as {
+    resolvedBy?: string;
+    resolutionNotes?: string;
+  };
 
-  const failure = await prisma.scrapeFailure.findUnique({ where: { id } });
-  if (!failure) {
+  const scrapeLog = await prisma.scrapeLog.findUnique({ where: { id } });
+  if (!scrapeLog) {
     return NextResponse.json(
-      { error: "Failure record not found" },
+      { error: "Scrape log not found" },
       { status: 404 },
     );
   }
 
-  if (failure.resolvedAt) {
+  if (scrapeLog.resolvedAt) {
     return NextResponse.json({ error: "Already resolved" }, { status: 409 });
   }
 
-  const updated = await prisma.scrapeFailure.update({
+  const updated = await prisma.scrapeLog.update({
     where: { id },
     data: {
       resolvedAt: new Date(),
-      resolvedBy: "manual",
+      resolvedBy: resolvedBy || "admin",
       resolutionNotes: resolutionNotes ?? null,
     },
   });
 
-  return NextResponse.json({
-    id: updated.id,
-    resolvedAt: updated.resolvedAt,
-    resolvedBy: updated.resolvedBy,
-    resolutionNotes: updated.resolutionNotes,
-  });
+  return NextResponse.json(updated);
 }

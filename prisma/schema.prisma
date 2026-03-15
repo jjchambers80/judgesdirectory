@@ -176,6 +176,81 @@ enum DiscoveryRunStatus {
   FAILED
 }
 
+// ---------------------------------------------------------------------------
+// URL Health Scoring & Delta-Run Prioritization (Feature 012)
+// ---------------------------------------------------------------------------
+
+enum YieldTrend {
+  IMPROVING
+  STABLE
+  DECLINING
+}
+
+enum HealthSource {
+  DISCOVERED
+  MANUAL
+}
+
+model UrlHealth {
+  id                String       @id @default(uuid())
+  url               String       @unique
+  domain            String
+  state             String
+  stateAbbr         String       @db.VarChar(2)
+  healthScore       Float        @default(0.5)
+  totalScrapes      Int          @default(0)
+  successfulScrapes Int          @default(0)
+  lastYield         Int?
+  avgYield          Float?
+  yieldTrend        YieldTrend   @default(STABLE)
+  anomalyDetected   Boolean      @default(false)
+  anomalyMessage    String?
+  lastScrapedAt     DateTime?
+  lastSuccessAt     DateTime?
+  source            HealthSource @default(MANUAL)
+  active            Boolean      @default(true)
+  scrapeLogs        ScrapeLog[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([stateAbbr, healthScore])
+  @@index([healthScore])
+  @@index([lastSuccessAt])
+  @@index([anomalyDetected])
+  @@index([active])
+  @@map("url_health")
+}
+
+model ScrapeLog {
+  id              String       @id @default(uuid())
+  urlHealthId     String
+  urlHealth       UrlHealth    @relation(fields: [urlHealthId], references: [id], onDelete: Cascade)
+  url             String
+  state           String
+  stateAbbr       String       @db.VarChar(2)
+  success         Boolean
+  judgesFound     Int          @default(0)
+  failureType     FailureType?
+  httpStatusCode  Int?
+  errorMessage    String?      @db.Text
+  retryCount      Int          @default(0)
+  scrapeDurationMs Int?
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolutionNotes String?      @db.Text
+  scrapedAt       DateTime     @default(now())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([urlHealthId])
+  @@index([url])
+  @@index([stateAbbr, success])
+  @@index([failureType])
+  @@index([scrapedAt])
+  @@index([resolvedAt])
+  @@map("scrape_logs")
+}
+
 model UrlCandidate {
   id              String          @id @default(uuid())
   url             String          @unique
@@ -202,31 +277,6 @@ model UrlCandidate {
   @@index([discoveredAt])
   @@index([stateAbbr, status])
   @@map("url_candidates")
-}
-
-model ScrapeFailure {
-  id              String      @id @default(uuid())
-  url             String
-  state           String
-  stateAbbr       String      @db.VarChar(2)
-  failureType     FailureType
-  httpStatusCode  Int?
-  errorMessage    String?     @db.Text
-  retryCount      Int         @default(0)
-  attemptedAt     DateTime    @default(now())
-  resolvedAt      DateTime?
-  resolvedBy      String?
-  resolutionNotes String?     @db.Text
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-
-  @@index([url])
-  @@index([state])
-  @@index([failureType])
-  @@index([resolvedAt])
-  @@index([stateAbbr, failureType])
-  @@index([attemptedAt])
-  @@map("scrape_failures")
 }
 
 model DiscoveryRun {

@@ -5,10 +5,14 @@
  * console.warn fallback so the harvest pipeline never crashes due to failure
  * tracking errors.
  *
+ * As of Feature 012, failure recording writes to ScrapeLog (via health-recorder)
+ * instead of the legacy ScrapeFailure table.
+ *
  * @module scripts/harvest/failure-tracker
  */
 
 import { PrismaClient, FailureType } from "@prisma/client";
+import { recordScrape } from "./health-recorder";
 
 const prisma = new PrismaClient();
 
@@ -109,7 +113,8 @@ export function classifyFailure(
 // ---------------------------------------------------------------------------
 
 /**
- * Record a scrape failure in the database.
+ * Record a scrape failure via health-recorder.
+ * Delegates to recordScrape() which upserts UrlHealth + creates ScrapeLog.
  * Non-blocking: swallows DB errors and logs a warning.
  */
 export async function recordFailure(
@@ -122,16 +127,16 @@ export async function recordFailure(
   retryCount?: number,
 ): Promise<void> {
   try {
-    await prisma.scrapeFailure.create({
-      data: {
-        url,
-        state,
-        stateAbbr: stateAbbr.toUpperCase(),
-        failureType,
-        httpStatusCode: httpStatusCode ?? null,
-        errorMessage: errorMessage ?? null,
-        retryCount: retryCount ?? 0,
-      },
+    await recordScrape({
+      url,
+      state,
+      stateAbbr: stateAbbr.toUpperCase(),
+      success: false,
+      judgesFound: 0,
+      failureType,
+      httpStatusCode: httpStatusCode ?? null,
+      errorMessage: errorMessage ?? null,
+      retryCount: retryCount ?? 0,
     });
   } catch (err) {
     console.warn(
@@ -145,14 +150,16 @@ export async function recordFailure(
 // ---------------------------------------------------------------------------
 
 /**
- * Resolve all unresolved failures for a URL (called after successful fetch+extract).
+ * Resolve all unresolved failure logs for a URL (called after successful fetch+extract).
+ * Marks matching ScrapeLog entries as resolved.
  * Non-blocking: swallows DB errors and logs a warning.
  */
 export async function resolveFailuresForUrl(url: string): Promise<void> {
   try {
-    await prisma.scrapeFailure.updateMany({
+    await prisma.scrapeLog.updateMany({
       where: {
-        url,
+        urlHealth: { url },
+        success: false,
         resolvedAt: null,
       },
       data: {
