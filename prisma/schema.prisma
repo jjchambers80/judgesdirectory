@@ -147,3 +147,105 @@ model Judge {
   @@index([status])
   @@map("judges")
 }
+
+// ---------------------------------------------------------------------------
+// URL Discovery & Scrape Failure Tracking (Feature 011)
+// ---------------------------------------------------------------------------
+
+enum CandidateStatus {
+  DISCOVERED
+  APPROVED
+  REJECTED
+}
+
+enum FailureType {
+  HTTP_403
+  HTTP_429
+  TIMEOUT
+  CAPTCHA_DETECTED
+  SSL_ERROR
+  DNS_FAILURE
+  EMPTY_PAGE
+  PARSE_ERROR
+  UNKNOWN
+}
+
+enum DiscoveryRunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model UrlCandidate {
+  id              String          @id @default(uuid())
+  url             String          @unique
+  domain          String
+  state           String
+  stateAbbr       String          @db.VarChar(2)
+  suggestedType   String?
+  suggestedLevel  String?
+  confidenceScore Float?
+  searchQuery     String
+  snippetText     String?         @db.Text
+  pageTitle       String?
+  status          CandidateStatus @default(DISCOVERED)
+  rejectionReason String?         @db.Text
+  reviewedAt      DateTime?
+  promotedAt      DateTime?
+  discoveryRunId  String
+  discoveryRun    DiscoveryRun    @relation(fields: [discoveryRunId], references: [id])
+  discoveredAt    DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([state])
+  @@index([status])
+  @@index([discoveredAt])
+  @@index([stateAbbr, status])
+  @@map("url_candidates")
+}
+
+model ScrapeFailure {
+  id              String      @id @default(uuid())
+  url             String
+  state           String
+  stateAbbr       String      @db.VarChar(2)
+  failureType     FailureType
+  httpStatusCode  Int?
+  errorMessage    String?     @db.Text
+  retryCount      Int         @default(0)
+  attemptedAt     DateTime    @default(now())
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  resolutionNotes String?     @db.Text
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([url])
+  @@index([state])
+  @@index([failureType])
+  @@index([resolvedAt])
+  @@index([stateAbbr, failureType])
+  @@index([attemptedAt])
+  @@map("scrape_failures")
+}
+
+model DiscoveryRun {
+  id              String             @id @default(uuid())
+  state           String
+  stateAbbr       String             @db.VarChar(2)
+  status          DiscoveryRunStatus @default(RUNNING)
+  queriesRun      Int                @default(0)
+  candidatesFound Int                @default(0)
+  candidatesNew   Int                @default(0)
+  startedAt       DateTime           @default(now())
+  completedAt     DateTime?
+  errorMessage    String?            @db.Text
+  candidates      UrlCandidate[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([status])
+  @@index([state])
+  @@index([startedAt])
+  @@map("discovery_runs")
+}

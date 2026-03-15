@@ -73,6 +73,7 @@ export function SearchFilters({
   };
 
   // Remove individual filter
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const removeFilter = (key: keyof FilterState) => {
     const newFilters = { ...filters };
     delete newFilters[key];
@@ -86,12 +87,14 @@ export function SearchFilters({
   const hasActiveFilters = filters.state || filters.courtType || filters.county;
 
   // Find labels for active filters
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getStateLabel = () => {
     if (!filters.state || !options) return null;
     const state = options.states.find((s) => s.abbreviation === filters.state);
     return state?.name;
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getCountyLabel = () => {
     if (!filters.county || !options?.counties) return null;
     const county = options.counties.find((c) => c.slug === filters.county);
@@ -101,85 +104,85 @@ export function SearchFilters({
   return (
     <div className={cn("flex flex-wrap items-center gap-3", className)}>
       {/* Filter dropdowns */}
-        {/* State filter (US2) */}
-        <select
-          value={filters.state || ""}
-          onChange={handleStateChange}
-          disabled={isLoading || !options}
-          className={cn(
-            "h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-          )}
-          aria-label="Filter by state"
-        >
-          <option value="">All States</option>
-          {options?.states.map((state) => (
-            <option key={state.abbreviation} value={state.abbreviation}>
-              {state.name}
-            </option>
-          ))}
-        </select>
-
-        {/* County filter (US4) - only enabled when state is selected */}
-        <div className="relative">
-          <select
-            value={filters.county || ""}
-            onChange={handleCountyChange}
-            disabled={isLoading || !filters.state || !options?.counties}
-            className={cn(
-              "h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-            )}
-            aria-label="Filter by county"
-            title={!filters.state ? "Select a state first" : undefined}
-          >
-            <option value="">
-              {!filters.state ? "Select state first" : "All Counties"}
-            </option>
-            {options?.counties?.map((county) => (
-              <option key={county.slug} value={county.slug}>
-                {county.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Court type filter (US3) */}
-        <select
-          value={filters.courtType || ""}
-          onChange={handleCourtTypeChange}
-          disabled={isLoading || !options}
-          className={cn(
-            "h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-          )}
-          aria-label="Filter by court type"
-        >
-          <option value="">All Court Types</option>
-          {options?.courtTypes.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
-
-        {/* Clear all button (FR-016) */}
-        {hasActiveFilters && (
-          <button
-            type="button"
-            onClick={handleClearAll}
-            className={cn(
-              "h-9 px-3 rounded-md text-sm",
-              "text-muted-foreground hover:text-foreground",
-              "hover:bg-accent transition-colors",
-            )}
-          >
-            Clear all
-          </button>
+      {/* State filter (US2) */}
+      <select
+        value={filters.state || ""}
+        onChange={handleStateChange}
+        disabled={isLoading || !options}
+        className={cn(
+          "h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "disabled:cursor-not-allowed disabled:opacity-50",
         )}
+        aria-label="Filter by state"
+      >
+        <option value="">All States</option>
+        {options?.states.map((state) => (
+          <option key={state.abbreviation} value={state.abbreviation}>
+            {state.name}
+          </option>
+        ))}
+      </select>
+
+      {/* County filter (US4) - only enabled when state is selected */}
+      <div className="relative">
+        <select
+          value={filters.county || ""}
+          onChange={handleCountyChange}
+          disabled={isLoading || !filters.state || !options?.counties}
+          className={cn(
+            "h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+          )}
+          aria-label="Filter by county"
+          title={!filters.state ? "Select a state first" : undefined}
+        >
+          <option value="">
+            {!filters.state ? "Select state first" : "All Counties"}
+          </option>
+          {options?.counties?.map((county) => (
+            <option key={county.slug} value={county.slug}>
+              {county.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Court type filter (US3) */}
+      <select
+        value={filters.courtType || ""}
+        onChange={handleCourtTypeChange}
+        disabled={isLoading || !options}
+        className={cn(
+          "h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+        )}
+        aria-label="Filter by court type"
+      >
+        <option value="">All Court Types</option>
+        {options?.courtTypes.map((type) => (
+          <option key={type} value={type}>
+            {type}
+          </option>
+        ))}
+      </select>
+
+      {/* Clear all button (FR-016) */}
+      {hasActiveFilters && (
+        <button
+          type="button"
+          onClick={handleClearAll}
+          className={cn(
+            "h-9 px-3 rounded-md text-sm",
+            "text-muted-foreground hover:text-foreground",
+            "hover:bg-accent transition-colors",
+          )}
+        >
+          Clear all
+        </button>
+      )}
     </div>
   );
 }

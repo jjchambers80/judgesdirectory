@@ -53,6 +53,16 @@ export default function AdminDashboard() {
           title="Judge Records"
           description="View, create, edit, and manage judge records"
         />
+        <AdminCard
+          href="/admin/discovery/"
+          title="URL Discovery"
+          description="Discover and review court roster URLs for new states"
+        />
+        <AdminCard
+          href="/admin/failures/"
+          title="Scrape Failures"
+          description="Track and manage harvest scraping failures"
+        />
       </div>
     </div>
   );

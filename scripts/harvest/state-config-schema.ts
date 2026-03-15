@@ -14,14 +14,14 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 
 const RateLimitObjectSchema = z.object({
-  fetchDelayMs: z.number().min(500).default(1500),
+  fetchDelayMs: z.number().min(500).default(2000),
   maxConcurrent: z.number().int().min(1).default(1),
   requestTimeoutMs: z.number().min(5000).default(15000),
   maxRetries: z.number().int().min(0).default(3),
 });
 
 export const RateLimitConfigSchema = RateLimitObjectSchema.default({
-  fetchDelayMs: 1500,
+  fetchDelayMs: 2000,
   maxConcurrent: 1,
   requestTimeoutMs: 15000,
   maxRetries: 3,

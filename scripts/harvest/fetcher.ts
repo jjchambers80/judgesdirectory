@@ -11,6 +11,7 @@
 import * as cheerio from "cheerio";
 import TurndownService from "turndown";
 import type { RateLimitConfig } from "./state-config-schema";
+import { hasCaptcha } from "./failure-tracker";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,6 +22,14 @@ export interface FetchResult {
   rawHtml: string;
   htmlSize: number;
   markdownSize: number;
+}
+
+/** Thrown when a CAPTCHA is detected in a successful HTTP 200 response. */
+export class CaptchaDetectedError extends Error {
+  constructor(indicator: string) {
+    super(`CAPTCHA detected in response body (matched: "${indicator}")`);
+    this.name = "CaptchaDetectedError";
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -94,6 +103,17 @@ export async function fetchPage(
       }
 
       const html = await response.text();
+
+      // Check for CAPTCHA / bot protection in the response body
+      if (hasCaptcha(html)) {
+        const { CAPTCHA_INDICATORS } = await import("./failure-tracker");
+        const lowerHtml = html.toLowerCase();
+        const matched =
+          CAPTCHA_INDICATORS.find((ind) => lowerHtml.includes(ind)) ??
+          "unknown";
+        throw new CaptchaDetectedError(matched);
+      }
+
       let markdown = cleanHtml(html);
 
       // If standard cleaning yields empty/trivial output, try SPA fallbacks

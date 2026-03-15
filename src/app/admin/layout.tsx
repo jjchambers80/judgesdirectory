@@ -36,6 +36,12 @@ export default function AdminLayout({
         <Link href="/admin/courts/" className={linkClasses}>
           Courts
         </Link>
+        <Link href="/admin/discovery/" className={linkClasses}>
+          Discovery
+        </Link>
+        <Link href="/admin/failures/" className={linkClasses}>
+          Failures
+        </Link>
         <Link href="/admin/dashboard/" className={linkClasses}>
           Progress
         </Link>

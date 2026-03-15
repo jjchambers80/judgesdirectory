@@ -71,6 +71,11 @@ import {
   validateLLMConfig,
   describeLLMConfig,
 } from "./llm-provider";
+import {
+  classifyFailure,
+  recordFailure,
+  resolveFailuresForUrl,
+} from "./failure-tracker";
 
 // ---------------------------------------------------------------------------
 // File-based logging
@@ -831,6 +836,21 @@ async function runEnrichedPipeline(
 
       console.log(`  Extracted: ${result.judges.length} judge(s)`);
 
+      // Empty page detection: successful fetch but no judges extracted
+      if (result.judges.length === 0) {
+        await recordFailure(
+          entry.url,
+          stateConfig.state,
+          stateConfig.abbreviation,
+          "EMPTY_PAGE",
+          200,
+          `Zero judges extracted from ${entry.label}`,
+        );
+      } else {
+        // Auto-resolve previous failures for this URL on successful extraction
+        await resolveFailuresForUrl(entry.url);
+      }
+
       // Phase 2: Enrich with bio page data (unless --skip-bio)
       const enrichResult = await enrichWithBioPages(result.judges, entry, {
         skipBioFetch: flags.skipBio,
@@ -879,6 +899,17 @@ async function runEnrichedPipeline(
       failed++;
       const errMsg = err instanceof Error ? err.message : String(err);
       console.error(`  ERROR: ${errMsg}`);
+
+      // Classify and record failure (non-blocking)
+      const failureType = classifyFailure(errMsg);
+      await recordFailure(
+        entry.url,
+        stateConfig.state,
+        stateConfig.abbreviation,
+        failureType,
+        undefined,
+        errMsg,
+      );
 
       // Record failure in checkpoint but continue with next URL
       updateCheckpoint(checkpoint, entry.url, 0, [errMsg], stateOutputDir);

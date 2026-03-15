@@ -74,7 +74,7 @@ export async function seedStateCourts(config: StateConfig): Promise<void> {
     console.warn(
       `  WARN: ${missingCounties.size} county(ies) not found in DB for ${config.state}: ${Array.from(missingCounties).join(", ")}`,
     );
-    for (const countyName of missingCounties) {
+    for (const countyName of Array.from(missingCounties)) {
       unresolvedWarnings.push({
         countyName,
         stateAbbreviation: config.abbreviation,

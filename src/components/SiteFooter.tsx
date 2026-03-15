@@ -3,7 +3,7 @@ import { SITE_NAME } from "@/lib/constants";
 export default function SiteFooter() {
   return (
     <footer className="border-t border-border mt-auto">
-      <div className="px-4 py-6 mx-auto max-w-[1200px] sm:px-8">
+      <div className="px-4 py-6 mx-auto max-w-[1400px] sm:px-8">
         <p className="text-sm text-muted-foreground">
           &copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
         </p>

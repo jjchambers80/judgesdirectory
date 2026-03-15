@@ -39,3 +39,4 @@ next-env.d.ts
 
 # harvest script output (generated CSVs, logs, checkpoints)
 scripts/harvest/output/
+scripts/discovery/output/
