@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Roboto } from "next/font/google";
 import { SITE_NAME, SITE_DESCRIPTION, TITLE_TEMPLATE } from "@/lib/constants";
-import ThemeToggle from "@/components/ThemeToggle";
+import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -49,15 +50,17 @@ export default function RootLayout({
           Skip to main content
         </a>
 
-        <header className="flex flex-col items-start gap-2 px-4 py-3 border-b border-border sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-4">
-          <a
-            href="/judges/"
-            className="no-underline text-foreground hover:no-underline"
-          >
-            <strong className="text-lg">{SITE_NAME}</strong>
-          </a>
-          <ThemeToggle />
-        </header>
+        <Suspense
+          fallback={
+            <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
+              <div className="flex items-center gap-6 px-4 py-3 sm:px-8 mx-auto max-w-[1200px]">
+                <strong className="text-lg tracking-tight">{SITE_NAME}</strong>
+              </div>
+            </header>
+          }
+        >
+          <SiteHeader />
+        </Suspense>
 
         <main
           id="main-content"

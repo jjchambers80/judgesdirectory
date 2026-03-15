@@ -14,6 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { SearchInput } from "./SearchInput";
 import { SearchResults } from "./SearchResults";
 import { SearchFilters } from "./SearchFilters";
+import { FilterChip } from "./FilterChip";
 import type { SearchResponse, FilterOptions } from "@/lib/search";
 
 interface FilterState {
@@ -25,11 +26,17 @@ interface FilterState {
 interface JudgeSearchProps {
   /** Initial search results from server (for SSR) */
   initialResults?: SearchResponse;
+  /** Hide the search input (when rendered in header instead) */
+  hideSearchInput?: boolean;
   /** Additional CSS classes */
   className?: string;
 }
 
-export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
+export function JudgeSearch({
+  initialResults,
+  hideSearchInput,
+  className,
+}: JudgeSearchProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -51,9 +58,7 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
   const [filterOptions, setFilterOptions] =
     React.useState<FilterOptions | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [hasSearched, setHasSearched] = React.useState(
-    !!initialQuery || !!initialFilters.state || !!initialFilters.courtType,
-  );
+  const [hasSearched, setHasSearched] = React.useState(true);
 
   // Fetch filter options
   const fetchFilterOptions = React.useCallback(async (stateAbbr?: string) => {
@@ -82,18 +87,6 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
       searchFilters: FilterState,
       searchPage: number = 1,
     ) => {
-      const hasFiltersOrQuery =
-        searchQuery.trim() ||
-        searchFilters.state ||
-        searchFilters.courtType ||
-        searchFilters.county;
-
-      if (!hasFiltersOrQuery) {
-        setResponse(null);
-        setHasSearched(false);
-        return;
-      }
-
       setIsLoading(true);
       setHasSearched(true);
 
@@ -124,9 +117,13 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
     [],
   );
 
+  // Track internal URL changes to avoid double-fetching on URL sync
+  const internalNavRef = React.useRef(false);
+
   // Update URL with current state (FR-009)
   const updateUrl = React.useCallback(
     (q: string, f: FilterState, p: number = 1) => {
+      internalNavRef.current = true;
       const params = new URLSearchParams();
       if (q.trim()) params.set("q", q.trim());
       if (f.state) params.set("state", f.state);
@@ -166,17 +163,16 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
   const handleQueryChange = (value: string) => {
     setQuery(value);
 
-    // Clear results when input is cleared and no filters
+    // Re-fetch all results when input is cleared
     if (
       !value.trim() &&
       !filters.state &&
       !filters.courtType &&
       !filters.county
     ) {
-      setResponse(null);
-      setHasSearched(false);
       setPage(1);
       updateUrl("", {});
+      fetchResults("", {}, 1);
     }
   };
 
@@ -198,35 +194,94 @@ export function JudgeSearch({ initialResults, className }: JudgeSearchProps) {
     [filters.state, query, updateUrl, fetchResults, fetchFilterOptions],
   );
 
-  // Load filter options on mount
+  // Sync state from URL changes (handles mount + header search navigation)
+  const searchParamsKey = searchParams.toString();
   React.useEffect(() => {
-    fetchFilterOptions(initialFilters.state);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Fetch results on mount if query/filters exist in URL
-  React.useEffect(() => {
-    if (initialQuery || initialFilters.state || initialFilters.courtType) {
-      fetchResults(initialQuery, initialFilters, initialPage);
+    if (internalNavRef.current) {
+      internalNavRef.current = false;
+      return;
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const urlQuery = searchParams.get("q") || "";
+    const urlPage = parseInt(searchParams.get("page") || "1", 10);
+    const urlFilters: FilterState = {
+      state: searchParams.get("state") || undefined,
+      courtType: searchParams.get("courtType") || undefined,
+      county: searchParams.get("county") || undefined,
+    };
+    setQuery(urlQuery);
+    setPage(urlPage);
+    setFilters(urlFilters);
+    fetchResults(urlQuery, urlFilters, urlPage);
+    fetchFilterOptions(urlFilters.state);
+  }, [searchParamsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={className}>
-      <SearchInput
-        value={query}
-        onChange={handleQueryChange}
-        onSubmit={handleSubmit}
-        placeholder="Search judges by name..."
-        className="mb-4"
-      />
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3 mb-6">
+        {!hideSearchInput && (
+          <SearchInput
+            value={query}
+            onChange={handleQueryChange}
+            onSubmit={handleSubmit}
+            placeholder="Search judges by name..."
+            className="flex-1 min-w-0"
+          />
+        )}
 
-      <SearchFilters
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        options={filterOptions}
-        isLoading={isLoading}
-        className="mb-6"
-      />
+        <SearchFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          options={filterOptions}
+          isLoading={isLoading}
+        />
+      </div>
+
+      {(filters.state || filters.courtType || filters.county) && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {filters.state &&
+            filterOptions?.states &&
+            (() => {
+              const s = filterOptions.states.find(
+                (st) => st.abbreviation === filters.state,
+              );
+              return s ? (
+                <FilterChip
+                  label={s.name}
+                  onRemove={() =>
+                    handleFiltersChange({
+                      ...filters,
+                      state: undefined,
+                      county: undefined,
+                    })
+                  }
+                />
+              ) : null;
+            })()}
+          {filters.courtType && (
+            <FilterChip
+              label={filters.courtType}
+              onRemove={() =>
+                handleFiltersChange({ ...filters, courtType: undefined })
+              }
+            />
+          )}
+          {filters.county &&
+            filterOptions?.counties &&
+            (() => {
+              const c = filterOptions.counties.find(
+                (co) => co.slug === filters.county,
+              );
+              return c ? (
+                <FilterChip
+                  label={c.name}
+                  onRemove={() =>
+                    handleFiltersChange({ ...filters, county: undefined })
+                  }
+                />
+              ) : null;
+            })()}
+        </div>
+      )}
 
       {hasSearched && (
         <SearchResults

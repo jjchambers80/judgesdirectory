@@ -6,6 +6,7 @@ import { SITE_URL } from "@/lib/constants";
 import { countyListTitle, buildItemListJsonLd } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import Disclaimer from "@/components/Disclaimer";
+import JudgeGrid from "@/components/JudgeGrid";
 
 interface PageProps {
   params: Promise<{ state: string }>;
@@ -29,7 +30,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function CountyListPage({ params }: PageProps) {
+export default async function StateJudgesPage({ params }: PageProps) {
   const { state: stateSlug } = await params;
 
   const state = await prisma.state.findUnique({
@@ -38,21 +39,41 @@ export default async function CountyListPage({ params }: PageProps) {
 
   if (!state) notFound();
 
-  const counties = await prisma.county.findMany({
-    where: { stateId: state.id },
-    orderBy: { name: "asc" },
-    include: {
-      _count: { select: { courts: true } },
+  const judges = await prisma.judge.findMany({
+    where: {
+      status: "VERIFIED",
+      court: { county: { stateId: state.id } },
+    },
+    orderBy: { fullName: "asc" },
+    select: {
+      id: true,
+      fullName: true,
+      slug: true,
+      termEnd: true,
+      photoUrl: true,
+      court: {
+        select: {
+          type: true,
+          slug: true,
+          county: {
+            select: {
+              name: true,
+              slug: true,
+              state: { select: { name: true, slug: true } },
+            },
+          },
+        },
+      },
     },
   });
 
   const jsonLd = buildItemListJsonLd(
-    counties.map((county, index) => ({
-      name: county.name,
-      url: `/judges/${state.slug}/${county.slug}/`,
+    judges.map((judge, index) => ({
+      name: judge.fullName,
+      url: `/judges/${judge.court.county.state.slug}/${judge.court.county.slug}/${judge.court.slug}/${judge.slug}/`,
       position: index + 1,
     })),
-    `Counties in ${state.name}`,
+    `Judges in ${state.name}`,
     `/judges/${state.slug}/`,
   );
 
@@ -66,7 +87,7 @@ export default async function CountyListPage({ params }: PageProps) {
         <ol className="flex flex-wrap items-center gap-1.5 list-none m-0 p-0">
           <li>
             <Link href="/judges/" className="text-link hover:underline">
-              States
+              All Judges
             </Link>
           </li>
           <li aria-hidden="true">
@@ -86,28 +107,12 @@ export default async function CountyListPage({ params }: PageProps) {
           <li aria-current="page">{state.name}</li>
         </ol>
       </nav>
-      <h1>Judges in {state.name} — County Directory</h1>
-      <p className="text-muted-foreground mb-8">
-        {counties.length} {counties.length === 1 ? "county" : "counties"} in{" "}
-        {state.name}. Select a county to view court types.
+      <h1>Judges in {state.name}</h1>
+      <p className="text-sm text-muted-foreground mb-4">
+        {judges.length} verified {judges.length === 1 ? "judge" : "judges"} in{" "}
+        {state.name}
       </p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {counties.map((county) => (
-          <Link
-            key={county.id}
-            href={`/judges/${state.slug}/${county.slug}/`}
-            className="block px-5 py-4 border border-border rounded-md no-underline text-foreground hover:border-primary transition-colors"
-          >
-            <strong>{county.name}</strong>
-            {county._count.courts > 0 && (
-              <span className="ml-2 text-sm text-muted-foreground">
-                ({county._count.courts}{" "}
-                {county._count.courts === 1 ? "court" : "courts"})
-              </span>
-            )}
-          </Link>
-        ))}
-      </div>
+      <JudgeGrid judges={judges} />
       <Disclaimer />
     </>
   );

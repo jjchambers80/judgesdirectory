@@ -2,36 +2,52 @@ import { Metadata } from "next";
 import { Suspense } from "react";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
-import { statesGridTitle, buildItemListJsonLd } from "@/lib/seo";
+import { buildItemListJsonLd } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import Disclaimer from "@/components/Disclaimer";
-import StateGrid from "@/components/StateGrid";
 import { JudgeSearch } from "@/components/search";
 
 export const metadata: Metadata = {
-  title: statesGridTitle(),
+  title: "U.S. Judges Directory — All Judges",
   description:
-    "Search and browse judges across all U.S. states. Find judges by name, state, county, or court type.",
+    "Browse all verified U.S. judges alphabetically. Find judges by name, state, county, or court type.",
   alternates: {
     canonical: `${SITE_URL}/judges/`,
   },
 };
 
-export default async function StatesGridPage() {
-  const states = await prisma.state.findMany({
-    orderBy: { name: "asc" },
-    include: {
-      _count: { select: { counties: true } },
+export default async function JudgesPage() {
+  const judges = await prisma.judge.findMany({
+    where: { status: "VERIFIED" },
+    orderBy: { fullName: "asc" },
+    select: {
+      fullName: true,
+      slug: true,
+      court: {
+        select: {
+          slug: true,
+          county: {
+            select: {
+              slug: true,
+              state: {
+                select: {
+                  slug: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
 
   const jsonLd = buildItemListJsonLd(
-    states.map((state, index) => ({
-      name: state.name,
-      url: `/judges/${state.slug}/`,
+    judges.map((judge, index) => ({
+      name: judge.fullName,
+      url: `/judges/${judge.court.county.state.slug}/${judge.court.county.slug}/${judge.court.slug}/${judge.slug}/`,
       position: index + 1,
     })),
-    "U.S. States",
+    "U.S. Judges Directory",
     "/judges/",
   );
 
@@ -47,23 +63,15 @@ export default async function StatesGridPage() {
 
       <JsonLd data={jsonLd} />
       <main id="main-content">
-        <h1>U.S. Judges Directory — Browse by State</h1>
-        <p className="text-muted-foreground mb-6">
-          Search for judges or select a state to browse by county and court
-          type.
-        </p>
-
         {/* Search Component (Feature: 009-search-discovery) */}
         <Suspense
           fallback={
             <div className="h-10 w-full max-w-md bg-muted rounded-md animate-pulse mb-8" />
           }
         >
-          <JudgeSearch className="mb-8 max-w-2xl" />
+          <JudgeSearch hideSearchInput className="mb-8" />
         </Suspense>
 
-        <h2 className="text-xl font-semibold mb-4">Browse by State</h2>
-        <StateGrid states={states} />
         <Disclaimer />
       </main>
     </>

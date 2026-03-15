@@ -36,6 +36,10 @@ export interface SearchResult {
   fullName: string;
   /** URL slug for judge profile */
   slug: string;
+  /** Photo URL (may be null) */
+  photoUrl: string | null;
+  /** Term end date (may be null) */
+  termEnd: Date | null;
   /** Court information for context */
   court: {
     type: string;
@@ -127,6 +131,8 @@ const searchResultSelect = {
   id: true,
   fullName: true,
   slug: true,
+  photoUrl: true,
+  termEnd: true,
   court: {
     select: {
       type: true,

@@ -10,7 +10,6 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { FilterChip } from "./FilterChip";
 import type { FilterOptions } from "@/lib/search";
 
 interface FilterState {
@@ -100,9 +99,8 @@ export function SearchFilters({
   };
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("flex flex-wrap items-center gap-3", className)}>
       {/* Filter dropdowns */}
-      <div className="flex flex-wrap gap-3">
         {/* State filter (US2) */}
         <select
           value={filters.state || ""}
@@ -182,31 +180,6 @@ export function SearchFilters({
             Clear all
           </button>
         )}
-      </div>
-
-      {/* Active filter chips */}
-      {hasActiveFilters && (
-        <div className="flex flex-wrap gap-2">
-          {filters.state && getStateLabel() && (
-            <FilterChip
-              label={getStateLabel()!}
-              onRemove={() => removeFilter("state")}
-            />
-          )}
-          {filters.courtType && (
-            <FilterChip
-              label={filters.courtType}
-              onRemove={() => removeFilter("courtType")}
-            />
-          )}
-          {filters.county && getCountyLabel() && (
-            <FilterChip
-              label={getCountyLabel()!}
-              onRemove={() => removeFilter("county")}
-            />
-          )}
-        </div>
-      )}
     </div>
   );
 }

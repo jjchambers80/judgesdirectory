@@ -11,6 +11,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { SearchResult, SearchResponse } from "@/lib/search";
 
@@ -179,7 +180,7 @@ export function SearchInput({
     const stateSlug = judge.court.county.state.slug;
     const countySlug = judge.court.county.slug;
     const courtSlug = judge.court.slug;
-    return `/states/${stateSlug}/${countySlug}/${courtSlug}/${judge.slug}`;
+    return `/judges/${stateSlug}/${countySlug}/${courtSlug}/${judge.slug}/`;
   };
 
   // T047: Highlight matching text in suggestion
@@ -331,8 +332,8 @@ export function SearchInput({
           role="listbox"
           aria-label="Search suggestions"
           className={cn(
-            "absolute z-50 mt-1 w-full rounded-md border border-input bg-popover shadow-lg",
-            "max-h-60 overflow-auto",
+            "absolute z-50 mt-1 w-full rounded-md border border-input bg-background shadow-lg",
+            "max-h-60 overflow-auto list-none p-0 m-0",
           )}
         >
           {suggestions.map((judge, index) => (
@@ -348,17 +349,50 @@ export function SearchInput({
               }}
               onMouseEnter={() => setSelectedIndex(index)}
               className={cn(
-                "px-4 py-2 cursor-pointer text-sm",
+                "flex items-center gap-3 px-4 py-2.5 cursor-pointer text-sm",
                 "hover:bg-accent hover:text-accent-foreground",
                 index === selectedIndex && "bg-accent text-accent-foreground",
                 index !== suggestions.length - 1 && "border-b border-input/50",
               )}
             >
-              <div className="font-medium">
-                {highlightMatch(judge.fullName, value)}
+              <div className="relative w-8 h-8 shrink-0 rounded-full overflow-hidden bg-muted ring-1 ring-border">
+                {judge.photoUrl ? (
+                  <Image
+                    src={judge.photoUrl}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="object-cover w-full h-full"
+                    unoptimized
+                  />
+                ) : (
+                  <svg
+                    viewBox="0 0 32 32"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-full h-full"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      cx="16"
+                      cy="11"
+                      r="5"
+                      className="fill-muted-foreground/50"
+                    />
+                    <path
+                      d="M6 32 C6 24 10 20 16 20 C22 20 26 24 26 32"
+                      className="fill-muted-foreground/30"
+                    />
+                  </svg>
+                )}
               </div>
-              <div className="text-xs text-muted-foreground mt-0.5">
-                {judge.court.type} • {judge.court.county.state.abbreviation}
+              <div className="min-w-0 flex-1">
+                <div className="font-medium truncate">
+                  {highlightMatch(judge.fullName, value)}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                  {judge.court.type} · {judge.court.county.state.abbreviation}
+                </div>
               </div>
             </li>
           ))}
