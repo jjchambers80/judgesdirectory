@@ -36,7 +36,7 @@ export default function JudgeGrid({ judges }: JudgeGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
       {judges.map((judge) => {
         const { court } = judge;
         const href = `/judges/${court.county.state.slug}/${court.county.slug}/${court.slug}/${judge.slug}/`;

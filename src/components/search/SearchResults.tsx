@@ -24,6 +24,8 @@ interface SearchResultsProps {
   query: string;
   /** Whether results are loading */
   isLoading?: boolean;
+  /** Hide the result count (when displayed externally) */
+  hideResultCount?: boolean;
   /** Called when page changes (T038) */
   onPageChange?: (page: number) => void;
   /** Additional CSS classes */
@@ -206,6 +208,7 @@ export function SearchResults({
   response,
   query,
   isLoading = false,
+  hideResultCount = false,
   onPageChange,
   className,
 }: SearchResultsProps) {
@@ -238,10 +241,12 @@ export function SearchResults({
   return (
     <div className={className}>
       {/* Result count (T036) */}
-      <p className="text-sm text-muted-foreground mb-4">
-        Showing {startResult.toLocaleString()}–{endResult.toLocaleString()} of{" "}
-        {total.toLocaleString()} judges
-      </p>
+      {!hideResultCount && (
+        <p className="text-sm text-muted-foreground mb-4">
+          Showing {startResult.toLocaleString()}–{endResult.toLocaleString()} of{" "}
+          {total.toLocaleString()} judges
+        </p>
+      )}
 
       {/* Results grid */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

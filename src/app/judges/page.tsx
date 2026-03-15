@@ -4,7 +4,6 @@ import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
 import { buildItemListJsonLd } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
-import Disclaimer from "@/components/Disclaimer";
 import { JudgeSearch } from "@/components/search";
 
 export const metadata: Metadata = {
@@ -71,8 +70,6 @@ export default async function JudgesPage() {
         >
           <JudgeSearch hideSearchInput className="mb-8" />
         </Suspense>
-
-        <Disclaimer />
       </main>
     </>
   );

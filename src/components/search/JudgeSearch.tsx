@@ -215,9 +215,19 @@ export function JudgeSearch({
     fetchFilterOptions(urlFilters.state);
   }, [searchParamsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Compute result count text for inline display
+  const resultCountText = React.useMemo(() => {
+    if (!response) return null;
+    const { total, page: p, limit } = response;
+    if (total === 0) return null;
+    const start = (p - 1) * limit + 1;
+    const end = Math.min(p * limit, total);
+    return `Showing ${start.toLocaleString()}–${end.toLocaleString()} of ${total.toLocaleString()} judges`;
+  }, [response]);
+
   return (
     <div className={className}>
-      <div className="flex flex-col sm:flex-row sm:items-start gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
         {!hideSearchInput && (
           <SearchInput
             value={query}
@@ -234,6 +244,12 @@ export function JudgeSearch({
           options={filterOptions}
           isLoading={isLoading}
         />
+
+        {resultCountText && (
+          <p className="text-sm text-muted-foreground whitespace-nowrap sm:ml-auto">
+            {resultCountText}
+          </p>
+        )}
       </div>
 
       {(filters.state || filters.courtType || filters.county) && (
@@ -288,6 +304,7 @@ export function JudgeSearch({
           response={response}
           query={query}
           isLoading={isLoading}
+          hideResultCount
           onPageChange={handlePageChange}
         />
       )}

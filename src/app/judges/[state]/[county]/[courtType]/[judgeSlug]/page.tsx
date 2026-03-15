@@ -6,7 +6,6 @@ import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
 import { judgeProfileTitle, buildPersonJsonLd } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
-import Disclaimer from "@/components/Disclaimer";
 import { Badge } from "@/components/ui/badge";
 
 interface PageProps {
@@ -459,7 +458,6 @@ export default async function JudgeProfilePage({ params }: PageProps) {
         </p>
       )}
 
-      <Disclaimer />
     </>
   );
 }

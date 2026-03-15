@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Roboto } from "next/font/google";
 import { SITE_NAME, SITE_DESCRIPTION, TITLE_TEMPLATE } from "@/lib/constants";
 import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -41,7 +42,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>
+      <body className="min-h-screen flex flex-col">
         {/* Skip navigation link (FR-009) */}
         <a
           href="#main-content"
@@ -53,7 +54,7 @@ export default function RootLayout({
         <Suspense
           fallback={
             <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
-              <div className="flex items-center gap-6 px-4 py-3 sm:px-8 mx-auto max-w-[1200px]">
+              <div className="flex items-center gap-6 px-4 py-3 sm:px-8 mx-auto max-w-[1400px]">
                 <strong className="text-lg tracking-tight">{SITE_NAME}</strong>
               </div>
             </header>
@@ -64,10 +65,12 @@ export default function RootLayout({
 
         <main
           id="main-content"
-          className="px-4 py-6 mx-auto max-w-[1200px] sm:px-8 sm:py-8"
+          className="flex-grow px-4 py-6 mx-auto max-w-[1400px] sm:px-8 sm:py-8 w-full"
         >
           {children}
         </main>
+
+        <SiteFooter />
       </body>
     </html>
   );

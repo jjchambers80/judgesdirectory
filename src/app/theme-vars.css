@@ -18,9 +18,9 @@
   --color-surface: #ffffff;
 
   /* Disclaimer */
-  --color-disclaimer-bg: #fffbeb;
-  --color-disclaimer-border: #fef3c7;
-  --color-disclaimer-text: #92400e;
+  --color-disclaimer-bg: transparent;
+  --color-disclaimer-border: #e5e7eb;
+  --color-disclaimer-text: #6b7280;
 
   /* Admin / Form */
   --color-input-border: #d1d5db;
@@ -52,9 +52,9 @@
   --color-surface: #1f2937;
 
   /* Disclaimer */
-  --color-disclaimer-bg: #451a03;
-  --color-disclaimer-border: #78350f;
-  --color-disclaimer-text: #fde68a;
+  --color-disclaimer-bg: transparent;
+  --color-disclaimer-border: #374151;
+  --color-disclaimer-text: #9ca3af;
 
   /* Admin / Form */
   --color-input-border: #4b5563;
@@ -85,9 +85,9 @@
     --color-border: #374151;
     --color-surface: #1f2937;
 
-    --color-disclaimer-bg: #451a03;
-    --color-disclaimer-border: #78350f;
-    --color-disclaimer-text: #fde68a;
+    --color-disclaimer-bg: transparent;
+    --color-disclaimer-border: #374151;
+    --color-disclaimer-text: #9ca3af;
 
     --color-input-border: #4b5563;
     --color-input-border-error: #f87171;

@@ -53,7 +53,7 @@ export default function SiteHeader() {
       )}
     >
       {/* Desktop: logo | centered search | toggle */}
-      <div className="hidden sm:flex items-center gap-6 px-8 py-3 mx-auto max-w-[1200px]">
+      <div className="hidden sm:flex items-center gap-6 px-8 py-3 mx-auto max-w-[1400px]">
         <a
           href="/judges/"
           className="no-underline text-foreground hover:no-underline shrink-0"

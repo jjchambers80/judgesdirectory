@@ -121,26 +121,6 @@ export function SearchFilters({
           ))}
         </select>
 
-        {/* Court type filter (US3) */}
-        <select
-          value={filters.courtType || ""}
-          onChange={handleCourtTypeChange}
-          disabled={isLoading || !options}
-          className={cn(
-            "h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-          )}
-          aria-label="Filter by court type"
-        >
-          <option value="">All Court Types</option>
-          {options?.courtTypes.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
-
         {/* County filter (US4) - only enabled when state is selected */}
         <div className="relative">
           <select
@@ -165,6 +145,26 @@ export function SearchFilters({
             ))}
           </select>
         </div>
+
+        {/* Court type filter (US3) */}
+        <select
+          value={filters.courtType || ""}
+          onChange={handleCourtTypeChange}
+          disabled={isLoading || !options}
+          className={cn(
+            "h-9 px-3 rounded-md border border-input bg-background text-foreground text-sm",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+          )}
+          aria-label="Filter by court type"
+        >
+          <option value="">All Court Types</option>
+          {options?.courtTypes.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
 
         {/* Clear all button (FR-016) */}
         {hasActiveFilters && (

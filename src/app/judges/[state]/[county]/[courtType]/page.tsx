@@ -5,7 +5,6 @@ import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
 import { judgeListTitle, buildItemListJsonLd } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
-import Disclaimer from "@/components/Disclaimer";
 
 interface PageProps {
   params: Promise<{ state: string; county: string; courtType: string }>;
@@ -188,7 +187,6 @@ export default async function JudgeListPage({ params }: PageProps) {
           </div>
         </>
       )}
-      <Disclaimer />
     </>
   );
 }
