@@ -15,6 +15,10 @@ Auto-generated from all feature plans. Last updated: 2026-02-17
 - PostgreSQL 16 via Prisma ORM — existing State → County → Court → Judge hierarchy; no schema migrations needed (008-state-expansion)
 - TypeScript 5.x / Node.js 20.x + Next.js 14 (App Router), React 18, Prisma ORM, PostgreSQL (009-search-discovery)
 - PostgreSQL with pg_trgm extension for fuzzy text search (009-search-discovery)
+- TypeScript 5.x (Next.js 14+ App Router) + Next.js, Tailwind CSS, existing theme-vars.css custom properties (010-global-footer)
+- N/A — pure UI component, no database interaction (010-global-footer)
+- TypeScript 5, React 18, Next.js 14.2 + Next.js (SSR + client components), Prisma ORM, Tailwind CSS 4, Radix UI (no new dependencies) (011-lazy-load-results)
+- PostgreSQL via Prisma (existing — no schema changes) (011-lazy-load-results)
 
 - TypeScript 5.x on Node.js 20 LTS + Next.js 14 (App Router, SSR), Prisma ORM 5.x, next-sitemap, slugify (001-foundation)
 
@@ -34,9 +38,9 @@ npm test && npm run lint
 TypeScript 5.x on Node.js 20 LTS: Follow standard conventions
 
 ## Recent Changes
+- 011-lazy-load-results: Added TypeScript 5, React 18, Next.js 14.2 + Next.js (SSR + client components), Prisma ORM, Tailwind CSS 4, Radix UI (no new dependencies)
+- 010-global-footer: Added TypeScript 5.x (Next.js 14+ App Router) + Next.js, Tailwind CSS, existing theme-vars.css custom properties
 - 009-search-discovery: Added TypeScript 5.x / Node.js 20.x + Next.js 14 (App Router), React 18, Prisma ORM, PostgreSQL
-- 008-state-expansion: Added TypeScript 5.x / Node.js 20.18.0 (strict mode) + Zod (validation), Cheerio (deterministic extraction), OpenAI gpt-4o-mini (LLM extraction), tsx (runtime)
-- 007-state-expansion: Added TypeScript (strict mode), Node.js 20+ + Zod (schema validation), Cheerio + Turndown (HTML→Markdown), PapaParse (CSV), Prisma (ORM), multi-provider LLM abstraction (OpenAI/Anthropic)
 
 
 <!-- MANUAL ADDITIONS START -->
