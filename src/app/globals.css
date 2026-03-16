@@ -43,6 +43,9 @@
   --color-border: var(--color-border);
   --color-input: var(--color-input-border);
   --color-ring: var(--color-btn-primary);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-text-primary);
+  --color-destructive-foreground: #ffffff;
 
   /* --- Extended bridge tokens (FR-029) --- */
   --color-link: var(--color-link);
@@ -62,6 +65,35 @@
 
 /* --- Typography base layer (FR-028) --- */
 @layer base {
+  /* Compensate for omitted Tailwind preflight: apply the critical
+     box-sizing reset so width utilities (w-full etc.) include
+     padding/border, preventing horizontal overflow. */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-color: var(--color-border);
+  }
+
+  /* Compensate for omitted Tailwind preflight: ensure form elements
+     inherit color and use transparent backgrounds so dark-mode
+     theming propagates without per-element overrides. */
+  button,
+  [role="button"],
+  input,
+  select,
+  textarea {
+    color: inherit;
+    background-color: transparent;
+  }
+
+  /* Native <option> elements inside <select> can't inherit transparent;
+     give them the page background so dropdown menus render correctly. */
+  option {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+  }
+
   h1 {
     @apply text-2xl font-bold tracking-tight md:text-3xl;
   }
@@ -83,7 +115,7 @@
   p {
     @apply leading-relaxed;
   }
-  a {
+  a:where(:not([data-slot="button"], .no-link-style)) {
     @apply text-link underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
   }
 }

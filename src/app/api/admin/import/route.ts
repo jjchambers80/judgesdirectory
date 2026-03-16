@@ -82,6 +82,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
+const VALID_SORT_FIELDS = ["createdAt", "status", "totalRows"] as const;
+type SortField = (typeof VALID_SORT_FIELDS)[number];
+
 /**
  * GET /api/admin/import
  * List import batches with pagination.
@@ -96,6 +99,12 @@ export async function GET(request: NextRequest) {
     Math.max(1, parseInt(searchParams.get("limit") || "20", 10)),
   );
   const status = searchParams.get("status") || undefined;
+  const sortParam = searchParams.get("sort") || "createdAt";
+  const order = searchParams.get("order") === "asc" ? "asc" : "desc";
+
+  const sort: SortField = VALID_SORT_FIELDS.includes(sortParam as SortField)
+    ? (sortParam as SortField)
+    : "createdAt";
 
   const where: Record<string, unknown> = {};
   if (status) {
@@ -107,7 +116,7 @@ export async function GET(request: NextRequest) {
       where,
       skip: (page - 1) * limit,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { [sort]: order },
       include: {
         judges: {
           where: { status: "VERIFIED" },

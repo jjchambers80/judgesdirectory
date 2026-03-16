@@ -4,12 +4,21 @@ import { Prisma } from "@prisma/client";
 
 const STALE_DAYS = 30;
 
+const VALID_SORT_FIELDS = [
+  "discoveredAt",
+  "confidenceScore",
+  "stateAbbr",
+  "status",
+  "url",
+] as const;
+type SortField = (typeof VALID_SORT_FIELDS)[number];
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const state = searchParams.get("state");
   const status = searchParams.get("status");
-  const sort = searchParams.get("sort") || "discoveredAt";
-  const order = searchParams.get("order") || "desc";
+  const sortParam = searchParams.get("sort") || "discoveredAt";
+  const order = searchParams.get("order") === "asc" ? "asc" : "desc";
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const limit = Math.min(
     100,
@@ -17,6 +26,10 @@ export async function GET(request: NextRequest) {
   );
 
   const skip = (page - 1) * limit;
+
+  const sort: SortField = VALID_SORT_FIELDS.includes(sortParam as SortField)
+    ? (sortParam as SortField)
+    : "discoveredAt";
 
   // Build where clause
   const where: Prisma.UrlCandidateWhereInput = {};
@@ -34,11 +47,10 @@ export async function GET(request: NextRequest) {
     where.status = status as "DISCOVERED" | "APPROVED" | "REJECTED";
   }
 
-  // Build orderBy
-  const orderBy: Prisma.UrlCandidateOrderByWithRelationInput =
-    sort === "confidenceScore"
-      ? { confidenceScore: order === "asc" ? "asc" : "desc" }
-      : { discoveredAt: order === "asc" ? "asc" : "desc" };
+  // Build orderBy from validated sort field
+  const orderBy: Prisma.UrlCandidateOrderByWithRelationInput = {
+    [sort]: order,
+  };
 
   const [candidates, total] = await Promise.all([
     prisma.urlCandidate.findMany({

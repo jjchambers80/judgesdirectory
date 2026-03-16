@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { ColumnDef, SortingState } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 import CsvUploader, { UploadResult } from "@/components/admin/CsvUploader";
 import ColumnMapper from "@/components/admin/ColumnMapper";
 import ImportSummary from "@/components/admin/ImportSummary";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import type { DataTableToolbarConfig } from "@/components/ui/data-table-toolbar";
 
 type Step = "select-state" | "upload" | "preview" | "confirming" | "complete";
 
@@ -51,6 +55,15 @@ export default function AdminImportPage() {
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [batches, setBatches] = useState<BatchRecord[]>([]);
+  const [batchPagination, setBatchPagination] = useState({
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 0,
+  });
+  const [batchSorting, setBatchSorting] = useState<SortingState>([
+    { id: "createdAt", desc: true },
+  ]);
   const [rollingBack, setRollingBack] = useState<string | null>(null);
 
   // Fetch states on mount
@@ -61,12 +74,25 @@ export default function AdminImportPage() {
       .catch(() => {});
   }, []);
 
-  const fetchBatches = useCallback(() => {
-    fetch("/api/admin/import?limit=20")
-      .then((r) => r.json())
-      .then((data) => setBatches(data.batches || []))
-      .catch(() => {});
-  }, []);
+  const fetchBatches = useCallback(
+    (page = 1) => {
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("limit", String(batchPagination.limit));
+      if (batchSorting.length > 0) {
+        params.set("sort", batchSorting[0].id);
+        params.set("order", batchSorting[0].desc ? "desc" : "asc");
+      }
+      fetch(`/api/admin/import?${params}`)
+        .then((r) => r.json())
+        .then((data) => {
+          setBatches(data.batches || []);
+          if (data.pagination) setBatchPagination(data.pagination);
+        })
+        .catch(() => {});
+    },
+    [batchSorting, batchPagination.limit],
+  );
 
   useEffect(() => {
     fetchBatches();
@@ -162,6 +188,117 @@ export default function AdminImportPage() {
     setImportResult(null);
     setError(null);
   };
+
+  const batchColumns: ColumnDef<BatchRecord>[] = useMemo(
+    () => [
+      {
+        accessorKey: "fileName",
+        header: "File",
+        cell: ({ row }) => (
+          <span className="text-sm max-w-48 overflow-hidden text-ellipsis whitespace-nowrap block">
+            {row.original.fileName}
+          </span>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: "totalRows",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Rows" />
+        ),
+        cell: ({ row }) => (
+          <span className="text-sm">{row.original.totalRows}</span>
+        ),
+      },
+      {
+        id: "result",
+        header: "Result",
+        cell: ({ row }) => (
+          <span className="text-xs">
+            {row.original.successCount} ok / {row.original.skipCount} skip /{" "}
+            {row.original.errorCount} err
+          </span>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Status" />
+        ),
+        cell: ({ row }) => (
+          <span
+            className={cn(
+              "inline-block px-1.5 py-0.5 rounded-full text-[0.7rem] font-semibold",
+              row.original.status === "COMPLETE"
+                ? "bg-badge-success-bg text-badge-success-text"
+                : row.original.status === "ROLLED_BACK"
+                  ? "bg-error-bg text-error-text"
+                  : "bg-badge-warning-bg text-badge-warning-text",
+            )}
+          >
+            {row.original.status}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "createdAt",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Date" />
+        ),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {new Date(row.original.createdAt).toLocaleDateString()}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => {
+          const b = row.original;
+          if (b.status !== "COMPLETE" || b.hasVerifiedJudges) return null;
+          return (
+            <button
+              onClick={() => handleRollback(b.id)}
+              disabled={rollingBack === b.id}
+              className={cn(
+                "px-2 py-1 border border-error-text rounded bg-error-bg text-error-text text-[0.7rem]",
+                rollingBack === b.id
+                  ? "cursor-not-allowed opacity-50"
+                  : "cursor-pointer",
+              )}
+            >
+              {rollingBack === b.id ? "…" : "Rollback"}
+            </button>
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rollingBack],
+  );
+
+  const batchToolbarConfig: DataTableToolbarConfig = useMemo(
+    () => ({
+      facetedFilters: [
+        {
+          columnId: "status",
+          title: "Status",
+          options: [
+            { label: "Complete", value: "COMPLETE" },
+            { label: "Pending", value: "PENDING" },
+            { label: "Rolled Back", value: "ROLLED_BACK" },
+            { label: "Failed", value: "FAILED" },
+          ],
+        },
+      ],
+      enableColumnVisibility: false,
+    }),
+    [],
+  );
 
   return (
     <div>
@@ -366,67 +503,21 @@ export default function AdminImportPage() {
         {batches.length === 0 ? (
           <p className="text-muted-foreground">No imports yet.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b-2 border-border text-left">
-                  <th className="p-2">File</th>
-                  <th className="p-2">Rows</th>
-                  <th className="p-2">Result</th>
-                  <th className="p-2">Status</th>
-                  <th className="p-2">Date</th>
-                  <th className="p-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {batches.map((b) => (
-                  <tr key={b.id} className="border-b border-border">
-                    <td className="p-2 text-sm max-w-48 overflow-hidden text-ellipsis whitespace-nowrap">
-                      {b.fileName}
-                    </td>
-                    <td className="p-2 text-sm">{b.totalRows}</td>
-                    <td className="p-2 text-xs">
-                      {b.successCount} ok / {b.skipCount} skip / {b.errorCount}{" "}
-                      err
-                    </td>
-                    <td className="p-2">
-                      <span
-                        className={cn(
-                          "inline-block px-1.5 py-0.5 rounded-full text-[0.7rem] font-semibold",
-                          b.status === "COMPLETE"
-                            ? "bg-badge-success-bg text-badge-success-text"
-                            : b.status === "ROLLED_BACK"
-                              ? "bg-error-bg text-error-text"
-                              : "bg-badge-warning-bg text-badge-warning-text",
-                        )}
-                      >
-                        {b.status}
-                      </span>
-                    </td>
-                    <td className="p-2 text-xs text-muted-foreground">
-                      {new Date(b.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="p-2">
-                      {b.status === "COMPLETE" && !b.hasVerifiedJudges && (
-                        <button
-                          onClick={() => handleRollback(b.id)}
-                          disabled={rollingBack === b.id}
-                          className={cn(
-                            "px-2 py-1 border border-error-text rounded bg-error-bg text-error-text text-[0.7rem]",
-                            rollingBack === b.id
-                              ? "cursor-not-allowed opacity-50"
-                              : "cursor-pointer",
-                          )}
-                        >
-                          {rollingBack === b.id ? "…" : "Rollback"}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={batchColumns}
+            data={batches}
+            toolbarConfig={batchToolbarConfig}
+            manualSorting
+            manualPagination
+            sorting={batchSorting}
+            onSortingChange={setBatchSorting}
+            pageCount={batchPagination.totalPages}
+            currentPage={batchPagination.page}
+            onPageChange={(page) => fetchBatches(page)}
+            onPageSizeChange={(size) =>
+              setBatchPagination((prev) => ({ ...prev, limit: size }))
+            }
+          />
         )}
       </div>
     </div>

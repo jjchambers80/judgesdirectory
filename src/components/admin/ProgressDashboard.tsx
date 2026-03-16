@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ColumnDef } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import type { DataTableToolbarConfig } from "@/components/ui/data-table-toolbar";
 
 interface DashboardData {
   target: number;
@@ -54,6 +58,60 @@ export default function ProgressDashboard() {
 
   const { totals, target, byState, recentBatches, milestoneReached } = data;
   const progressPct = Math.min(totals.percentComplete, 100);
+
+  type StateRow = DashboardData["byState"][number];
+
+  const stateColumns: ColumnDef<StateRow>[] = [
+    {
+      accessorKey: "stateName",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="State" />
+      ),
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.stateName}</span>
+      ),
+    },
+    {
+      accessorKey: "imported",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Imported" />
+      ),
+      cell: ({ row }) => row.original.imported.toLocaleString(),
+    },
+    {
+      accessorKey: "verified",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Verified" />
+      ),
+      cell: ({ row }) => row.original.verified.toLocaleString(),
+    },
+    {
+      accessorKey: "unverified",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Unverified" />
+      ),
+      cell: ({ row }) => row.original.unverified.toLocaleString(),
+    },
+    {
+      accessorKey: "rejected",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Rejected" />
+      ),
+      cell: ({ row }) => row.original.rejected.toLocaleString(),
+    },
+    {
+      accessorKey: "percentOfTarget",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="% of Target" />
+      ),
+      cell: ({ row }) => `${row.original.percentOfTarget}%`,
+    },
+  ];
+
+  const stateToolbarConfig: DataTableToolbarConfig = {
+    textFilters: [{ columnId: "stateName", placeholder: "Search states…" }],
+    enableColumnVisibility: false,
+  };
 
   return (
     <div>
@@ -119,32 +177,11 @@ export default function ProgressDashboard() {
       {byState.length > 0 && (
         <div className="mb-8">
           <h2 className="mb-3 text-lg">By State</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b-2 border-border text-left">
-                  <th className="p-2">State</th>
-                  <th className="p-2">Imported</th>
-                  <th className="p-2">Verified</th>
-                  <th className="p-2">Unverified</th>
-                  <th className="p-2">Rejected</th>
-                  <th className="p-2">% of Target</th>
-                </tr>
-              </thead>
-              <tbody>
-                {byState.map((s) => (
-                  <tr key={s.stateId} className="border-b border-border">
-                    <td className="p-2 font-medium">{s.stateName}</td>
-                    <td className="p-2">{s.imported.toLocaleString()}</td>
-                    <td className="p-2">{s.verified.toLocaleString()}</td>
-                    <td className="p-2">{s.unverified.toLocaleString()}</td>
-                    <td className="p-2">{s.rejected.toLocaleString()}</td>
-                    <td className="p-2">{s.percentOfTarget}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={stateColumns}
+            data={byState}
+            toolbarConfig={stateToolbarConfig}
+          />
         </div>
       )}
 

@@ -7,6 +7,9 @@ const VALID_SORT_FIELDS = [
   "lastScrapedAt",
   "lastYield",
   "avgYield",
+  "url",
+  "stateAbbr",
+  "totalScrapes",
 ] as const;
 type SortField = (typeof VALID_SORT_FIELDS)[number];
 
@@ -68,9 +71,7 @@ export async function GET(request: NextRequest) {
   ]);
 
   // Inline summary for current filter scope
-  const allForSummary = state
-    ? { stateAbbr: state.toUpperCase() }
-    : {};
+  const allForSummary = state ? { stateAbbr: state.toUpperCase() } : {};
   const summaryRecords = await prisma.urlHealth.findMany({
     where: allForSummary,
     select: { healthScore: true, anomalyDetected: true, active: true },

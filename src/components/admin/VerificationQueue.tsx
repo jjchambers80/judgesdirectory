@@ -1,7 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  ColumnDef,
+  SortingState,
+  RowSelectionState,
+} from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import type { DataTableToolbarConfig } from "@/components/ui/data-table-toolbar";
 
 interface JudgeRecord {
   id: string;
@@ -47,6 +56,10 @@ export default function VerificationQueue({
     total: 0,
     totalPages: 0,
   });
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "fullName", desc: false },
+  ]);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [statusFilter, setStatusFilter] = useState("UNVERIFIED");
   const [stateId, setStateId] = useState("");
   const [batchId, setBatchId] = useState("");
@@ -54,9 +67,6 @@ export default function VerificationQueue({
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [states, setStates] = useState<StateOption[]>([]);
   const [batches, setBatches] = useState<BatchOption[]>([]);
-
-  // Multi-select state for batch operations (US5)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchActionLoading, setBatchActionLoading] = useState(false);
 
   useEffect(() => {
@@ -85,13 +95,17 @@ export default function VerificationQueue({
       params.set("status", statusFilter);
       if (stateId) params.set("stateId", stateId);
       if (batchId) params.set("batchId", batchId);
+      if (sorting.length > 0) {
+        params.set("sort", sorting[0].id);
+        params.set("order", sorting[0].desc ? "desc" : "asc");
+      }
 
       try {
         const res = await fetch(`/api/admin/verification?${params}`);
         const data = await res.json();
         setJudges(data.judges || []);
         setPagination(data.pagination || pagination);
-        setSelectedIds(new Set());
+        setRowSelection({});
         onStatsChange?.({
           total: data.pagination?.total ?? 0,
           page: data.pagination?.page ?? 1,
@@ -102,13 +116,13 @@ export default function VerificationQueue({
         setLoading(false);
       }
     },
-    [statusFilter, stateId, batchId, onStatsChange, pagination],
+    [statusFilter, stateId, batchId, sorting, onStatsChange, pagination],
   );
 
   useEffect(() => {
     fetchQueue(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, stateId, batchId]);
+  }, [statusFilter, stateId, batchId, sorting]);
 
   const handleAction = async (
     judgeId: string,
@@ -134,15 +148,23 @@ export default function VerificationQueue({
     }
   };
 
+  const selectedIds = useMemo(
+    () =>
+      Object.keys(rowSelection)
+        .map((idx) => judges[parseInt(idx)]?.id)
+        .filter(Boolean),
+    [rowSelection, judges],
+  );
+
   const handleBatchAction = async (action: "verify" | "reject") => {
-    if (selectedIds.size === 0) return;
+    if (selectedIds.length === 0) return;
     setBatchActionLoading(true);
     try {
       const res = await fetch("/api/admin/verification/batch", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          judgeIds: Array.from(selectedIds),
+          judgeIds: selectedIds,
           action,
         }),
       });
@@ -169,76 +191,235 @@ export default function VerificationQueue({
     }
   };
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  const columns: ColumnDef<JudgeRecord>[] = useMemo(
+    () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all on page"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label={`Select ${row.original.fullName}`}
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "fullName",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Name" />
+        ),
+        cell: ({ row }) => (
+          <span className="font-medium text-sm">{row.original.fullName}</span>
+        ),
+      },
+      {
+        accessorKey: "court",
+        header: "Court",
+        cell: ({ row }) => (
+          <span className="text-xs">{row.original.court}</span>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: "county",
+        header: "County",
+        cell: ({ row }) => (
+          <span className="text-xs">{row.original.county}</span>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: "state",
+        header: "State",
+        cell: ({ row }) => (
+          <span className="text-xs">{row.original.state}</span>
+        ),
+        enableSorting: false,
+      },
+      {
+        id: "sourceUrl",
+        accessorKey: "sourceUrl",
+        header: "Source",
+        cell: ({ row }) =>
+          row.original.sourceUrl ? (
+            <a
+              href={row.original.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-link text-xs"
+            >
+              View Source
+            </a>
+          ) : (
+            <span className="text-muted-foreground text-xs">—</span>
+          ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          <span
+            className={cn(
+              "px-1.5 py-0.5 rounded-full text-[0.7rem] font-semibold",
+              row.original.status === "VERIFIED" &&
+                "bg-badge-success-bg text-badge-success-text",
+              row.original.status === "REJECTED" &&
+                "bg-error-bg text-error-text",
+              row.original.status === "UNVERIFIED" &&
+                "bg-badge-warning-bg text-badge-warning-text",
+            )}
+          >
+            {row.original.status}
+          </span>
+        ),
+        enableSorting: false,
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <div className="flex gap-1.5">
+            {row.original.status === "UNVERIFIED" && (
+              <>
+                <button
+                  onClick={() => handleAction(row.original.id, "verify")}
+                  disabled={actionLoading === row.original.id}
+                  className={cn(
+                    "px-2 py-0.5 bg-badge-success-bg text-badge-success-text border-none rounded text-[0.7rem] font-semibold",
+                    actionLoading === row.original.id
+                      ? "cursor-not-allowed opacity-50"
+                      : "cursor-pointer",
+                  )}
+                >
+                  Verify
+                </button>
+                <button
+                  onClick={() => handleAction(row.original.id, "reject")}
+                  disabled={actionLoading === row.original.id}
+                  className={cn(
+                    "px-2 py-0.5 bg-error-bg text-error-text border-none rounded text-[0.7rem] font-semibold",
+                    actionLoading === row.original.id
+                      ? "cursor-not-allowed opacity-50"
+                      : "cursor-pointer",
+                  )}
+                >
+                  Reject
+                </button>
+              </>
+            )}
+            {(row.original.status === "VERIFIED" ||
+              row.original.status === "REJECTED") && (
+              <button
+                onClick={() => handleAction(row.original.id, "unverify")}
+                disabled={actionLoading === row.original.id}
+                className={cn(
+                  "px-2 py-0.5 border border-input rounded bg-background text-[0.7rem]",
+                  actionLoading === row.original.id
+                    ? "cursor-not-allowed opacity-50"
+                    : "cursor-pointer",
+                )}
+              >
+                Unverify
+              </button>
+            )}
+          </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [actionLoading],
+  );
 
-  const toggleSelectAll = () => {
-    if (selectedIds.size === judges.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(judges.map((j) => j.id)));
-    }
-  };
+  const toolbarConfig: DataTableToolbarConfig = useMemo(
+    () => ({
+      textFilters: [{ columnId: "fullName", placeholder: "Search by name…" }],
+      facetedFilters: [
+        {
+          columnId: "status",
+          title: "Status",
+          options: [
+            { label: "Unverified", value: "UNVERIFIED" },
+            { label: "Verified", value: "VERIFIED" },
+            { label: "Rejected", value: "REJECTED" },
+          ],
+        },
+      ],
+      enableColumnVisibility: false,
+    }),
+    [],
+  );
+
+  const serverFilters = (
+    <>
+      <select
+        aria-label="Filter by status"
+        value={statusFilter}
+        onChange={(e) => setStatusFilter(e.target.value)}
+        className="h-8 px-2 border border-input rounded-md bg-background text-foreground text-sm"
+      >
+        <option value="UNVERIFIED">Unverified</option>
+        <option value="VERIFIED">Verified</option>
+        <option value="REJECTED">Rejected</option>
+      </select>
+      <select
+        aria-label="Filter by state"
+        value={stateId}
+        onChange={(e) => setStateId(e.target.value)}
+        className="h-8 px-2 border border-input rounded-md bg-background text-foreground text-sm"
+      >
+        <option value="">All States</option>
+        {states.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+      <select
+        aria-label="Filter by import batch"
+        value={batchId}
+        onChange={(e) => setBatchId(e.target.value)}
+        className="h-8 px-2 border border-input rounded-md bg-background text-foreground text-sm"
+      >
+        <option value="">All Batches</option>
+        {batches.map((b) => (
+          <option key={b.id} value={b.id}>
+            {b.fileName}
+          </option>
+        ))}
+      </select>
+    </>
+  );
+
+  const recordCount = (
+    <span className="text-xs text-muted-foreground whitespace-nowrap ml-auto">
+      {pagination.total} records
+    </span>
+  );
 
   return (
     <div>
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-4 items-center">
-        <select
-          aria-label="Filter by status"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-2 py-1.5 border border-input rounded-md bg-background text-foreground"
-        >
-          <option value="UNVERIFIED">Unverified</option>
-          <option value="VERIFIED">Verified</option>
-          <option value="REJECTED">Rejected</option>
-        </select>
-
-        <select
-          aria-label="Filter by state"
-          value={stateId}
-          onChange={(e) => setStateId(e.target.value)}
-          className="px-2 py-1.5 border border-input rounded-md bg-background text-foreground"
-        >
-          <option value="">All States</option>
-          {states.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          aria-label="Filter by import batch"
-          value={batchId}
-          onChange={(e) => setBatchId(e.target.value)}
-          className="px-2 py-1.5 border border-input rounded-md bg-background text-foreground"
-        >
-          <option value="">All Batches</option>
-          {batches.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.fileName}
-            </option>
-          ))}
-        </select>
-
-        <span className="text-xs text-muted-foreground">
-          {pagination.total} records
-        </span>
-      </div>
-
-      {/* Batch Actions (US5) */}
-      {selectedIds.size > 0 && (
+      {/* Batch Actions */}
+      {selectedIds.length > 0 && (
         <div className="flex gap-2 items-center mb-3 px-3 py-2 bg-secondary rounded-md">
           <span className="text-sm font-semibold">
-            {selectedIds.size} selected
+            {selectedIds.length} selected
           </span>
           <button
             onClick={() => handleBatchAction("verify")}
@@ -267,7 +448,7 @@ export default function VerificationQueue({
         </div>
       )}
 
-      {/* Table */}
+      {/* DataTable */}
       {loading ? (
         <p className="text-muted-foreground">Loading…</p>
       ) : judges.length === 0 ? (
@@ -275,157 +456,27 @@ export default function VerificationQueue({
           No records match the current filters.
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b-2 border-border text-left">
-                <th className="p-2 w-8">
-                  <input
-                    type="checkbox"
-                    checked={
-                      judges.length > 0 && selectedIds.size === judges.length
-                    }
-                    onChange={toggleSelectAll}
-                    aria-label="Select all on page"
-                  />
-                </th>
-                <th className="p-2">Name</th>
-                <th className="p-2">Court</th>
-                <th className="p-2">County</th>
-                <th className="p-2">State</th>
-                <th className="p-2">Source</th>
-                <th className="p-2">Status</th>
-                <th className="p-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {judges.map((j) => (
-                <tr key={j.id} className="border-b border-border">
-                  <td className="p-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(j.id)}
-                      onChange={() => toggleSelect(j.id)}
-                      aria-label={`Select ${j.fullName}`}
-                    />
-                  </td>
-                  <td className="p-2 font-medium text-sm">{j.fullName}</td>
-                  <td className="p-2 text-xs">{j.court}</td>
-                  <td className="p-2 text-xs">{j.county}</td>
-                  <td className="p-2 text-xs">{j.state}</td>
-                  <td className="p-2 text-xs">
-                    {j.sourceUrl ? (
-                      <a
-                        href={j.sourceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-link"
-                      >
-                        View Source
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  <td className="p-2">
-                    <span
-                      className={cn(
-                        "px-1.5 py-0.5 rounded-full text-[0.7rem] font-semibold",
-                        j.status === "VERIFIED" &&
-                          "bg-badge-success-bg text-badge-success-text",
-                        j.status === "REJECTED" &&
-                          "bg-error-bg text-error-text",
-                        j.status === "UNVERIFIED" &&
-                          "bg-badge-warning-bg text-badge-warning-text",
-                      )}
-                    >
-                      {j.status}
-                    </span>
-                  </td>
-                  <td className="p-2">
-                    <div className="flex gap-1.5">
-                      {j.status === "UNVERIFIED" && (
-                        <>
-                          <button
-                            onClick={() => handleAction(j.id, "verify")}
-                            disabled={actionLoading === j.id}
-                            className={cn(
-                              "px-2 py-0.5 bg-badge-success-bg text-badge-success-text border-none rounded text-[0.7rem] font-semibold",
-                              actionLoading === j.id
-                                ? "cursor-not-allowed opacity-50"
-                                : "cursor-pointer",
-                            )}
-                          >
-                            Verify
-                          </button>
-                          <button
-                            onClick={() => handleAction(j.id, "reject")}
-                            disabled={actionLoading === j.id}
-                            className={cn(
-                              "px-2 py-0.5 bg-error-bg text-error-text border-none rounded text-[0.7rem] font-semibold",
-                              actionLoading === j.id
-                                ? "cursor-not-allowed opacity-50"
-                                : "cursor-pointer",
-                            )}
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
-                      {(j.status === "VERIFIED" || j.status === "REJECTED") && (
-                        <button
-                          onClick={() => handleAction(j.id, "unverify")}
-                          disabled={actionLoading === j.id}
-                          className={cn(
-                            "px-2 py-0.5 border border-input rounded bg-background text-[0.7rem]",
-                            actionLoading === j.id
-                              ? "cursor-not-allowed opacity-50"
-                              : "cursor-pointer",
-                          )}
-                        >
-                          Unverify
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-4">
-          <button
-            disabled={pagination.page <= 1}
-            onClick={() => fetchQueue(pagination.page - 1)}
-            className={cn(
-              "px-3 py-1.5 border border-input rounded-md bg-background text-foreground",
-              pagination.page <= 1
-                ? "cursor-not-allowed opacity-50"
-                : "cursor-pointer hover:bg-muted transition-colors",
-            )}
-          >
-            Previous
-          </button>
-          <span className="px-2 py-1.5 text-sm text-foreground">
-            Page {pagination.page} of {pagination.totalPages}
-          </span>
-          <button
-            disabled={pagination.page >= pagination.totalPages}
-            onClick={() => fetchQueue(pagination.page + 1)}
-            className={cn(
-              "px-3 py-1.5 border border-input rounded-md bg-background text-foreground",
-              pagination.page >= pagination.totalPages
-                ? "cursor-not-allowed opacity-50"
-                : "cursor-pointer hover:bg-muted transition-colors",
-            )}
-          >
-            Next
-          </button>
-        </div>
+        <DataTable
+          columns={columns}
+          data={judges}
+          toolbarConfig={toolbarConfig}
+          toolbarLeadingContent={serverFilters}
+          toolbarTrailingContent={recordCount}
+          manualSorting
+          manualFiltering
+          manualPagination
+          sorting={sorting}
+          onSortingChange={setSorting}
+          rowSelection={rowSelection}
+          onRowSelectionChange={setRowSelection}
+          enableRowSelection
+          pageCount={pagination.totalPages}
+          currentPage={pagination.page}
+          onPageChange={(page) => fetchQueue(page)}
+          onPageSizeChange={(size) =>
+            setPagination((prev) => ({ ...prev, limit: size }))
+          }
+        />
       )}
     </div>
   );

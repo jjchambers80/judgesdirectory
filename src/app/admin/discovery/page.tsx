@@ -1,6 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  ColumnDef,
+  SortingState,
+  RowSelectionState,
+} from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import type { DataTableToolbarConfig } from "@/components/ui/data-table-toolbar";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
 
 interface UrlCandidate {
   id: string;
@@ -30,7 +40,18 @@ const STATUS_COLORS: Record<string, string> = {
   DISCOVERED: "bg-blue-100 text-blue-800",
   APPROVED: "bg-green-100 text-green-800",
   REJECTED: "bg-red-100 text-red-800",
+  STALE: "bg-orange-100 text-orange-800",
 };
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+const truncateUrl = (url: string, max = 50) =>
+  url.length > max ? url.slice(0, max) + "…" : url;
 
 export default function AdminDiscoveryPage() {
   const [candidates, setCandidates] = useState<UrlCandidate[]>([]);
@@ -40,11 +61,20 @@ export default function AdminDiscoveryPage() {
     total: 0,
     totalPages: 0,
   });
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "discoveredAt", desc: true },
+  ]);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility(
+    "discovery",
+    {
+      suggestedType: false,
+      suggestedLevel: false,
+    },
+  );
   const [stateFilter, setStateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [sortField, setSortField] = useState("discoveredAt");
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [bulkAction, setBulkAction] = useState<"approve" | "reject" | null>(
@@ -57,9 +87,11 @@ export default function AdminDiscoveryPage() {
       setLoading(true);
       const params = new URLSearchParams();
       params.set("page", String(page));
-      params.set("limit", "50");
-      params.set("sort", sortField);
-      params.set("order", "desc");
+      params.set("limit", String(pagination.limit));
+      if (sorting.length > 0) {
+        params.set("sort", sorting[0].id);
+        params.set("order", sorting[0].desc ? "desc" : "asc");
+      }
       if (stateFilter) params.set("state", stateFilter);
       if (statusFilter) params.set("status", statusFilter);
 
@@ -67,10 +99,10 @@ export default function AdminDiscoveryPage() {
       const data = await res.json();
       setCandidates(data.candidates);
       setPagination(data.pagination);
-      setSelected(new Set());
+      setRowSelection({});
       setLoading(false);
     },
-    [stateFilter, statusFilter, sortField],
+    [stateFilter, statusFilter, sorting, pagination.limit],
   );
 
   useEffect(() => {
@@ -95,18 +127,24 @@ export default function AdminDiscoveryPage() {
     fetchCandidates(pagination.page);
   };
 
+  const selectedIds = useMemo(
+    () =>
+      Object.keys(rowSelection)
+        .map((idx) => candidates[parseInt(idx)]?.id)
+        .filter(Boolean),
+    [rowSelection, candidates],
+  );
+
   const handleBulkAction = async (
     action: "approve" | "reject",
     reason?: string,
   ) => {
-    const ids = Array.from(selected);
-    if (ids.length === 0) return;
-
+    if (selectedIds.length === 0) return;
     await fetch("/api/admin/discovery/bulk", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ids,
+        ids: selectedIds,
         action,
         ...(action === "reject" ? { rejectionReason: reason } : {}),
       }),
@@ -137,32 +175,187 @@ export default function AdminDiscoveryPage() {
     }
   };
 
-  const toggleSelect = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  const columns: ColumnDef<UrlCandidate>[] = useMemo(
+    () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label={`Select ${row.original.url}`}
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "url",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="URL" />
+        ),
+        cell: ({ row }) => (
+          <div>
+            <a
+              href={row.original.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-link hover:underline"
+              title={row.original.url}
+            >
+              {truncateUrl(row.original.url)}
+            </a>
+            <div className="text-xs text-muted-foreground">
+              {row.original.domain}
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "stateAbbr",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="State" />
+        ),
+      },
+      {
+        accessorKey: "suggestedType",
+        header: "Type",
+        cell: ({ row }) => row.original.suggestedType || "—",
+        enableSorting: false,
+      },
+      {
+        accessorKey: "suggestedLevel",
+        header: "Level",
+        cell: ({ row }) => row.original.suggestedLevel || "—",
+        enableSorting: false,
+      },
+      {
+        accessorKey: "confidenceScore",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Confidence" />
+        ),
+        cell: ({ row }) => {
+          const score = row.original.confidenceScore;
+          if (score === null) return "—";
+          const color =
+            score >= 0.8
+              ? "bg-green-100 text-green-800"
+              : score >= 0.5
+                ? "bg-yellow-100 text-yellow-800"
+                : "bg-red-100 text-red-800";
+          return (
+            <span
+              className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${color}`}
+            >
+              {score.toFixed(2)}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Status" />
+        ),
+        cell: ({ row }) => {
+          const displayStatus = row.original.isStale
+            ? "STALE"
+            : row.original.status;
+          return (
+            <span
+              className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[displayStatus] || ""}`}
+            >
+              {displayStatus}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "discoveredAt",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Discovered" />
+        ),
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">
+            {formatDate(row.original.discoveredAt)}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => {
+          if (row.original.status !== "DISCOVERED") return null;
+          return (
+            <div className="flex gap-1">
+              <button
+                onClick={() => handleApprove(row.original.id)}
+                className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => {
+                  const reason = prompt("Rejection reason:");
+                  if (reason) handleReject(row.original.id, reason);
+                }}
+                className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
+              >
+                Reject
+              </button>
+            </div>
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
-  const toggleSelectAll = () => {
-    if (selected.size === candidates.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(candidates.map((c) => c.id)));
-    }
-  };
+  const stateOptions = useMemo(() => {
+    const states = Array.from(
+      new Set(candidates.map((c) => c.stateAbbr)),
+    ).sort();
+    return states.map((s) => ({ label: s, value: s }));
+  }, [candidates]);
 
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-
-  const truncateUrl = (url: string, max = 50) =>
-    url.length > max ? url.slice(0, max) + "…" : url;
+  const toolbarConfig: DataTableToolbarConfig = useMemo(
+    () => ({
+      facetedFilters: [
+        {
+          columnId: "stateAbbr",
+          title: "State",
+          options: stateOptions,
+        },
+        {
+          columnId: "status",
+          title: "Status",
+          options: [
+            { label: "Discovered", value: "DISCOVERED" },
+            { label: "Approved", value: "APPROVED" },
+            { label: "Rejected", value: "REJECTED" },
+            { label: "Stale", value: "STALE" },
+          ],
+        },
+      ],
+      enableColumnVisibility: true,
+    }),
+    [stateOptions],
+  );
 
   return (
     <div>
@@ -179,45 +372,11 @@ export default function AdminDiscoveryPage() {
         )}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:gap-4">
-        <input
-          type="text"
-          placeholder="State abbr (e.g. FL)"
-          value={stateFilter}
-          onChange={(e) => setStateFilter(e.target.value.toUpperCase())}
-          maxLength={2}
-          aria-label="Filter by state"
-          className="px-3 py-2 border border-border rounded-md text-sm w-24"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          aria-label="Filter by status"
-          className="px-3 py-2 border border-border rounded-md text-sm"
-        >
-          <option value="">All Statuses</option>
-          <option value="DISCOVERED">Discovered</option>
-          <option value="STALE">Stale</option>
-          <option value="APPROVED">Approved</option>
-          <option value="REJECTED">Rejected</option>
-        </select>
-        <select
-          value={sortField}
-          onChange={(e) => setSortField(e.target.value)}
-          aria-label="Sort by"
-          className="px-3 py-2 border border-border rounded-md text-sm"
-        >
-          <option value="discoveredAt">Date</option>
-          <option value="confidenceScore">Confidence</option>
-        </select>
-      </div>
-
       {/* Bulk actions */}
-      {selected.size > 0 && (
+      {selectedIds.length > 0 && (
         <div className="flex gap-2 mb-4 items-center text-sm">
           <span className="text-muted-foreground">
-            {selected.size} selected
+            {selectedIds.length} selected
           </span>
           <button
             onClick={() => handleBulkAction("approve")}
@@ -281,151 +440,62 @@ export default function AdminDiscoveryPage() {
         </div>
       )}
 
-      {/* Table */}
+      {/* DataTable */}
       {loading ? (
         <p className="text-muted-foreground">Loading…</p>
-      ) : candidates.length === 0 ? (
+      ) : candidates.length === 0 && !stateFilter && !statusFilter ? (
         <p className="text-muted-foreground">
           No candidates found. Run{" "}
           <code>npx tsx scripts/discovery/discover.ts --state FL</code> to
           discover URLs.
         </p>
       ) : (
-        <>
-          <div className="overflow-x-auto border border-border rounded-lg">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="p-3 text-left w-8">
-                    <input
-                      type="checkbox"
-                      checked={selected.size === candidates.length}
-                      onChange={toggleSelectAll}
-                      aria-label="Select all"
-                    />
-                  </th>
-                  <th className="p-3 text-left">URL</th>
-                  <th className="p-3 text-left">State</th>
-                  <th className="p-3 text-left">Type</th>
-                  <th className="p-3 text-left">Level</th>
-                  <th className="p-3 text-left">Confidence</th>
-                  <th className="p-3 text-left">Status</th>
-                  <th className="p-3 text-left">Discovered</th>
-                  <th className="p-3 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {candidates.map((c) => (
-                  <tr key={c.id} className="border-b border-border">
-                    <td className="p-3">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(c.id)}
-                        onChange={() => toggleSelect(c.id)}
-                        aria-label={`Select ${c.url}`}
-                      />
-                    </td>
-                    <td className="p-3">
-                      <a
-                        href={c.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-link hover:underline"
-                        title={c.url}
-                      >
-                        {truncateUrl(c.url)}
-                      </a>
-                      <div className="text-xs text-muted-foreground">
-                        {c.domain}
-                      </div>
-                    </td>
-                    <td className="p-3">{c.stateAbbr}</td>
-                    <td className="p-3">{c.suggestedType || "—"}</td>
-                    <td className="p-3">{c.suggestedLevel || "—"}</td>
-                    <td className="p-3">
-                      {c.confidenceScore !== null ? (
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                            c.confidenceScore >= 0.8
-                              ? "bg-green-100 text-green-800"
-                              : c.confidenceScore >= 0.5
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {c.confidenceScore.toFixed(2)}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                          c.isStale
-                            ? "bg-orange-100 text-orange-800"
-                            : STATUS_COLORS[c.status] || ""
-                        }`}
-                      >
-                        {c.isStale ? "STALE" : c.status}
-                      </span>
-                    </td>
-                    <td className="p-3 text-muted-foreground">
-                      {formatDate(c.discoveredAt)}
-                    </td>
-                    <td className="p-3">
-                      {c.status === "DISCOVERED" && (
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => handleApprove(c.id)}
-                            className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => {
-                              const reason = prompt("Rejection reason:");
-                              if (reason) handleReject(c.id, reason);
-                            }}
-                            className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 text-sm">
-              <span className="text-muted-foreground">
-                Page {pagination.page} of {pagination.totalPages} (
-                {pagination.total} total)
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => fetchCandidates(pagination.page - 1)}
-                  disabled={pagination.page <= 1}
-                  className="px-3 py-1 border border-border rounded disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => fetchCandidates(pagination.page + 1)}
-                  disabled={pagination.page >= pagination.totalPages}
-                  className="px-3 py-1 border border-border rounded disabled:opacity-50"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
-        </>
+        <DataTable
+          columns={columns}
+          data={candidates}
+          toolbarConfig={toolbarConfig}
+          toolbarLeadingContent={
+            <>
+              <input
+                type="text"
+                placeholder="State abbr (e.g. FL)"
+                value={stateFilter}
+                onChange={(e) => setStateFilter(e.target.value.toUpperCase())}
+                maxLength={2}
+                aria-label="Filter by state"
+                className="h-8 w-40 rounded-md border border-border px-3 text-sm"
+              />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                aria-label="Filter by status"
+                className="h-8 rounded-md border border-border px-3 text-sm"
+              >
+                <option value="">All Statuses</option>
+                <option value="DISCOVERED">Discovered</option>
+                <option value="STALE">Stale</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </>
+          }
+          manualSorting
+          manualFiltering
+          manualPagination
+          sorting={sorting}
+          onSortingChange={setSorting}
+          rowSelection={rowSelection}
+          onRowSelectionChange={setRowSelection}
+          enableRowSelection
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
+          pageCount={pagination.totalPages}
+          currentPage={pagination.page}
+          onPageChange={(page) => fetchCandidates(page)}
+          onPageSizeChange={(size) => {
+            setPagination((prev) => ({ ...prev, limit: size }));
+          }}
+        />
       )}
     </div>
   );

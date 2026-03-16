@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { generateUniqueJudgeSlug } from "@/lib/slugify";
 
+const VALID_SORT_FIELDS = ["fullName", "createdAt", "status"] as const;
+type SortField = (typeof VALID_SORT_FIELDS)[number];
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
@@ -15,6 +18,12 @@ export async function GET(request: NextRequest) {
   const countyId = searchParams.get("countyId") || undefined;
   const courtId = searchParams.get("courtId") || undefined;
   const status = searchParams.get("status") || undefined;
+  const sortParam = searchParams.get("sort") || "createdAt";
+  const order = searchParams.get("order") === "asc" ? "asc" : "desc";
+
+  const sort: SortField = VALID_SORT_FIELDS.includes(sortParam as SortField)
+    ? (sortParam as SortField)
+    : "createdAt";
 
   const where: Record<string, unknown> = {};
 
@@ -37,7 +46,7 @@ export async function GET(request: NextRequest) {
       where,
       skip: (page - 1) * limit,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { [sort]: order },
       include: {
         court: {
           include: {

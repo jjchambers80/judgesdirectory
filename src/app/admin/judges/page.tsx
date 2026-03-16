@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { ColumnDef, SortingState } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import type { DataTableToolbarConfig } from "@/components/ui/data-table-toolbar";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface JudgeRecord {
   id: string;
@@ -37,7 +42,11 @@ export default function AdminJudgesPage() {
     total: 0,
     totalPages: 0,
   });
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "createdAt", desc: true },
+  ]);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
@@ -46,9 +55,13 @@ export default function AdminJudgesPage() {
       setLoading(true);
       const params = new URLSearchParams();
       params.set("page", String(page));
-      params.set("limit", "50");
-      if (search) params.set("search", search);
+      params.set("limit", String(pagination.limit));
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (statusFilter) params.set("status", statusFilter);
+      if (sorting.length > 0) {
+        params.set("sort", sorting[0].id);
+        params.set("order", sorting[0].desc ? "desc" : "asc");
+      }
 
       const res = await fetch(`/api/admin/judges?${params}`);
       const data = await res.json();
@@ -56,7 +69,7 @@ export default function AdminJudgesPage() {
       setPagination(data.pagination);
       setLoading(false);
     },
-    [search, statusFilter],
+    [debouncedSearch, statusFilter, sorting, pagination.limit],
   );
 
   useEffect(() => {
@@ -79,43 +92,110 @@ export default function AdminJudgesPage() {
     fetchJudges(pagination.page);
   };
 
+  const columns: ColumnDef<JudgeRecord>[] = useMemo(
+    () => [
+      {
+        accessorKey: "fullName",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Name" />
+        ),
+        cell: ({ row }) => <strong>{row.original.fullName}</strong>,
+      },
+      {
+        id: "courtType",
+        accessorFn: (row) => row.court.type,
+        header: "Court",
+        enableSorting: false,
+      },
+      {
+        id: "location",
+        accessorFn: (row) =>
+          `${row.court.county.name}, ${row.court.county.state.name}`,
+        header: "Location",
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">
+            {row.original.court.county.name},{" "}
+            {row.original.court.county.state.name}
+          </span>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Status" />
+        ),
+        cell: ({ row }) => (
+          <span
+            className={cn(
+              "inline-block px-2 py-1 rounded-full text-xs font-semibold",
+              row.original.status === "VERIFIED"
+                ? "bg-badge-success-bg text-badge-success-text"
+                : row.original.status === "REJECTED"
+                  ? "bg-error-bg text-error-text"
+                  : "bg-badge-warning-bg text-badge-warning-text",
+            )}
+          >
+            {row.original.status === "VERIFIED"
+              ? "Verified"
+              : row.original.status === "REJECTED"
+                ? "Rejected"
+                : "Unverified"}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <div className="flex gap-2 text-sm">
+            <button
+              onClick={() => handleVerify(row.original.id, row.original.status)}
+              className="px-2 py-1 border border-input rounded bg-background text-foreground cursor-pointer text-xs hover:bg-muted transition-colors"
+            >
+              {row.original.status === "VERIFIED" ? "Unverify" : "Verify"}
+            </button>
+            <button
+              onClick={() =>
+                handleDelete(row.original.id, row.original.fullName)
+              }
+              className="px-2 py-1 border border-error-text rounded bg-error-bg text-error-text cursor-pointer text-xs"
+            >
+              Delete
+            </button>
+          </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const toolbarConfig: DataTableToolbarConfig = useMemo(
+    () => ({
+      textFilters: [{ columnId: "fullName", placeholder: "Search by name…" }],
+      enableColumnVisibility: false,
+    }),
+    [],
+  );
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1>Judge Records</h1>
         <Link
           href="/admin/judges/new/"
-          className="px-4 py-2 bg-primary text-btn-primary-text rounded-md no-underline text-sm hover:bg-primary/90 transition-colors"
+          className="no-link-style px-4 py-2 bg-primary text-white rounded-md no-underline text-sm font-medium hover:bg-primary/90 hover:no-underline transition-colors"
         >
           + Add Judge
         </Link>
       </div>
 
-      <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:gap-4">
-        <input
-          type="text"
-          placeholder="Search by name..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search judges by name"
-          className="px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground flex-1"
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          aria-label="Filter by status"
-          className="px-3 py-2 border border-input rounded-md bg-background text-foreground"
-        >
-          <option value="">All Status</option>
-          <option value="VERIFIED">Verified</option>
-          <option value="UNVERIFIED">Unverified</option>
-          <option value="REJECTED">Rejected</option>
-        </select>
-      </div>
-
       {loading ? (
         <p>Loading...</p>
-      ) : judges.length === 0 ? (
+      ) : judges.length === 0 && !debouncedSearch && !statusFilter ? (
         <p className="text-muted-foreground">
           No judges found.{" "}
           <Link href="/admin/judges/new/" className="text-link hover:underline">
@@ -124,102 +204,37 @@ export default function AdminJudgesPage() {
           .
         </p>
       ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b-2 border-border text-left">
-                  <th className="py-3 px-2">Name</th>
-                  <th className="py-3 px-2">Court</th>
-                  <th className="py-3 px-2">Location</th>
-                  <th className="py-3 px-2">Status</th>
-                  <th className="py-3 px-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {judges.map((judge) => (
-                  <tr key={judge.id} className="border-b border-border">
-                    <td className="py-3 px-2">
-                      <strong>{judge.fullName}</strong>
-                    </td>
-                    <td className="py-3 px-2">{judge.court.type}</td>
-                    <td className="py-3 px-2 text-sm text-muted-foreground">
-                      {judge.court.county.name}, {judge.court.county.state.name}
-                    </td>
-                    <td className="py-3 px-2">
-                      <span
-                        className={cn(
-                          "inline-block px-2 py-1 rounded-full text-xs font-semibold",
-                          judge.status === "VERIFIED"
-                            ? "bg-badge-success-bg text-badge-success-text"
-                            : judge.status === "REJECTED"
-                              ? "bg-error-bg text-error-text"
-                              : "bg-badge-warning-bg text-badge-warning-text",
-                        )}
-                      >
-                        {judge.status === "VERIFIED"
-                          ? "Verified"
-                          : judge.status === "REJECTED"
-                            ? "Rejected"
-                            : "Unverified"}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2">
-                      <div className="flex gap-2 text-sm">
-                        <button
-                          onClick={() => handleVerify(judge.id, judge.status)}
-                          className="px-2 py-1 border border-input rounded bg-background text-foreground cursor-pointer text-xs hover:bg-muted transition-colors"
-                        >
-                          {judge.status === "VERIFIED" ? "Unverify" : "Verify"}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(judge.id, judge.fullName)}
-                          className="px-2 py-1 border border-error-text rounded bg-error-bg text-error-text cursor-pointer text-xs"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex flex-col items-center justify-between gap-3 mt-4 sm:flex-row">
-            <span className="text-sm text-muted-foreground">
-              Showing {(pagination.page - 1) * pagination.limit + 1}–
-              {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
-              of {pagination.total}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => fetchJudges(pagination.page - 1)}
-                disabled={pagination.page <= 1}
-                className={cn(
-                  "px-4 py-2 border border-input rounded-md text-sm bg-background text-foreground",
-                  pagination.page <= 1
-                    ? "opacity-50 cursor-not-allowed"
-                    : "cursor-pointer hover:bg-muted transition-colors",
-                )}
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => fetchJudges(pagination.page + 1)}
-                disabled={pagination.page >= pagination.totalPages}
-                className={cn(
-                  "px-4 py-2 border border-input rounded-md text-sm bg-background text-foreground",
-                  pagination.page >= pagination.totalPages
-                    ? "opacity-50 cursor-not-allowed"
-                    : "cursor-pointer hover:bg-muted transition-colors",
-                )}
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </>
+        <DataTable
+          columns={columns}
+          data={judges}
+          toolbarConfig={toolbarConfig}
+          toolbarLeadingContent={
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="Filter by status"
+              className="h-8 rounded-md border border-border px-3 text-sm"
+            >
+              <option value="">All Status</option>
+              <option value="VERIFIED">Verified</option>
+              <option value="UNVERIFIED">Unverified</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          }
+          manualSorting
+          manualFiltering
+          manualPagination
+          sorting={sorting}
+          onSortingChange={setSorting}
+          textFilterValue={search}
+          onTextFilterChange={setSearch}
+          pageCount={pagination.totalPages}
+          currentPage={pagination.page}
+          onPageChange={(page) => fetchJudges(page)}
+          onPageSizeChange={(size) =>
+            setPagination((prev) => ({ ...prev, limit: size }))
+          }
+        />
       )}
     </div>
   );
