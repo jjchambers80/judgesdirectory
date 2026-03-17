@@ -59,6 +59,11 @@ export const ExtractionResultSchema = z.object({
 export type JudgeRecord = z.infer<typeof JudgeRecordSchema>;
 export type ExtractionResult = z.infer<typeof ExtractionResultSchema>;
 
+/** Extended result that includes extraction metadata */
+export interface ExtractionResultWithMethod extends ExtractionResult {
+  extractionMethod: "deterministic" | "llm";
+}
+
 // ---------------------------------------------------------------------------
 // Bio page extraction schemas (Phase 2: detailed profile data)
 // ---------------------------------------------------------------------------
@@ -228,7 +233,7 @@ export function getLastExtractionStats(): ExtractionStats | null {
 export async function extractJudges(
   markdown: string,
   context: ExtractContext,
-): Promise<ExtractionResult> {
+): Promise<ExtractionResultWithMethod> {
   // If deterministic flag is set, force Cheerio-only extraction (per FR-020)
   if (context.deterministic && context.rawHtml) {
     const selectorResult = extractWithSelectorHint(
@@ -242,7 +247,7 @@ export async function extractJudges(
         `    [deterministic:selector-hint] Extracted ${selectorResult.result.judges.length} judges (zero LLM cost)`,
       );
       lastExtractionStats = { method: "deterministic" };
-      return selectorResult.result;
+      return { ...selectorResult.result, extractionMethod: "deterministic" };
     }
 
     // If selector hint failed, try generic deterministic patterns
@@ -257,7 +262,7 @@ export async function extractJudges(
         `    [deterministic:${generic.method}] Extracted ${generic.result.judges.length} judges (zero LLM cost)`,
       );
       lastExtractionStats = { method: "deterministic" };
-      return generic.result;
+      return { ...generic.result, extractionMethod: "deterministic" };
     }
 
     // Deterministic flag was set but extraction failed — warn but fall through to LLM
@@ -279,7 +284,7 @@ export async function extractJudges(
         `    [deterministic:${deterministic.method}] Extracted ${deterministic.result.judges.length} judges`,
       );
       lastExtractionStats = { method: "deterministic" };
-      return deterministic.result;
+      return { ...deterministic.result, extractionMethod: "deterministic" };
     }
   }
 
@@ -309,7 +314,7 @@ export async function extractJudges(
 
   // Validate with Zod
   const result = ExtractionResultSchema.parse(normalized);
-  return result;
+  return { ...result, extractionMethod: "llm" as const };
 }
 
 /**

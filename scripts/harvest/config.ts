@@ -33,6 +33,8 @@ export interface CliFlags {
   skipBio: boolean;
   ballotpedia: boolean;
   ballotpediaMax: number | null;
+  exa: boolean;
+  exaMax: number | null;
   outputDir: string;
   // State selection flags (new)
   state: string | null;
@@ -116,6 +118,8 @@ export interface EnrichedJudgeRecord {
   // Source Attribution
   rosterUrl: string;
   bioPageUrl: string | null;
+  sourceAuthority: string | null;
+  extractionMethod: string | null;
 
   // Data Quality
   confidenceScore: number;
@@ -178,6 +182,8 @@ export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
     skipBio: false,
     ballotpedia: false,
     ballotpediaMax: null,
+    exa: false,
+    exaMax: null,
     outputDir: path.resolve(process.cwd(), "scripts/harvest/output"),
     state: null,
     all: false,
@@ -221,6 +227,18 @@ export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
         flags.outputDir = flags.outputDir; // no-op to keep switch exhaustive
         break;
       case "--use-identity":
+        break;
+      case "--exa":
+        flags.exa = true;
+        break;
+      case "--exa-max":
+        if (argv[i + 1] && !argv[i + 1].startsWith("--")) {
+          flags.exa = true;
+          flags.exaMax = parseInt(argv[++i], 10);
+        } else {
+          console.error("Error: --exa-max requires a number argument");
+          process.exit(1);
+        }
         break;
       case "--output-dir":
         if (argv[i + 1] && !argv[i + 1].startsWith("--")) {
@@ -310,6 +328,14 @@ export function validateEnv(flags: CliFlags): void {
       );
       process.exit(1);
     }
+  }
+
+  // Exa enrichment requires EXA_API_KEY
+  if (flags.exa && !process.env.EXA_API_KEY) {
+    console.error(
+      'Error: EXA_API_KEY is required for --exa. Get one at https://dashboard.exa.ai/api-keys\n  export EXA_API_KEY="..."',
+    );
+    process.exit(1);
   }
 }
 

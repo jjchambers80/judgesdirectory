@@ -21,6 +21,8 @@
  *   --skip-bio               Skip bio page enrichment (roster data only)
  *   --ballotpedia            Enrich with Ballotpedia political/electoral data
  *   --ballotpedia-max <n>    Limit Ballotpedia enrichment to n judges
+ *   --exa                    Enrich with Exa web search (judges below threshold)
+ *   --exa-max <n>            Limit Exa enrichment to n judges
  *   --output-dir <path>      Override output directory
  *
  * @module scripts/harvest/index
@@ -62,6 +64,7 @@ import { fetchPage } from "./fetcher";
 import { extractJudges, type JudgeRecord } from "./extractor";
 import { enrichWithBioPages } from "./bio-enricher";
 import { enrichAllWithBallotpedia } from "./ballotpedia-enricher";
+import { enrichAllWithExa } from "./exa-enricher";
 import { normalizeJudgeName, canonicalizeCourtType } from "./normalizer";
 import { deduplicateJudges, deduplicateEnrichedJudges } from "./deduplicator";
 import {
@@ -84,6 +87,10 @@ import {
   recomputeHealthScores,
   type RecordResult,
 } from "./health-recorder";
+import {
+  classifySourceAuthority,
+  buildStateConfigsMap,
+} from "./source-classifier";
 
 // ---------------------------------------------------------------------------
 // File-based logging
@@ -568,6 +575,29 @@ async function runSingleState(
     };
   }
 
+  // Optional: Exa web search enrichment for judges below confidence threshold
+  let exaStats: {
+    totalEnriched: number;
+    totalSearched: number;
+    totalSkipped: number;
+    fieldCounts: Record<string, number>;
+  } | null = null;
+
+  if (flags.exa) {
+    console.log("\n===== Exa Web Search Enrichment =====");
+    const exaResult = await enrichAllWithExa(finalRecords, {
+      delayMs: stateConfig.rateLimit?.fetchDelayMs ?? 1000,
+      maxJudges: flags.exaMax || undefined,
+    });
+    finalRecords = exaResult.judges;
+    exaStats = {
+      totalEnriched: exaResult.totalEnriched,
+      totalSearched: exaResult.totalSearched,
+      totalSkipped: exaResult.totalSkipped,
+      fieldCounts: exaResult.fieldCounts,
+    };
+  }
+
   // Write enriched CSV output to per-state directory
   const csvPath = writeEnrichedCsv(finalRecords, stateOutputDir, slug);
   console.log(`CSV written: ${csvPath}`);
@@ -584,6 +614,7 @@ async function runSingleState(
       timestamp,
       bioStats: pipelineResult.bioStats,
       ballotpediaStats,
+      exaStats,
       stateSlug: slug,
       healthStats: pipelineResult.healthStats,
     },
@@ -936,6 +967,12 @@ async function runEnrichedPipeline(
   const completedSet = new Set(checkpoint.completedUrls);
   const stateOutputDir = path.join(flags.outputDir, slug);
 
+  // Build state configs map for source authority classification
+  const allStates = discoverStates();
+  const stateConfigs = buildStateConfigsMap(
+    allStates.map((s) => ({ slug: s, courts: loadStateConfig(s).courts })),
+  );
+
   const bioStats = {
     bioPagesFetched: 0,
     bioPagesSucceeded: 0,
@@ -1033,6 +1070,10 @@ async function runEnrichedPipeline(
       }
 
       // Phase 2: Enrich with bio page data (unless --skip-bio)
+      // Classify source authority for this court URL
+      const sourceAuthority = classifySourceAuthority(entry.url, stateConfigs);
+      const extractionMethod = result.extractionMethod;
+
       const enrichResult = await enrichWithBioPages(result.judges, entry, {
         skipBioFetch: flags.skipBio,
         stateAbbreviation: stateConfig.abbreviation,
@@ -1042,6 +1083,23 @@ async function runEnrichedPipeline(
           }
         },
       });
+
+      // Apply source-authority-aware base confidence and tag metadata
+      const SOURCE_AUTHORITY_BASES: Record<string, number> = {
+        OFFICIAL_GOV: 0.65,
+        COURT_WEBSITE: 0.55,
+        SECONDARY: 0.45,
+      };
+      const baseScore = SOURCE_AUTHORITY_BASES[sourceAuthority] ?? 0.45;
+      const extractionBonus = extractionMethod === "deterministic" ? 0.10 : 0;
+
+      for (const record of enrichResult.enriched) {
+        record.sourceAuthority = sourceAuthority;
+        record.extractionMethod = extractionMethod;
+        // Recompute confidence: base + extraction bonus + bio fields (already added by enricher)
+        const bioFieldCount = record.fieldsFromBio.length;
+        record.confidenceScore = Math.min(0.95, baseScore + extractionBonus + bioFieldCount * 0.05);
+      }
 
       // Accumulate bio stats
       bioStats.bioPagesFetched += enrichResult.stats.bioPagesFetched;
@@ -1487,6 +1545,8 @@ function writeEnrichedCsv(
     "Roster URL": r.rosterUrl,
     "Bio Page URL": r.bioPageUrl ?? "",
     "Confidence Score": r.confidenceScore.toFixed(2),
+    "Source Authority": r.sourceAuthority ?? "",
+    "Extraction Method": r.extractionMethod ?? "",
   }));
 
   const csv = Papa.unparse(csvRecords, {
@@ -1514,6 +1574,8 @@ function writeEnrichedCsv(
       "Roster URL",
       "Bio Page URL",
       "Confidence Score",
+      "Source Authority",
+      "Extraction Method",
     ],
   });
 

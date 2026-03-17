@@ -25,6 +25,7 @@ Auto-generated from all feature plans. Last updated: 2026-02-17
 - PostgreSQL (existing, via Prisma) (012-url-health)
 - TypeScript (strict mode) on Next.js 14.2, React 18 + `@tanstack/react-table` (new), `radix-ui` (existing), `class-variance-authority` + `clsx` + `tailwind-merge` (existing), `lucide-react` (shadcn icon library) (013-admin-data-tables)
 - PostgreSQL via Prisma ORM (existing — no schema changes) (013-admin-data-tables)
+- TypeScript (Node.js runtime, strict mode) + Next.js 14, Prisma ORM, Zod, cheerio, @tanstack/react-table (014-auto-verification)
 
 - TypeScript 5.x on Node.js 20 LTS + Next.js 14 (App Router, SSR), Prisma ORM 5.x, next-sitemap, slugify (001-foundation)
 
@@ -44,10 +45,26 @@ npm test && npm run lint
 TypeScript 5.x on Node.js 20 LTS: Follow standard conventions
 
 ## Recent Changes
+- 014-auto-verification: Added TypeScript (Node.js runtime, strict mode) + Next.js 14, Prisma ORM, Zod, cheerio, @tanstack/react-table
 - 013-admin-data-tables: Added TypeScript (strict mode) on Next.js 14.2, React 18 + `@tanstack/react-table` (new), `radix-ui` (existing), `class-variance-authority` + `clsx` + `tailwind-merge` (existing), `lucide-react` (shadcn icon library)
 - 012-url-health: Added TypeScript (strict mode), Node.js + Next.js 14, Prisma ORM v6, Tailwind CSS, shadcn/ui
-- 011-url-discovery-scrape-tracking: Added TypeScript (strict mode), Node.js 20+ + Next.js (SSR), Prisma ORM, Google Custom Search JSON API (`googleapis` npm package), OpenAI gpt-4o-mini (for classification), Zod (validation), cheerio/turndown (existing fetcher)
 
 
 <!-- MANUAL ADDITIONS START -->
+
+## Self-Improvement Workflow
+
+When any of the following occur during a session, log a structured entry to the appropriate file in `skills/self-improving-agent/.learnings/`:
+
+| Trigger | Log To |
+|---------|--------|
+| Command or operation fails unexpectedly | `.learnings/ERRORS.md` |
+| User corrects you ("No, that's wrong…", "Actually…") | `.learnings/LEARNINGS.md` (category: `correction`) |
+| User requests a capability that doesn't exist | `.learnings/FEATURE_REQUESTS.md` |
+| API or external tool fails | `.learnings/ERRORS.md` |
+| Knowledge is outdated or incorrect | `.learnings/LEARNINGS.md` (category: `knowledge_gap`) |
+| A better approach is discovered | `.learnings/LEARNINGS.md` (category: `best_practice`) |
+
+Before starting major tasks, review existing learnings for relevant context. See `skills/self-improving-agent/SKILL.md` for entry formats and promotion rules.
+
 <!-- MANUAL ADDITIONS END -->

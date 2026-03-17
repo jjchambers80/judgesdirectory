@@ -9,6 +9,8 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import type { DataTableToolbarConfig } from "@/components/ui/data-table-toolbar";
 import { useDebounce } from "@/hooks/use-debounce";
 
+type ViewMode = "judges" | "sources";
+
 interface JudgeRecord {
   id: string;
   fullName: string;
@@ -27,6 +29,15 @@ interface JudgeRecord {
   updatedAt: string;
 }
 
+interface SourceRecord {
+  sourceUrl: string;
+  sourceAuthority: string | null;
+  total: number;
+  verified: number;
+  unverified: number;
+  needsReview: number;
+}
+
 interface Pagination {
   page: number;
   limit: number;
@@ -35,6 +46,56 @@ interface Pagination {
 }
 
 export default function AdminJudgesPage() {
+  const [viewMode, setViewMode] = useState<ViewMode>("judges");
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <h1>Judge Records</h1>
+        <div className="flex items-center gap-3">
+          <div className="flex rounded-md border border-border overflow-hidden">
+            <button
+              onClick={() => setViewMode("judges")}
+              className={cn(
+                "px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer",
+                viewMode === "judges"
+                  ? "bg-primary text-white"
+                  : "bg-background text-foreground hover:bg-muted",
+              )}
+            >
+              Judges
+            </button>
+            <button
+              onClick={() => setViewMode("sources")}
+              className={cn(
+                "px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer",
+                viewMode === "sources"
+                  ? "bg-primary text-white"
+                  : "bg-background text-foreground hover:bg-muted",
+              )}
+            >
+              Sources
+            </button>
+          </div>
+          <Link
+            href="/admin/judges/new/"
+            className="no-link-style px-4 py-2 bg-primary text-white rounded-md no-underline text-sm font-medium hover:bg-primary/90 hover:no-underline transition-colors"
+          >
+            + Add Judge
+          </Link>
+        </div>
+      </div>
+
+      {viewMode === "judges" ? <JudgesView /> : <SourcesView />}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Judges View (original table)
+// ---------------------------------------------------------------------------
+
+function JudgesView() {
   const [judges, setJudges] = useState<JudgeRecord[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
@@ -183,16 +244,6 @@ export default function AdminJudgesPage() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1>Judge Records</h1>
-        <Link
-          href="/admin/judges/new/"
-          className="no-link-style px-4 py-2 bg-primary text-white rounded-md no-underline text-sm font-medium hover:bg-primary/90 hover:no-underline transition-colors"
-        >
-          + Add Judge
-        </Link>
-      </div>
-
       {loading ? (
         <p>Loading...</p>
       ) : judges.length === 0 && !debouncedSearch && !statusFilter ? (
@@ -237,5 +288,213 @@ export default function AdminJudgesPage() {
         />
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sources View (aggregated by sourceUrl)
+// ---------------------------------------------------------------------------
+
+function SourcesView() {
+  const [sources, setSources] = useState<SourceRecord[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState<string | null>(null);
+
+  const fetchSources = useCallback(
+    async (page: number) => {
+      setLoading(true);
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("limit", String(pagination.limit));
+      const res = await fetch(`/api/admin/judges/sources?${params}`);
+      const data = await res.json();
+      setSources(data.sources);
+      setPagination(data.pagination);
+      setLoading(false);
+    },
+    [pagination.limit],
+  );
+
+  useEffect(() => {
+    fetchSources(1);
+  }, [fetchSources]);
+
+  const handleBatchVerify = async (sourceUrl: string, unverified: number) => {
+    if (
+      !confirm(
+        `Verify all ${unverified} unverified judges from:\n${sourceUrl}?`,
+      )
+    )
+      return;
+    setVerifying(sourceUrl);
+    try {
+      const res = await fetch("/api/admin/judges/batch-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceUrl }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Batch verify failed");
+        return;
+      }
+      const result = await res.json();
+      alert(`Promoted ${result.promoted} judges to VERIFIED.`);
+      fetchSources(pagination.page);
+    } finally {
+      setVerifying(null);
+    }
+  };
+
+  const authorityBadge = (auth: string | null) => {
+    const label = auth ?? "UNKNOWN";
+    const color =
+      auth === "OFFICIAL_GOV"
+        ? "bg-badge-success-bg text-badge-success-text"
+        : auth === "COURT_WEBSITE"
+          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+          : "bg-badge-warning-bg text-badge-warning-text";
+    return (
+      <span
+        className={cn(
+          "inline-block px-2 py-0.5 rounded-full text-xs font-semibold",
+          color,
+        )}
+      >
+        {label}
+      </span>
+    );
+  };
+
+  const columns: ColumnDef<SourceRecord>[] = useMemo(
+    () => [
+      {
+        accessorKey: "sourceUrl",
+        header: "Source URL",
+        cell: ({ row }) => (
+          <a
+            href={row.original.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-link hover:underline text-sm max-w-xs truncate block"
+            title={row.original.sourceUrl}
+          >
+            {row.original.sourceUrl}
+          </a>
+        ),
+      },
+      {
+        accessorKey: "sourceAuthority",
+        header: "Authority",
+        cell: ({ row }) => authorityBadge(row.original.sourceAuthority),
+        enableSorting: false,
+      },
+      {
+        accessorKey: "total",
+        header: "Total",
+      },
+      {
+        accessorKey: "verified",
+        header: "Verified",
+        cell: ({ row }) => (
+          <span className="text-badge-success-text font-medium">
+            {row.original.verified}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "unverified",
+        header: "Unverified",
+        cell: ({ row }) => (
+          <span className="text-badge-warning-text font-medium">
+            {row.original.unverified}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "needsReview",
+        header: "Needs Review",
+        cell: ({ row }) => (
+          <span
+            className={cn(
+              "font-medium",
+              row.original.needsReview > 0
+                ? "text-error-text"
+                : "text-muted-foreground",
+            )}
+          >
+            {row.original.needsReview}
+          </span>
+        ),
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) =>
+          row.original.unverified > 0 ? (
+            <button
+              onClick={() =>
+                handleBatchVerify(
+                  row.original.sourceUrl,
+                  row.original.unverified,
+                )
+              }
+              disabled={verifying === row.original.sourceUrl}
+              className={cn(
+                "px-3 py-1 border rounded text-xs font-medium cursor-pointer transition-colors",
+                verifying === row.original.sourceUrl
+                  ? "opacity-50 cursor-not-allowed border-muted text-muted-foreground"
+                  : "border-badge-success-text bg-badge-success-bg text-badge-success-text hover:opacity-80",
+              )}
+            >
+              {verifying === row.original.sourceUrl
+                ? "Verifying…"
+                : `Verify All (${row.original.unverified})`}
+            </button>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [verifying],
+  );
+
+  const toolbarConfig: DataTableToolbarConfig = useMemo(
+    () => ({
+      textFilters: [{ columnId: "sourceUrl", placeholder: "Search by URL…" }],
+      enableColumnVisibility: false,
+    }),
+    [],
+  );
+
+  if (loading) return <p>Loading sources…</p>;
+
+  if (sources.length === 0)
+    return <p className="text-muted-foreground">No source URLs found.</p>;
+
+  return (
+    <DataTable
+      columns={columns}
+      data={sources}
+      toolbarConfig={toolbarConfig}
+      manualPagination
+      manualSorting
+      manualFiltering
+      pageCount={pagination.totalPages}
+      currentPage={pagination.page}
+      onPageChange={(page) => fetchSources(page)}
+      onPageSizeChange={(size) =>
+        setPagination((prev) => ({ ...prev, limit: size }))
+      }
+    />
   );
 }

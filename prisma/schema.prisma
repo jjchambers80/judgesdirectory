@@ -125,7 +125,9 @@ model Judge {
   
   // Source & Status
   sourceUrl            String?
+  rosterUrl            String?
   sourceAuthority      SourceAuthority?
+  extractionMethod     String?
   status               JudgeStatus  @default(UNVERIFIED)
   importBatchId        String?
   importBatch          ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)

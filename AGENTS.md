@@ -20,6 +20,7 @@
 | [skill-creator](.github/skills/skill-creator/SKILL.md) | Create new skills, modify and improve existing skills, and measure skill performance. \| A skill for creating new skills and iteratively improving them. |
 | [theme-factory](.github/skills/theme-factory/SKILL.md) | Toolkit for styling artifacts with a theme. \| This skill provides a curated collection of professional font and color themes themes, each with carefully selected color palettes and font pairings. O... |
 | [web-artifacts-builder](.github/skills/web-artifacts-builder/SKILL.md) | Suite of tools for creating elaborate, multi-component claude.ai HTML artifacts using modern fron... \| To build powerful frontend claude.ai artifacts, follow these steps: 1. Initialize the frontend re... |
+| [web-search-exa](.github/skills/web-search-exa/SKILL.md) | Neural web search, content extraction, company/people research, code search, and deep research via the Exa MCP server. \| Use for web lookups, finding code examples, researching companies/people, extracting URL content, or running deep multi-step research. |
 | [webapp-testing](.github/skills/webapp-testing/SKILL.md) | Toolkit for interacting with and testing local web applications using Playwright. \| To test local web applications, write native Python Playwright scripts. |
 | [xlsx](.github/skills/xlsx/SKILL.md) | Use this skill any time a spreadsheet file is the primary input or output. |
 

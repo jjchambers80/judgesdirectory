@@ -161,9 +161,11 @@ function createBaseRecord(
     // Source Attribution
     rosterUrl: courtEntry.url,
     bioPageUrl: null,
+    sourceAuthority: null,
+    extractionMethod: null,
 
     // Data Quality
-    confidenceScore: 0.5, // Base confidence from official roster
+    confidenceScore: 0.5, // Base confidence — overridden by orchestrator with source-authority-aware base
     fieldsFromRoster: [
       "fullName",
       "courtType",
@@ -232,10 +234,12 @@ function mergeAndTrackBioData(
   }
 
   // Increase confidence score based on bio data availability
+  // New formula: source-authority-aware base (set on record.confidenceScore),
+  // plus +0.05 per bio field, capped at 0.95
   const bioFieldCount = record.fieldsFromBio.length;
   if (bioFieldCount > 0) {
-    // Each bio field adds confidence, up to 0.9 max
-    record.confidenceScore = Math.min(0.9, 0.5 + bioFieldCount * 0.05);
+    const baseScore = record.confidenceScore; // Already set by orchestrator with source-authority base + extraction bonus
+    record.confidenceScore = Math.min(0.95, baseScore + bioFieldCount * 0.05);
   }
 }
 
