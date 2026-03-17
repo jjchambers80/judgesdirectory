@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "exa": {
+      "type": "sse",
+      "url": "https://mcp.exa.ai/mcp"
+    }
+  }
+}

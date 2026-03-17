@@ -64,6 +64,13 @@ export interface EnrichedReportStats {
     totalEnriched: number;
     fieldCounts: Record<string, number>;
   } | null;
+  /** Exa web search enrichment stats (optional) */
+  exaStats?: {
+    totalEnriched: number;
+    totalSearched: number;
+    totalSkipped: number;
+    fieldCounts: Record<string, number>;
+  } | null;
   /** State slug for per-state reporting */
   stateSlug?: string;
   /** Health scoring stats from this harvest run */
@@ -833,6 +840,27 @@ function buildEnrichedReport(stats: EnrichedReportStats): {
     lines.push("");
   }
 
+  // Exa web search enrichment stats (if run)
+  if (stats.exaStats && stats.exaStats.totalSearched > 0) {
+    lines.push("## Exa Web Search Enrichment");
+    lines.push("");
+    lines.push(`- Judges searched: ${stats.exaStats.totalSearched}`);
+    lines.push(`- Judges enriched: ${stats.exaStats.totalEnriched}`);
+    lines.push(`- Judges skipped (above threshold): ${stats.exaStats.totalSkipped}`);
+    if (Object.keys(stats.exaStats.fieldCounts).length > 0) {
+      lines.push("");
+      lines.push("| Field | Records Enriched |");
+      lines.push("| --- | --- |");
+      const sorted = Object.entries(stats.exaStats.fieldCounts).sort(
+        ([, a], [, b]) => b - a,
+      );
+      for (const [field, count] of sorted) {
+        lines.push(`| ${field} | ${count} |`);
+      }
+    }
+    lines.push("");
+  }
+
   // URL health scoring summary
   if (stats.healthStats && stats.healthStats.scoresUpdated > 0) {
     lines.push("## URL Health Summary");
@@ -887,6 +915,11 @@ function printEnrichedSummary(stats: EnrichedReportStats): void {
   if (stats.ballotpediaStats) {
     console.log(
       `Ballotpedia: ${stats.ballotpediaStats.totalEnriched} judges enriched`,
+    );
+  }
+  if (stats.exaStats) {
+    console.log(
+      `Exa: ${stats.exaStats.totalEnriched}/${stats.exaStats.totalSearched} judges enriched (${stats.exaStats.totalSkipped} skipped)`,
     );
   }
   console.log(

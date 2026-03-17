@@ -11,6 +11,7 @@
     "harvest": "tsx scripts/harvest/index.ts",
     "harvest:reset": "tsx scripts/harvest/index.ts --reset",
     "harvest:full": "tsx scripts/harvest/index.ts --reset --ballotpedia",
+    "harvest:exa": "tsx scripts/harvest/index.ts --exa",
     "harvest:quick": "tsx scripts/harvest/index.ts --skip-bio",
     "import": "tsx scripts/import/index.ts",
     "import:dry-run": "tsx scripts/import/index.ts --dry-run",
