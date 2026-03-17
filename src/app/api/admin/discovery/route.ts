@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const state = searchParams.get("state");
   const status = searchParams.get("status");
+  const scrapeWorthyParam = searchParams.get("scrapeWorthy");
   const sortParam = searchParams.get("sort") || "discoveredAt";
   const order = searchParams.get("order") === "asc" ? "asc" : "desc";
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
@@ -45,6 +46,14 @@ export async function GET(request: NextRequest) {
     where.discoveredAt = { lt: staleDate };
   } else if (status) {
     where.status = status as "DISCOVERED" | "APPROVED" | "REJECTED";
+  }
+
+  if (scrapeWorthyParam === "true") {
+    where.scrapeWorthy = true;
+  } else if (scrapeWorthyParam === "false") {
+    where.scrapeWorthy = false;
+  } else if (scrapeWorthyParam === "null") {
+    where.scrapeWorthy = null;
   }
 
   // Build orderBy from validated sort field

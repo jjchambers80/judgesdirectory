@@ -54,18 +54,24 @@ model Court {
   @@map("courts")
 }
 
-enum ImportBatchStatus {
-  PENDING
-  PROCESSING
-  COMPLETE
-  ROLLED_BACK
-}
-
 enum JudgeStatus {
   UNVERIFIED
   VERIFIED
   NEEDS_REVIEW
   REJECTED
+}
+
+enum HarvestJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum HarvestTrigger {
+  ADMIN
+  CRON
+  CLI
 }
 
 enum SourceAuthority {
@@ -75,21 +81,36 @@ enum SourceAuthority {
   SECONDARY         // News, bar associations, etc.
 }
 
-model ImportBatch {
-  id           String            @id @default(uuid())
-  fileName     String
-  totalRows    Int
-  successCount Int               @default(0)
-  skipCount    Int               @default(0)
-  errorCount   Int               @default(0)
-  status       ImportBatchStatus @default(PENDING)
-  judges       Judge[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+model HarvestJob {
+  id              String           @id @default(uuid())
+  stateAbbr       String           @db.VarChar(2)
+  state           String
+  status          HarvestJobStatus @default(QUEUED)
+  triggeredBy     HarvestTrigger   @default(ADMIN)
 
+  urlsTotal       Int              @default(0)
+  urlsProcessed   Int              @default(0)
+  urlsFailed      Int              @default(0)
+  judgesFound     Int              @default(0)
+  judgesNew       Int              @default(0)
+  judgesUpdated   Int              @default(0)
+
+  startedAt       DateTime?
+  completedAt     DateTime?
+
+  reportMarkdown  String?          @db.Text
+  errorMessage    String?          @db.Text
+
+  judges          Judge[]
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([stateAbbr])
   @@index([status])
   @@index([createdAt])
-  @@map("import_batches")
+  @@index([stateAbbr, status])
+  @@map("harvest_jobs")
 }
 
 model Judge {
@@ -129,8 +150,8 @@ model Judge {
   sourceAuthority      SourceAuthority?
   extractionMethod     String?
   status               JudgeStatus  @default(UNVERIFIED)
-  importBatchId        String?
-  importBatch          ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  harvestJobId         String?
+  harvestJob           HarvestJob?  @relation(fields: [harvestJobId], references: [id], onDelete: SetNull)
   
   // Confidence & Verification
   confidenceScore      Float?       // 0.0 - 1.0 overall confidence
@@ -145,7 +166,7 @@ model Judge {
   @@unique([courtId, slug])
   @@index([courtId])
   @@index([fullName])
-  @@index([importBatchId])
+  @@index([harvestJobId])
   @@index([status])
   @@map("judges")
 }
@@ -264,7 +285,7 @@ model UrlCandidate {
   confidenceScore Float?
   searchQuery     String
   snippetText     String?         @db.Text
-  pageTitle       String?
+  pageTitle       String?         
   status          CandidateStatus @default(DISCOVERED)
   rejectionReason String?         @db.Text
   reviewedAt      DateTime?
@@ -274,10 +295,19 @@ model UrlCandidate {
   discoveredAt    DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
+  // Harvest pipeline fields
+  scrapeWorthy      Boolean?
+  autoClassifiedAt  DateTime?
+  fetchMethod       String          @default("http")
+  extractionHints   Json?
+  lastYieldCount    Int?
+  harvestAttempts   Int             @default(0)
+
   @@index([state])
   @@index([status])
   @@index([discoveredAt])
   @@index([stateAbbr, status])
+  @@index([scrapeWorthy])
   @@map("url_candidates")
 }
 

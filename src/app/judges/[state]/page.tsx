@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
 import { countyListTitle, buildItemListJsonLd } from "@/lib/seo";
@@ -11,13 +12,16 @@ interface PageProps {
   params: Promise<{ state: string }>;
 }
 
+// Cached so generateMetadata and the page component share one DB round-trip
+const getState = cache((slug: string) =>
+  prisma.state.findUnique({ where: { slug } }),
+);
+
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { state: stateSlug } = await params;
-  const state = await prisma.state.findUnique({
-    where: { slug: stateSlug },
-  });
+  const state = await getState(stateSlug);
 
   if (!state) return {};
 
@@ -32,9 +36,7 @@ export async function generateMetadata({
 export default async function StateJudgesPage({ params }: PageProps) {
   const { state: stateSlug } = await params;
 
-  const state = await prisma.state.findUnique({
-    where: { slug: stateSlug },
-  });
+  const state = await getState(stateSlug);
 
   if (!state) notFound();
 

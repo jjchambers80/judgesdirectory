@@ -7,15 +7,15 @@
 
 ## Schema Changes Overview
 
-| Action | Entity | Description |
-|--------|--------|-------------|
-| MODIFY | `UrlCandidate` | Add `scrapeWorthy`, `autoClassifiedAt`, `fetchMethod`, `extractionHints` |
-| CREATE | `HarvestJob` | New model tracking harvest executions |
-| CREATE | `HarvestJobStatus` | New enum for job lifecycle |
-| CREATE | `HarvestTrigger` | New enum for trigger source |
-| MODIFY | `Judge` | Replace `importBatchId` → `harvestJobId` FK |
-| DROP | `ImportBatch` | Remove model entirely |
-| DROP | `ImportBatchStatus` | Remove enum entirely |
+| Action | Entity              | Description                                                              |
+| ------ | ------------------- | ------------------------------------------------------------------------ |
+| MODIFY | `UrlCandidate`      | Add `scrapeWorthy`, `autoClassifiedAt`, `fetchMethod`, `extractionHints` |
+| CREATE | `HarvestJob`        | New model tracking harvest executions                                    |
+| CREATE | `HarvestJobStatus`  | New enum for job lifecycle                                               |
+| CREATE | `HarvestTrigger`    | New enum for trigger source                                              |
+| MODIFY | `Judge`             | Replace `importBatchId` → `harvestJobId` FK                              |
+| DROP   | `ImportBatch`       | Remove model entirely                                                    |
+| DROP   | `ImportBatchStatus` | Remove enum entirely                                                     |
 
 ---
 
@@ -68,12 +68,14 @@ model UrlCandidate {
 ```
 
 **Field Details**:
+
 - `scrapeWorthy`: tri-state — `null` means unclassified (needs manual review), `true` means auto or manually confirmed for scraping, `false` means classified as non-judicial or zero-yield.
 - `autoClassifiedAt`: timestamp of when auto-classification ran (distinguishes from manual override).
 - `fetchMethod`: How to fetch the URL. Default `"http"` for standard fetch. `"browser"` for Cloudflare-protected sites (e.g., New York courts).
 - `extractionHints`: JSON blob for deterministic extraction patterns, e.g., `{"pattern": "flcourts-next-data"}` or `{"selector": ".judge-roster td.name"}`. Nullable — null means use LLM extraction.
 
 **Query for harvest URL loading**:
+
 ```sql
 SELECT * FROM url_candidates
 WHERE state_abbr = $1
@@ -138,6 +140,7 @@ enum HarvestTrigger {
 ```
 
 **Lifecycle**:
+
 1. Created as `QUEUED` when admin clicks "Start Harvest" or cron fires
 2. Transitions to `RUNNING` when the runner starts processing
 3. Runner updates `urlsProcessed`, `judgesFound`, `judgesNew`, `judgesUpdated` as it progresses
@@ -146,12 +149,14 @@ enum HarvestTrigger {
 6. `errorMessage` written on failure
 
 **Concurrency check** (FR-010): Before creating a new job, query:
+
 ```sql
 SELECT id FROM harvest_jobs
 WHERE state_abbr = $1
   AND status IN ('QUEUED', 'RUNNING')
 LIMIT 1;
 ```
+
 If result exists, reject the new job request.
 
 ---
@@ -185,6 +190,7 @@ model Judge {
 ```
 
 **Migration safety**: Existing judges have `importBatchId` values. The migration must:
+
 1. Add `harvestJobId` column (nullable)
 2. Drop `importBatchId` column (existing values are lost — this is acceptable per spec FR-026)
 3. Drop `ImportBatch` table
@@ -205,6 +211,7 @@ model Judge {
 ## Migration Plan
 
 ### Step 1: Add new fields to UrlCandidate
+
 ```sql
 ALTER TABLE url_candidates ADD COLUMN scrape_worthy BOOLEAN;
 ALTER TABLE url_candidates ADD COLUMN auto_classified_at TIMESTAMPTZ;
@@ -214,6 +221,7 @@ CREATE INDEX idx_url_candidates_scrape_worthy ON url_candidates (scrape_worthy);
 ```
 
 ### Step 2: Create HarvestJob table + enums
+
 ```sql
 CREATE TYPE "HarvestJobStatus" AS ENUM ('QUEUED', 'RUNNING', 'COMPLETED', 'FAILED');
 CREATE TYPE "HarvestTrigger" AS ENUM ('ADMIN', 'CRON', 'CLI');
@@ -245,6 +253,7 @@ CREATE INDEX idx_harvest_jobs_state_status ON harvest_jobs (state_abbr, status);
 ```
 
 ### Step 3: Swap Judge FK
+
 ```sql
 -- Add new column
 ALTER TABLE judges ADD COLUMN harvest_job_id UUID REFERENCES harvest_jobs(id) ON DELETE SET NULL;
@@ -257,6 +266,7 @@ ALTER TABLE judges DROP COLUMN import_batch_id;
 ```
 
 ### Step 4: Drop ImportBatch
+
 ```sql
 DROP TABLE IF EXISTS import_batches;
 DROP TYPE IF EXISTS "ImportBatchStatus";
@@ -293,44 +303,48 @@ UrlHealth ────1:N──→ ScrapeLog
 ## Key Queries
 
 ### Load URLs for harvest (db-config-loader)
+
 ```typescript
 const urls = await prisma.urlCandidate.findMany({
   where: {
     stateAbbr: stateAbbr,
-    status: 'APPROVED',
+    status: "APPROVED",
     OR: [
-      { scrapeWorthy: null },  // unclassified — include
-      { scrapeWorthy: true },  // confirmed worthy
+      { scrapeWorthy: null }, // unclassified — include
+      { scrapeWorthy: true }, // confirmed worthy
     ],
   },
-  orderBy: { url: 'asc' },
+  orderBy: { url: "asc" },
 });
 ```
 
 ### List harvestable states
+
 ```typescript
 const states = await prisma.urlCandidate.findMany({
   where: {
-    status: 'APPROVED',
+    status: "APPROVED",
     OR: [{ scrapeWorthy: null }, { scrapeWorthy: true }],
   },
   select: { stateAbbr: true, state: true },
-  distinct: ['stateAbbr'],
-  orderBy: { state: 'asc' },
+  distinct: ["stateAbbr"],
+  orderBy: { state: "asc" },
 });
 ```
 
 ### Check for active job (concurrency guard)
+
 ```typescript
 const activeJob = await prisma.harvestJob.findFirst({
   where: {
     stateAbbr: stateAbbr,
-    status: { in: ['QUEUED', 'RUNNING'] },
+    status: { in: ["QUEUED", "RUNNING"] },
   },
 });
 ```
 
 ### Judge upsert (db-writer)
+
 ```typescript
 await prisma.judge.upsert({
   where: { courtId_slug: { courtId, slug } },
@@ -339,7 +353,7 @@ await prisma.judge.upsert({
     slug,
     fullName,
     harvestJobId: jobId,
-    status: 'UNVERIFIED',
+    status: "UNVERIFIED",
     // ... all harvest fields
   },
   update: {
@@ -353,14 +367,15 @@ await prisma.judge.upsert({
 ```
 
 ### Delta check for scheduled harvests
+
 ```typescript
 const staleUrls = await prisma.urlHealth.findMany({
   where: {
     stateAbbr: stateAbbr,
     active: true,
     OR: [
-      { lastSuccessAt: null },  // never scraped
-      { lastSuccessAt: { lt: freshnessThreshold } },  // stale
+      { lastSuccessAt: null }, // never scraped
+      { lastSuccessAt: { lt: freshnessThreshold } }, // stale
     ],
   },
 });

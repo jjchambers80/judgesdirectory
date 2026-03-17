@@ -20,6 +20,9 @@ export interface ClassificationResult {
   courtLevel: string | null;
   confidence: number | null;
   reasoning: string;
+  /** null = needs human review, true = auto-approved, false = auto-rejected */
+  scrapeWorthy: boolean | null;
+  autoClassifiedAt: Date;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,18 +73,46 @@ export async function classifyResults(
       ? parsed
       : parsed.results || parsed.classifications || [];
 
-    return items.map((item: Record<string, unknown>, index: number) => ({
-      url: String(item.url || results[index]?.link || ""),
-      isJudicialRoster: Boolean(item.isJudicialRoster),
-      courtType: item.courtType ? String(item.courtType) : null,
-      courtLevel: item.courtLevel ? String(item.courtLevel) : null,
-      confidence: typeof item.confidence === "number" ? item.confidence : null,
-      reasoning: String(item.reasoning || ""),
-    }));
+    return items.map((item: Record<string, unknown>, index: number) => {
+      const confidence =
+        typeof item.confidence === "number" ? item.confidence : null;
+      const isJudicialRoster = Boolean(item.isJudicialRoster);
+
+      // Compute scrape-worthiness (FR-002, FR-003)
+      let scrapeWorthy: boolean | null = null;
+      if (confidence !== null) {
+        if (confidence >= 0.7 && isJudicialRoster) {
+          scrapeWorthy = true;
+        } else if (confidence < 0.3 || !isJudicialRoster) {
+          scrapeWorthy = false;
+        }
+        // else: null (needs human review)
+      }
+
+      return {
+        url: String(item.url || results[index]?.link || ""),
+        isJudicialRoster,
+        courtType: item.courtType ? String(item.courtType) : null,
+        courtLevel: item.courtLevel ? String(item.courtLevel) : null,
+        confidence,
+        reasoning: String(item.reasoning || ""),
+        scrapeWorthy,
+        autoClassifiedAt: new Date(),
+      };
+    });
   } catch (err) {
     console.warn(
       `[Classifier] LLM classification failed: ${err instanceof Error ? err.message : String(err)}`,
     );
-    return [];
+    return results.map((r) => ({
+      url: r.link,
+      isJudicialRoster: false,
+      courtType: null,
+      courtLevel: null,
+      confidence: null,
+      reasoning: "Classification failed",
+      scrapeWorthy: null,
+      autoClassifiedAt: new Date(),
+    }));
   }
 }

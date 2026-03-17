@@ -27,8 +27,8 @@ export default function AdminLayout({
         <Link href="/admin/judges/new/" className={linkClasses}>
           + Add Judge
         </Link>
-        <Link href="/admin/import/" className={linkClasses}>
-          Import
+        <Link href="/admin/harvest/" className={linkClasses}>
+          Harvest
         </Link>
         <Link href="/admin/verification/" className={linkClasses}>
           Verification

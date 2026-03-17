@@ -304,36 +304,196 @@ export function formatFreshnessSection(result: {
 }
 
 // ---------------------------------------------------------------------------
-// Public API
+// HarvestMetrics and ReportData types (T029)
 // ---------------------------------------------------------------------------
 
 /**
- * Generate a Markdown quality report and write it to the output directory.
- * Also prints a summary to stdout.
+ * Structured metrics from a completed harvest run.
+ * Used as input to generateReport() for DB-backed reporting.
  */
-export function generateReport(stats: ReportStats, outputDir: string): string {
-  const report = buildReport(stats);
+export interface HarvestMetrics {
+  stateAbbr: string;
+  stateName: string;
+  startedAt: Date;
+  completedAt: Date;
+  urlsTotal: number;
+  urlsProcessed: number;
+  urlsFailed: number;
+  judgesFound: number;
+  judgesNew: number;
+  judgesUpdated: number;
+  /** Per-URL results from checkpoint */
+  urlResults: Array<{
+    url: string;
+    judgesFound: number;
+    errors: string[];
+    httpStatus?: number;
+    failureReason?: string;
+  }>;
+  /** Court-type breakdown */
+  courtTypeCounts: Record<string, number>;
+  /** Field coverage percentages (0–100) */
+  fieldCoverage: Record<string, number>;
+}
 
-  // Ensure output directory exists
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
+/**
+ * Structured data extracted from a report for programmatic use.
+ */
+export interface ReportData {
+  qualityVerdict: Severity;
+  urlsProcessed: number;
+  urlsFailed: number;
+  judgesFound: number;
+  judgesNew: number;
+  judgesUpdated: number;
+  durationSeconds: number;
+  courtTypeCounts: Record<string, number>;
+  fieldCoverage: Record<string, number>;
+  failedUrls: Array<{ url: string; reason: string }>;
+}
+
+/**
+ * Generate a structured harvest report from HarvestMetrics.
+ *
+ * Returns both the markdown string (for DB storage / admin UI) and
+ * parsed ReportData (for programmatic use). Does NOT write to disk.
+ */
+export function generateReport(metrics: HarvestMetrics): {
+  markdown: string;
+  data: ReportData;
+} {
+  const durationSeconds = Math.round(
+    (metrics.completedAt.getTime() - metrics.startedAt.getTime()) / 1000,
+  );
+  const durationDisplay =
+    durationSeconds >= 3600
+      ? `${(durationSeconds / 3600).toFixed(1)}h`
+      : durationSeconds >= 60
+        ? `${Math.round(durationSeconds / 60)}m ${durationSeconds % 60}s`
+        : `${durationSeconds}s`;
+
+  const failedUrls = metrics.urlResults
+    .filter((r) => r.errors.length > 0)
+    .map((r) => ({ url: r.url, reason: r.errors.join("; ") }));
+
+  const lines: string[] = [];
+
+  // Header
+  lines.push(
+    `# ${metrics.stateName} Harvest Report — ${metrics.completedAt.toISOString().slice(0, 10)}`,
+  );
+  lines.push("");
+
+  // Quality gate assessment
+  const totalPages = metrics.urlsTotal;
+  const failedPages = metrics.urlsFailed;
+  const zeroJudgePages = metrics.urlResults.filter(
+    (r) => r.errors.length === 0 && r.judgesFound === 0,
+  ).length;
+  const qualityGateResult = evaluateQualityGate({
+    totalPages,
+    failedPages,
+    zeroJudgePages,
+    totalRecords: metrics.judgesFound,
+    trialRecordsMissingCounty: 0,
+    totalTrialRecords: 0,
+    recordsMissingCoreFields: 0,
+    zodFailures: 0,
+    totalRawAttempts: metrics.judgesFound,
+  });
+  lines.push(qualityGateResult.markdown);
+  lines.push("");
+
+  // Summary stats
+  lines.push("## Summary");
+  lines.push("");
+  lines.push(`- **State**: ${metrics.stateName} (${metrics.stateAbbr})`);
+  lines.push(`- **Duration**: ${durationDisplay}`);
+  lines.push(`- **URLs targeted**: ${metrics.urlsTotal}`);
+  lines.push(`- **URLs processed**: ${metrics.urlsProcessed}`);
+  lines.push(`- **URLs failed**: ${metrics.urlsFailed}`);
+  lines.push(`- **Judges found**: ${metrics.judgesFound}`);
+  lines.push(`- **Judges new**: ${metrics.judgesNew}`);
+  lines.push(`- **Judges updated**: ${metrics.judgesUpdated}`);
+  lines.push("");
+
+  // Court-type breakdown
+  if (Object.keys(metrics.courtTypeCounts).length > 0) {
+    lines.push("## Court Type Breakdown");
+    lines.push("");
+    lines.push("| Court Type | Count |");
+    lines.push("|------------|-------|");
+    const sortOrder = [
+      "Supreme Court",
+      "Court of Criminal Appeals",
+      "Court of Appeals",
+      "District Court of Appeal",
+      "Appellate Division",
+      "Circuit Court",
+      "Superior Court",
+      "County Court",
+      "District Court",
+      "Family Court",
+    ];
+    const sorted = [
+      ...sortOrder.filter((ct) => metrics.courtTypeCounts[ct] > 0),
+      ...Object.keys(metrics.courtTypeCounts).filter(
+        (ct) => !sortOrder.includes(ct),
+      ),
+    ];
+    for (const ct of sorted) {
+      const count = metrics.courtTypeCounts[ct];
+      if (count > 0) lines.push(`| ${ct} | ${count} |`);
+    }
+    lines.push("");
   }
 
-  const slug = stats.stateSlug || "florida";
-  const timestamp = stats.timestamp.replace(/[:.]/g, "-").slice(0, 19);
-  const filename = `${slug}-quality-report-${timestamp}.md`;
-  const filePath = path.join(outputDir, filename);
+  // Field coverage
+  if (Object.keys(metrics.fieldCoverage).length > 0) {
+    lines.push("## Field Coverage");
+    lines.push("");
+    lines.push("| Field | Coverage |");
+    lines.push("|-------|----------|");
+    const sortedFields = Object.entries(metrics.fieldCoverage).sort(
+      ([, a], [, b]) => b - a,
+    );
+    for (const [field, pct] of sortedFields) {
+      lines.push(`| ${field} | ${pct.toFixed(1)}% |`);
+    }
+    lines.push("");
+  }
 
-  fs.writeFileSync(filePath, report, "utf-8");
+  // Failed URLs
+  if (failedUrls.length > 0) {
+    lines.push("## Failed URLs");
+    lines.push("");
+    lines.push("| URL | Reason |");
+    lines.push("|-----|--------|");
+    for (const { url, reason } of failedUrls) {
+      lines.push(`| ${url} | ${reason} |`);
+    }
+    lines.push("");
+  }
 
-  // Print summary to stdout
-  printSummary(stats);
+  const markdown = lines.join("\n");
+  const data: ReportData = {
+    qualityVerdict: qualityGateResult.verdict,
+    urlsProcessed: metrics.urlsProcessed,
+    urlsFailed: metrics.urlsFailed,
+    judgesFound: metrics.judgesFound,
+    judgesNew: metrics.judgesNew,
+    judgesUpdated: metrics.judgesUpdated,
+    durationSeconds,
+    courtTypeCounts: metrics.courtTypeCounts,
+    fieldCoverage: metrics.fieldCoverage,
+    failedUrls,
+  };
 
-  return filePath;
+  return { markdown, data };
 }
 
 // ---------------------------------------------------------------------------
-// Report builder
+// Legacy report builder (used by generateEnrichedReport)
 // ---------------------------------------------------------------------------
 
 function buildReport(stats: ReportStats): string {
@@ -555,12 +715,12 @@ function printSummary(stats: ReportStats): void {
 
 /**
  * Generate an enriched report with field coverage statistics.
- * Returns file path and quality gate verdict.
+ * Returns file path, quality gate verdict, and markdown string.
  */
 export function generateEnrichedReport(
   stats: EnrichedReportStats,
   outputDir: string,
-): { filePath: string; qualityVerdict: Severity } {
+): { filePath: string; qualityVerdict: Severity; markdown: string } {
   const { report, qualityVerdict } = buildEnrichedReport(stats);
 
   if (!fs.existsSync(outputDir)) {
@@ -575,7 +735,7 @@ export function generateEnrichedReport(
   fs.writeFileSync(filePath, report, "utf-8");
   printEnrichedSummary(stats);
 
-  return { filePath, qualityVerdict };
+  return { filePath, qualityVerdict, markdown: report };
 }
 
 // ---------------------------------------------------------------------------
@@ -846,7 +1006,9 @@ function buildEnrichedReport(stats: EnrichedReportStats): {
     lines.push("");
     lines.push(`- Judges searched: ${stats.exaStats.totalSearched}`);
     lines.push(`- Judges enriched: ${stats.exaStats.totalEnriched}`);
-    lines.push(`- Judges skipped (above threshold): ${stats.exaStats.totalSkipped}`);
+    lines.push(
+      `- Judges skipped (above threshold): ${stats.exaStats.totalSkipped}`,
+    );
     if (Object.keys(stats.exaStats.fieldCounts).length > 0) {
       lines.push("");
       lines.push("| Field | Records Enriched |");
@@ -867,9 +1029,7 @@ function buildEnrichedReport(stats: EnrichedReportStats): {
     lines.push("");
     lines.push(`- URLs processed: ${stats.healthStats.urlsProcessed}`);
     lines.push(`- Health scores updated: ${stats.healthStats.scoresUpdated}`);
-    lines.push(
-      `- Anomalies detected: ${stats.healthStats.anomaliesDetected}`,
-    );
+    lines.push(`- Anomalies detected: ${stats.healthStats.anomaliesDetected}`);
     if (stats.healthStats.anomalyMessages.length > 0) {
       lines.push("");
       lines.push("### Anomalies");

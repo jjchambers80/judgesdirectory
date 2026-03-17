@@ -92,6 +92,8 @@ import {
   buildStateConfigsMap,
 } from "./source-classifier";
 
+import { spawn } from "node:child_process";
+
 // ---------------------------------------------------------------------------
 // File-based logging
 // ---------------------------------------------------------------------------
@@ -280,6 +282,28 @@ function printFreshnessTable(outputDir: string, stateSlugs: string[]): void {
 
 async function main(): Promise<void> {
   const flags = parseFlags();
+
+  // Delegate to DB-driven runner if --job-id is provided
+  const jobIdIdx = process.argv.indexOf("--job-id");
+  if (jobIdIdx !== -1 && process.argv[jobIdIdx + 1]) {
+    const jobId = process.argv[jobIdIdx + 1];
+    console.log(`Delegating to runner.ts for job ${jobId}...`);
+    const runnerPath = path.join(__dirname, "runner.ts");
+    const args = ["tsx", runnerPath, "--job-id", jobId];
+    if (flags.resume) args.push("--resume");
+    if (flags.reset) args.push("--reset");
+    if (flags.skipBio) args.push("--skip-bio");
+    if (flags.ballotpedia) args.push("--ballotpedia");
+    if (flags.exa) args.push("--exa");
+
+    const child = spawn("npx", args, {
+      stdio: "inherit",
+      env: process.env,
+    });
+    child.on("close", (code) => process.exit(code ?? 0));
+    return;
+  }
+
   validateEnv(flags);
 
   // --list: print available states and exit
@@ -488,18 +512,14 @@ async function runSingleState(
       flags,
     );
 
-    console.log(
-      `[Health] Delta mode: ${courtUrls.length} URLs prioritized`,
-    );
+    console.log(`[Health] Delta mode: ${courtUrls.length} URLs prioritized`);
     for (const b of buckets) {
       const tag = b.skipped ? ` [skipped: ${b.reason}]` : "";
       const label =
         b.bucket === "never-scraped"
           ? "never scraped"
           : b.bucket.replace("-", "+");
-      console.log(
-        `  Bucket (${label}): ${b.urls.length} URLs${tag}`,
-      );
+      console.log(`  Bucket (${label}): ${b.urls.length} URLs${tag}`);
     }
     console.log(
       `[Health] Processing ${sortedUrls.length} URLs (${skippedCount} skipped)`,
@@ -936,10 +956,7 @@ async function prioritizeUrls(
         skipped = true;
         reason = "fresh data";
         skippedCount += urls.length;
-      } else if (
-        bucket === "stale-unhealthy" &&
-        flags.skipBroken
-      ) {
+      } else if (bucket === "stale-unhealthy" && flags.skipBroken) {
         skipped = true;
         reason = `--skip-broken (threshold: ${flags.skipBrokenThreshold})`;
         skippedCount += urls.length;
@@ -1091,14 +1108,17 @@ async function runEnrichedPipeline(
         SECONDARY: 0.45,
       };
       const baseScore = SOURCE_AUTHORITY_BASES[sourceAuthority] ?? 0.45;
-      const extractionBonus = extractionMethod === "deterministic" ? 0.10 : 0;
+      const extractionBonus = extractionMethod === "deterministic" ? 0.1 : 0;
 
       for (const record of enrichResult.enriched) {
         record.sourceAuthority = sourceAuthority;
         record.extractionMethod = extractionMethod;
         // Recompute confidence: base + extraction bonus + bio fields (already added by enricher)
         const bioFieldCount = record.fieldsFromBio.length;
-        record.confidenceScore = Math.min(0.95, baseScore + extractionBonus + bioFieldCount * 0.05);
+        record.confidenceScore = Math.min(
+          0.95,
+          baseScore + extractionBonus + bioFieldCount * 0.05,
+        );
       }
 
       // Accumulate bio stats
@@ -1180,9 +1200,7 @@ async function runEnrichedPipeline(
       const batchResult = await recomputeHealthScores(ids);
       healthStats.scoresUpdated = batchResult.updated;
       healthStats.anomaliesDetected = batchResult.anomalies.length;
-      healthStats.anomalyMessages = batchResult.anomalies.map(
-        (a) => `⚠️ ${a}`,
-      );
+      healthStats.anomalyMessages = batchResult.anomalies.map((a) => `⚠️ ${a}`);
 
       console.log(`\n[Health] === Health Summary ===`);
       console.log(`  URLs processed: ${processed}`);

@@ -1,5 +1,7 @@
 /**
- * Promote approved UrlCandidates into a state court configuration JSON file.
+ * Promote approved UrlCandidates — DB-only status update.
+ *
+ * Previously wrote JSON config files; now sets promotedAt and seeds UrlHealth.
  *
  * @module scripts/discovery/config-promoter
  */
@@ -9,11 +11,7 @@ require("dotenv").config({
   path: require("node:path").resolve(__dirname, "../../.env"),
 });
 
-import fs from "node:fs";
-import path from "node:path";
 import { PrismaClient } from "@prisma/client";
-import { StateConfigSchema } from "../harvest/state-config-schema";
-import type { StateConfig } from "../harvest/state-config-schema";
 
 const prisma = new PrismaClient();
 
@@ -80,15 +78,13 @@ const STATE_NAMES: Record<string, string> = {
 
 export interface PromoteResult {
   state: string;
-  configPath: string;
-  entriesAdded: number;
-  entriesExisting: number;
-  entriesTotal: number;
-  candidatesPromoted: number;
+  entriesPromoted: number;
+  healthSeeded: number;
 }
 
 /**
- * Promote approved candidates for a state into a court config JSON file.
+ * Promote approved candidates for a state — DB-only status update.
+ * Sets promotedAt and seeds UrlHealth records.
  */
 export async function promoteToConfig(
   stateAbbr: string,
@@ -110,57 +106,6 @@ export async function promoteToConfig(
     throw new Error(`No approved candidates for state ${abbr}`);
   }
 
-  // Load existing config if present
-  const slug = stateName.toLowerCase().replace(/\s+/g, "-");
-  const configPath = path.resolve(__dirname, `../harvest/${slug}-courts.json`);
-  let existingConfig: StateConfig | null = null;
-  let existingUrls = new Set<string>();
-
-  if (fs.existsSync(configPath)) {
-    const raw = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-    const result = StateConfigSchema.safeParse(raw);
-    if (result.success) {
-      existingConfig = result.data;
-      existingUrls = new Set(existingConfig.courts.map((c) => c.url));
-    }
-  }
-
-  // Build new court entries from approved candidates
-  const newEntries = candidates
-    .filter((c) => !existingUrls.has(c.url))
-    .map((c) => ({
-      url: c.url,
-      courtType: c.suggestedType || "Unknown Court",
-      level: (c.suggestedLevel || "trial") as
-        | "supreme"
-        | "appellate"
-        | "trial"
-        | "specialized",
-      label: `${c.suggestedType || "Court"} (${c.domain})`,
-      counties: [] as string[],
-      fetchMethod: "http" as const,
-      deterministic: false,
-      notes: "Promoted from discovery — needs manual enrichment",
-    }));
-
-  // Merge with existing or create new config
-  const allCourts = [...(existingConfig?.courts ?? []), ...newEntries];
-
-  const config = {
-    state: stateName,
-    abbreviation: abbr,
-    rateLimit: existingConfig?.rateLimit ?? {
-      fetchDelayMs: 2000,
-      maxConcurrent: 1,
-      requestTimeoutMs: 15000,
-      maxRetries: 3,
-    },
-    courts: allCourts,
-  };
-
-  // Write the config file
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
-
   // Mark candidates as promoted
   await prisma.urlCandidate.updateMany({
     where: {
@@ -169,14 +114,15 @@ export async function promoteToConfig(
     data: { promotedAt: new Date() },
   });
 
-  // Seed UrlHealth records for newly promoted URLs (Feature 012)
-  for (const entry of newEntries) {
+  // Seed UrlHealth records for promoted URLs
+  let healthSeeded = 0;
+  for (const candidate of candidates) {
     try {
       await prisma.urlHealth.upsert({
-        where: { url: entry.url },
+        where: { url: candidate.url },
         create: {
-          url: entry.url,
-          domain: new URL(entry.url).hostname.replace(/^www\./, ""),
+          url: candidate.url,
+          domain: new URL(candidate.url).hostname.replace(/^www\./, ""),
           state: stateName,
           stateAbbr: abbr,
           healthScore: 0.5,
@@ -184,20 +130,18 @@ export async function promoteToConfig(
         },
         update: {},
       });
+      healthSeeded++;
     } catch (err) {
       console.warn(
-        `[Promoter] Failed to seed UrlHealth for ${entry.url}: ${err instanceof Error ? err.message : String(err)}`,
+        `[Promoter] Failed to seed UrlHealth for ${candidate.url}: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
   }
 
   return {
     state: stateName,
-    configPath: `scripts/harvest/${slug}-courts.json`,
-    entriesAdded: newEntries.length,
-    entriesExisting: existingConfig?.courts.length ?? 0,
-    entriesTotal: allCourts.length,
-    candidatesPromoted: candidates.length,
+    entriesPromoted: candidates.length,
+    healthSeeded,
   };
 }
 

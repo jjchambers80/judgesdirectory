@@ -9,7 +9,7 @@ export async function PATCH(
   const body = await request.json();
 
   const { action, rejectionReason } = body as {
-    action: "approve" | "reject";
+    action?: "approve" | "reject";
     rejectionReason?: string;
   };
 

@@ -26,6 +26,12 @@ export interface UpsertCandidateInput {
   snippetText?: string | null;
   pageTitle?: string | null;
   discoveryRunId: string;
+  // New fields for autonomous pipeline
+  scrapeWorthy?: boolean | null;
+  autoClassifiedAt?: Date | null;
+  fetchMethod?: string;
+  /** Auto-set by classifier: APPROVED, REJECTED, or DISCOVERED (default) */
+  status?: CandidateStatus;
 }
 
 /** Staleness threshold in days */
@@ -56,6 +62,19 @@ export async function upsertCandidate(
         snippetText: input.snippetText ?? null,
         pageTitle: input.pageTitle ?? null,
         discoveryRunId: input.discoveryRunId,
+        scrapeWorthy: input.scrapeWorthy ?? null,
+        autoClassifiedAt: input.autoClassifiedAt ?? null,
+        fetchMethod: input.fetchMethod ?? "http",
+        ...(input.status ? { status: input.status } : {}),
+        // Track when classifier made a definitive decision
+        ...(input.status && input.status !== "DISCOVERED"
+          ? { reviewedAt: new Date() }
+          : {}),
+        ...(input.status ? { status: input.status } : {}),
+        // Track when classifier made a definitive decision
+        ...(input.status && input.status !== "DISCOVERED"
+          ? { reviewedAt: new Date() }
+          : {}),
       },
     });
     return { created: true };

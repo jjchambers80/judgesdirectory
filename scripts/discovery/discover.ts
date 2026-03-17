@@ -237,6 +237,17 @@ async function discoverState(
           (sr) => sr.link === classification.url,
         );
 
+        // Auto-promote or auto-reject based on classifier confidence + isJudicialRoster.
+        // High confidence (>=0.7) & confirmed roster → APPROVED (no human review needed).
+        // Low confidence (<0.3) or not judicial → REJECTED automatically.
+        // Middle band (0.3–0.7) → stays DISCOVERED for optional human triage.
+        let autoStatus: "APPROVED" | "REJECTED" | "DISCOVERED" = "DISCOVERED";
+        if (classification.scrapeWorthy === true) {
+          autoStatus = "APPROVED";
+        } else if (classification.scrapeWorthy === false) {
+          autoStatus = "REJECTED";
+        }
+
         const { created } = await upsertCandidate({
           url: classification.url,
           domain:
@@ -250,6 +261,9 @@ async function discoverState(
           snippetText: matchedSearch?.snippet ?? null,
           pageTitle: matchedSearch?.title ?? null,
           discoveryRunId: runId!,
+          scrapeWorthy: classification.scrapeWorthy,
+          autoClassifiedAt: classification.autoClassifiedAt,
+          status: autoStatus,
         });
 
         result.candidatesFound++;

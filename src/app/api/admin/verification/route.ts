@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   );
   const stateId = searchParams.get("stateId") || undefined;
   const countyId = searchParams.get("countyId") || undefined;
-  const batchId = searchParams.get("batchId") || undefined;
+  const harvestJobId = searchParams.get("harvestJobId") || undefined;
   const status = searchParams.get("status") || "UNVERIFIED";
   const sort = searchParams.get("sort") || "createdAt";
   const order = searchParams.get("order") === "asc" ? "asc" : "desc";
@@ -28,8 +28,8 @@ export async function GET(request: NextRequest) {
   if (status) {
     where.status = status;
   }
-  if (batchId) {
-    where.importBatchId = batchId;
+  if (harvestJobId) {
+    where.harvestJobId = harvestJobId;
   }
   if (countyId) {
     where.court = { countyId };
@@ -51,8 +51,8 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        importBatch: {
-          select: { id: true, fileName: true },
+        harvestJob: {
+          select: { id: true, state: true },
         },
       },
     }),
@@ -67,8 +67,7 @@ export async function GET(request: NextRequest) {
     state: j.court.county.state.name,
     sourceUrl: j.sourceUrl,
     status: j.status,
-    importBatchId: j.importBatch?.id ?? null,
-    importBatchFileName: j.importBatch?.fileName ?? null,
+    harvestJobId: j.harvestJob?.id ?? null,
     createdAt: j.createdAt.toISOString(),
   }));
 

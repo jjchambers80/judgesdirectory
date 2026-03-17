@@ -20,8 +20,7 @@ interface JudgeRecord {
   state: string;
   sourceUrl: string | null;
   status: string;
-  importBatchId: string | null;
-  importBatchFileName: string | null;
+  harvestJobId: string | null;
   createdAt: string;
 }
 
@@ -37,9 +36,10 @@ interface StateOption {
   name: string;
 }
 
-interface BatchOption {
+interface HarvestJobOption {
   id: string;
-  fileName: string;
+  state: string;
+  createdAt: string;
 }
 
 interface VerificationQueueProps {
@@ -62,11 +62,11 @@ export default function VerificationQueue({
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [statusFilter, setStatusFilter] = useState("UNVERIFIED");
   const [stateId, setStateId] = useState("");
-  const [batchId, setBatchId] = useState("");
+  const [harvestJobId, setHarvestJobId] = useState("");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [states, setStates] = useState<StateOption[]>([]);
-  const [batches, setBatches] = useState<BatchOption[]>([]);
+  const [harvestJobs, setHarvestJobs] = useState<HarvestJobOption[]>([]);
   const [batchActionLoading, setBatchActionLoading] = useState(false);
 
   useEffect(() => {
@@ -74,14 +74,17 @@ export default function VerificationQueue({
       .then((r) => r.json())
       .then((d) => setStates(d.states || []))
       .catch(() => {});
-    fetch("/api/admin/import?limit=50")
+    fetch("/api/admin/harvest?limit=50")
       .then((r) => r.json())
       .then((d) =>
-        setBatches(
-          (d.batches || []).map((b: { id: string; fileName: string }) => ({
-            id: b.id,
-            fileName: b.fileName,
-          })),
+        setHarvestJobs(
+          (d.jobs || []).map(
+            (j: { id: string; state: string; createdAt: string }) => ({
+              id: j.id,
+              state: j.state,
+              createdAt: j.createdAt,
+            }),
+          ),
         ),
       )
       .catch(() => {});
@@ -94,7 +97,7 @@ export default function VerificationQueue({
       params.set("page", String(page));
       params.set("status", statusFilter);
       if (stateId) params.set("stateId", stateId);
-      if (batchId) params.set("batchId", batchId);
+      if (harvestJobId) params.set("harvestJobId", harvestJobId);
       if (sorting.length > 0) {
         params.set("sort", sorting[0].id);
         params.set("order", sorting[0].desc ? "desc" : "asc");
@@ -116,13 +119,13 @@ export default function VerificationQueue({
         setLoading(false);
       }
     },
-    [statusFilter, stateId, batchId, sorting, onStatsChange, pagination],
+    [statusFilter, stateId, harvestJobId, sorting, onStatsChange, pagination],
   );
 
   useEffect(() => {
     fetchQueue(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, stateId, batchId, sorting]);
+  }, [statusFilter, stateId, harvestJobId, sorting]);
 
   const handleAction = async (
     judgeId: string,
@@ -392,15 +395,15 @@ export default function VerificationQueue({
         ))}
       </select>
       <select
-        aria-label="Filter by import batch"
-        value={batchId}
-        onChange={(e) => setBatchId(e.target.value)}
+        aria-label="Filter by harvest job"
+        value={harvestJobId}
+        onChange={(e) => setHarvestJobId(e.target.value)}
         className="h-8 px-2 border border-input rounded-md bg-background text-foreground text-sm"
       >
-        <option value="">All Batches</option>
-        {batches.map((b) => (
-          <option key={b.id} value={b.id}>
-            {b.fileName}
+        <option value="">All Harvest Jobs</option>
+        {harvestJobs.map((j) => (
+          <option key={j.id} value={j.id}>
+            {j.state} ({new Date(j.createdAt).toLocaleDateString()})
           </option>
         ))}
       </select>

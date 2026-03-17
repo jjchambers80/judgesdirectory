@@ -1,7 +1,9 @@
 /**
  * Harvest CLI configuration — flag parsing, env validation, shared types.
  *
- * State configuration loading uses Zod-validated JSON files.
+ * State configuration supports both DB-driven URLs (via db-config-loader)
+ * and legacy JSON files (via state-config-schema.ts).
+ *
  * Re-exports StateConfig and CourtEntry from state-config-schema.ts.
  *
  * @module scripts/harvest/config
@@ -44,6 +46,8 @@ export interface CliFlags {
   delta: boolean;
   skipBroken: boolean;
   skipBrokenThreshold: number;
+  // DB-driven harvest (Feature 015)
+  jobId: string | null;
 }
 
 /** A single extracted court URL entry with metadata for the pipeline */
@@ -134,10 +138,10 @@ export interface EnrichedJudgeRecord {
 
 /** Health score computation weights — tunable without schema changes */
 export const HEALTH_WEIGHTS = {
-  successRate: 0.40,
-  yieldConsistency: 0.30,
-  freshness: 0.20,
-  volumeScore: 0.10,
+  successRate: 0.4,
+  yieldConsistency: 0.3,
+  freshness: 0.2,
+  volumeScore: 0.1,
 } as const;
 
 /** Number of recent scrape logs to consider for health score */
@@ -191,6 +195,7 @@ export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
     delta: false,
     skipBroken: false,
     skipBrokenThreshold: 0.2,
+    jobId: null,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -273,7 +278,17 @@ export function parseFlags(argv: string[] = process.argv.slice(2)): CliFlags {
           flags.skipBroken = true;
           flags.skipBrokenThreshold = parseFloat(argv[++i]);
         } else {
-          console.error("Error: --skip-broken-threshold requires a number argument");
+          console.error(
+            "Error: --skip-broken-threshold requires a number argument",
+          );
+          process.exit(1);
+        }
+        break;
+      case "--job-id":
+        if (argv[i + 1] && !argv[i + 1].startsWith("--")) {
+          flags.jobId = argv[++i];
+        } else {
+          console.error("Error: --job-id requires a job ID argument");
           process.exit(1);
         }
         break;
@@ -343,16 +358,26 @@ export function validateEnv(flags: CliFlags): void {
 // State config loading
 // ---------------------------------------------------------------------------
 
-/** Directory containing state config JSON files */
+/** Directory containing legacy state config JSON files */
 const HARVEST_DIR = path.resolve(__dirname);
 
 /**
- * Load and validate a state's court configuration.
+ * Load and validate a state's court configuration from legacy JSON.
  * Reads {stateName}-courts.json from the harvest directory, validates via Zod.
+ *
+ * @deprecated Use db-config-loader.ts loadUrlsFromDb() for DB-driven harvest
  */
 export function loadStateConfig(stateName: string): StateConfig {
   const slug = stateSlug(stateName);
-  const configPath = path.join(HARVEST_DIR, `${slug}-courts.json`);
+  let configPath = path.join(HARVEST_DIR, `${slug}-courts.json`);
+
+  // Check legacy directory if not found in main directory
+  if (!fs.existsSync(configPath)) {
+    const legacyPath = path.join(HARVEST_DIR, "legacy", `${slug}-courts.json`);
+    if (fs.existsSync(legacyPath)) {
+      configPath = legacyPath;
+    }
+  }
 
   if (!fs.existsSync(configPath)) {
     const available = discoverStates();
@@ -386,10 +411,17 @@ export function loadStateConfig(stateName: string): StateConfig {
 /**
  * Discover all available state configurations by scanning for *-courts.json files.
  * Returns an array of state slugs (e.g., ["florida", "texas", "new-york"]).
+ *
+ * Also checks legacy/ subfolder for archived configs.
+ *
+ * @deprecated Use db-config-loader.ts for DB-driven state discovery
  */
 export function discoverStates(): string[] {
   const files = fs.readdirSync(HARVEST_DIR);
-  return files
+  const legacyDir = path.join(HARVEST_DIR, "legacy");
+  const legacyFiles = fs.existsSync(legacyDir) ? fs.readdirSync(legacyDir) : [];
+  const allFiles = [...files, ...legacyFiles];
+  return allFiles
     .filter((f) => f.endsWith("-courts.json"))
     .map((f) => f.replace("-courts.json", ""))
     .sort();

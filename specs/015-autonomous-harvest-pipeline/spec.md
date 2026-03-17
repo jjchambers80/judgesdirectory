@@ -9,7 +9,7 @@
 
 The current harvest pipeline relies on per-state JSON config files to define which URLs to scrape, outputs results as CSV files, and requires a separate admin CSV import step to materialize judges into the database. This feature replaces that entire flow with a database-driven architecture where the `UrlCandidate` table is the single source of truth for scrapeable URLs, the harvest pipeline writes judges directly to the database, and admins can trigger harvests with a single click. The system becomes autonomous through scheduled annual delta checks with persistent reports tracking what changed.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 — Admin Triggers State Harvest (Priority: P1)
 
@@ -125,7 +125,7 @@ As an admin, I no longer need the CSV upload/import wizard, column mapper, or ba
 - What happens when the annual cron fires but no states are stale? — No harvest jobs are created. The cron logs "All states are fresh, nothing to do" and exits cleanly.
 - How are existing judges from prior CSV imports handled during migration? — The `importBatchId` foreign key on existing judge records is set to null. Judge data (name, court, biographical fields) is completely untouched. The `ImportBatch` table is dropped after clearing references.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -179,7 +179,7 @@ As an admin, I no longer need the CSV upload/import wizard, column mapper, or ba
 - **Judge**: Extended with a link to the HarvestJob that created or last updated the record (replacing the former ImportBatch link). Retains all existing fields: name, court, biographical data, verification status, confidence score, source attribution.
 - **UrlHealth**: Existing table tracking scrape reliability per URL (health score, success rate, yield trends). Used by the delta logic to determine which URLs need re-scraping during scheduled harvests.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

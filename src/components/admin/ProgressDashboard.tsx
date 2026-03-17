@@ -25,12 +25,19 @@ interface DashboardData {
     unverified: number;
     rejected: number;
     percentOfTarget: number;
+    lastHarvestAt: string | null;
+    harvestStatus: "fresh" | "stale" | "never";
   }>;
-  recentBatches: Array<{
+  recentHarvestJobs: Array<{
     id: string;
-    fileName: string;
-    successCount: number;
+    stateAbbr: string;
+    state: string;
     status: string;
+    triggeredBy: string;
+    judgesNew: number;
+    judgesUpdated: number;
+    judgesFound: number;
+    completedAt: string | null;
     createdAt: string;
   }>;
   milestoneReached: boolean;
@@ -56,7 +63,7 @@ export default function ProgressDashboard() {
     return <p className="text-error-text">Failed to load dashboard data.</p>;
   }
 
-  const { totals, target, byState, recentBatches, milestoneReached } = data;
+  const { totals, target, byState, recentHarvestJobs, milestoneReached } = data;
   const progressPct = Math.min(totals.percentComplete, 100);
 
   type StateRow = DashboardData["byState"][number];
@@ -74,7 +81,7 @@ export default function ProgressDashboard() {
     {
       accessorKey: "imported",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Imported" />
+        <DataTableColumnHeader column={column} title="Judges" />
       ),
       cell: ({ row }) => row.original.imported.toLocaleString(),
     },
@@ -86,25 +93,43 @@ export default function ProgressDashboard() {
       cell: ({ row }) => row.original.verified.toLocaleString(),
     },
     {
-      accessorKey: "unverified",
+      accessorKey: "lastHarvestAt",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Unverified" />
+        <DataTableColumnHeader column={column} title="Last Harvest" />
       ),
-      cell: ({ row }) => row.original.unverified.toLocaleString(),
+      cell: ({ row }) =>
+        row.original.lastHarvestAt ? (
+          new Date(row.original.lastHarvestAt).toLocaleDateString()
+        ) : (
+          <span className="text-muted-foreground">Never</span>
+        ),
     },
     {
-      accessorKey: "rejected",
+      accessorKey: "harvestStatus",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Rejected" />
+        <DataTableColumnHeader column={column} title="Freshness" />
       ),
-      cell: ({ row }) => row.original.rejected.toLocaleString(),
-    },
-    {
-      accessorKey: "percentOfTarget",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="% of Target" />
-      ),
-      cell: ({ row }) => `${row.original.percentOfTarget}%`,
+      cell: ({ row }) => {
+        const s = row.original.harvestStatus;
+        return (
+          <span
+            className={cn(
+              "inline-block px-1.5 py-0.5 rounded-full text-[0.7rem] font-semibold",
+              s === "fresh"
+                ? "bg-badge-success-bg text-badge-success-text"
+                : s === "stale"
+                  ? "bg-badge-warning-bg text-badge-warning-text"
+                  : "bg-secondary text-muted-foreground",
+            )}
+          >
+            {s === "fresh"
+              ? "Fresh"
+              : s === "stale"
+                ? "Stale"
+                : "Never harvested"}
+          </span>
+        );
+      },
     },
   ];
 
@@ -122,7 +147,7 @@ export default function ProgressDashboard() {
           className="p-4 bg-badge-success-bg text-badge-success-text rounded-md mb-6 text-center font-bold text-lg"
         >
           🎉 Milestone reached! {totals.imported.toLocaleString()} judges
-          imported — target of {target.toLocaleString()} met!
+          harvested — target of {target.toLocaleString()} met!
         </div>
       )}
 
@@ -140,7 +165,7 @@ export default function ProgressDashboard() {
           aria-valuenow={progressPct}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Import progress toward pilot target"
+          aria-label="Harvest progress toward pilot target"
           className="w-full h-5 bg-secondary rounded-full overflow-hidden"
         >
           <div
@@ -155,7 +180,7 @@ export default function ProgressDashboard() {
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3 mb-8 sm:grid-cols-4">
-        <StatCard label="Total Imported" value={totals.imported} />
+        <StatCard label="Total Judges" value={totals.imported} />
         <StatCard
           label="Verified"
           value={totals.verified}
@@ -185,43 +210,51 @@ export default function ProgressDashboard() {
         </div>
       )}
 
-      {/* Recent batches */}
-      {recentBatches.length > 0 && (
+      {/* Recent harvest jobs */}
+      {recentHarvestJobs.length > 0 && (
         <div>
-          <h2 className="mb-3 text-lg">Recent Imports</h2>
+          <h2 className="mb-3 text-lg">Recent Harvests</h2>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b-2 border-border text-left">
-                  <th className="p-2">File</th>
-                  <th className="p-2">Records</th>
+                  <th className="p-2">State</th>
+                  <th className="p-2">New</th>
+                  <th className="p-2">Updated</th>
                   <th className="p-2">Status</th>
                   <th className="p-2">Date</th>
                 </tr>
               </thead>
               <tbody>
-                {recentBatches.map((b) => (
-                  <tr key={b.id} className="border-b border-border">
-                    <td className="p-2 text-sm">{b.fileName}</td>
+                {recentHarvestJobs.map((j) => (
+                  <tr key={j.id} className="border-b border-border">
+                    <td className="p-2 text-sm font-medium">{j.state}</td>
                     <td className="p-2 text-sm">
-                      {b.successCount.toLocaleString()}
+                      {j.judgesNew.toLocaleString()}
+                    </td>
+                    <td className="p-2 text-sm">
+                      {j.judgesUpdated.toLocaleString()}
                     </td>
                     <td className="p-2">
                       <span
                         className={cn(
                           "inline-block px-1.5 py-0.5 rounded-full text-[0.7rem] font-semibold",
-                          b.status === "COMPLETE"
+                          j.status === "COMPLETED"
                             ? "bg-badge-success-bg text-badge-success-text"
-                            : b.status === "ROLLED_BACK"
+                            : j.status === "FAILED"
                               ? "bg-error-bg text-error-text"
-                              : "bg-badge-warning-bg text-badge-warning-text",
+                              : j.status === "RUNNING"
+                                ? "bg-badge-info-bg text-badge-info-text"
+                                : "bg-badge-warning-bg text-badge-warning-text",
                         )}
                       >
-                        {b.status}
+                        {j.status}
                       </span>
                     </td>
                     <td className="p-2 text-xs text-muted-foreground">
-                      {new Date(b.createdAt).toLocaleDateString()}
+                      {j.completedAt
+                        ? new Date(j.completedAt).toLocaleDateString()
+                        : new Date(j.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}

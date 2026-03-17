@@ -27,6 +27,8 @@ interface UrlCandidate {
   reviewedAt: string | null;
   promotedAt: string | null;
   discoveredAt: string;
+  scrapeWorthy: boolean | null;
+  autoClassifiedAt: string | null;
 }
 
 interface Pagination {
@@ -472,8 +474,7 @@ export default function AdminDiscoveryPage() {
                 className="h-8 rounded-md border border-border px-3 text-sm"
               >
                 <option value="">All Statuses</option>
-                <option value="DISCOVERED">Discovered</option>
-                <option value="STALE">Stale</option>
+                <option value="DISCOVERED">Needs Review</option>
                 <option value="APPROVED">Approved</option>
                 <option value="REJECTED">Rejected</option>
               </select>

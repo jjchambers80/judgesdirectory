@@ -1,9 +1,6 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
-import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
-import { buildItemListJsonLd } from "@/lib/seo";
-import JsonLd from "@/components/seo/JsonLd";
 import { JudgeSearch } from "@/components/search";
 
 export const metadata: Metadata = {
@@ -15,41 +12,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function JudgesPage() {
-  const judges = await prisma.judge.findMany({
-    where: { status: "VERIFIED" },
-    orderBy: { fullName: "asc" },
-    select: {
-      fullName: true,
-      slug: true,
-      court: {
-        select: {
-          slug: true,
-          county: {
-            select: {
-              slug: true,
-              state: {
-                select: {
-                  slug: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-
-  const jsonLd = buildItemListJsonLd(
-    judges.map((judge, index) => ({
-      name: judge.fullName,
-      url: `/judges/${judge.court.county.state.slug}/${judge.court.county.slug}/${judge.court.slug}/${judge.slug}/`,
-      position: index + 1,
-    })),
-    "U.S. Judges Directory",
-    "/judges/",
-  );
-
+export default function JudgesPage() {
   return (
     <>
       {/* T048a: Skip navigation link per Constitution Principle VI */}
@@ -60,7 +23,6 @@ export default async function JudgesPage() {
         Skip to main content
       </a>
 
-      <JsonLd data={jsonLd} />
       <main id="main-content">
         {/* Search Component (Feature: 009-search-discovery) */}
         <Suspense

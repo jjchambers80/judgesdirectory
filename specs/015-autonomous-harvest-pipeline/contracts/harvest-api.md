@@ -7,14 +7,14 @@
 
 ## Endpoints Summary
 
-| Method | Path | Auth | Description | FRs |
-|--------|------|------|-------------|-----|
-| POST | `/api/admin/harvest` | Basic Auth | Trigger harvest for a state | FR-007, FR-010, FR-011 |
-| GET | `/api/admin/harvest` | Basic Auth | List harvest jobs | FR-009, FR-015, FR-022 |
-| GET | `/api/admin/harvest/[jobId]` | Basic Auth | Get job details + report | FR-009, FR-022 |
-| GET | `/api/admin/harvest/states` | Basic Auth | List harvestable states | FR-001, FR-011 |
-| POST | `/api/cron/harvest` | CRON_SECRET | Trigger annual delta harvest | FR-016, FR-017, FR-018 |
-| PATCH | `/api/admin/discovery/[id]` | Basic Auth | Override scrape-worthiness | FR-004 |
+| Method | Path                         | Auth        | Description                  | FRs                    |
+| ------ | ---------------------------- | ----------- | ---------------------------- | ---------------------- |
+| POST   | `/api/admin/harvest`         | Basic Auth  | Trigger harvest for a state  | FR-007, FR-010, FR-011 |
+| GET    | `/api/admin/harvest`         | Basic Auth  | List harvest jobs            | FR-009, FR-015, FR-022 |
+| GET    | `/api/admin/harvest/[jobId]` | Basic Auth  | Get job details + report     | FR-009, FR-022         |
+| GET    | `/api/admin/harvest/states`  | Basic Auth  | List harvestable states      | FR-001, FR-011         |
+| POST   | `/api/cron/harvest`          | CRON_SECRET | Trigger annual delta harvest | FR-016, FR-017, FR-018 |
+| PATCH  | `/api/admin/discovery/[id]`  | Basic Auth  | Override scrape-worthiness   | FR-004                 |
 
 ---
 
@@ -29,7 +29,7 @@ Triggers a new harvest job for a given state. The job runs in the background.
 ```typescript
 // Body
 {
-  stateAbbr: string  // two-letter state abbreviation, e.g. "SC"
+  stateAbbr: string; // two-letter state abbreviation, e.g. "SC"
 }
 ```
 
@@ -39,12 +39,12 @@ Triggers a new harvest job for a given state. The job runs in the background.
 
 ```typescript
 {
-  id: string           // UUID
-  stateAbbr: string
-  state: string
-  status: "QUEUED"
-  triggeredBy: "ADMIN"
-  createdAt: string    // ISO 8601
+  id: string; // UUID
+  stateAbbr: string;
+  state: string;
+  status: "QUEUED";
+  triggeredBy: "ADMIN";
+  createdAt: string; // ISO 8601
 }
 ```
 
@@ -52,10 +52,10 @@ Triggers a new harvest job for a given state. The job runs in the background.
 
 ```typescript
 {
-  error: "HARVEST_ALREADY_ACTIVE"
-  message: "A harvest job is already running for {state}"
-  activeJobId: string
-  activeJobStatus: "QUEUED" | "RUNNING"
+  error: "HARVEST_ALREADY_ACTIVE";
+  message: "A harvest job is already running for {state}";
+  activeJobId: string;
+  activeJobStatus: "QUEUED" | "RUNNING";
 }
 ```
 
@@ -63,8 +63,8 @@ Triggers a new harvest job for a given state. The job runs in the background.
 
 ```typescript
 {
-  error: "NO_APPROVED_URLS"
-  message: "No approved URLs found for {stateAbbr}. Run discovery first."
+  error: "NO_APPROVED_URLS";
+  message: "No approved URLs found for {stateAbbr}. Run discovery first.";
 }
 ```
 
@@ -89,12 +89,12 @@ Lists harvest jobs with optional filtering. Used for the harvest history table a
 
 ### Query Parameters
 
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `stateAbbr` | string | — | Filter by state |
-| `status` | string | — | Filter by status (comma-separated: `RUNNING,QUEUED`) |
-| `limit` | number | 20 | Max results |
-| `offset` | number | 0 | Pagination offset |
+| Param       | Type   | Default | Description                                          |
+| ----------- | ------ | ------- | ---------------------------------------------------- |
+| `stateAbbr` | string | —       | Filter by state                                      |
+| `status`    | string | —       | Filter by status (comma-separated: `RUNNING,QUEUED`) |
+| `limit`     | number | 20      | Max results                                          |
+| `offset`    | number | 0       | Pagination offset                                    |
 
 ### Response
 
@@ -103,22 +103,22 @@ Lists harvest jobs with optional filtering. Used for the harvest history table a
 ```typescript
 {
   jobs: Array<{
-    id: string
-    stateAbbr: string
-    state: string
-    status: "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED"
-    triggeredBy: "ADMIN" | "CRON" | "CLI"
-    urlsTotal: number
-    urlsProcessed: number
-    urlsFailed: number
-    judgesFound: number
-    judgesNew: number
-    judgesUpdated: number
-    startedAt: string | null
-    completedAt: string | null
-    createdAt: string
-  }>
-  total: number
+    id: string;
+    stateAbbr: string;
+    state: string;
+    status: "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED";
+    triggeredBy: "ADMIN" | "CRON" | "CLI";
+    urlsTotal: number;
+    urlsProcessed: number;
+    urlsFailed: number;
+    judgesFound: number;
+    judgesNew: number;
+    judgesUpdated: number;
+    startedAt: string | null;
+    completedAt: string | null;
+    createdAt: string;
+  }>;
+  total: number;
 }
 ```
 
@@ -130,7 +130,7 @@ The admin UI polls this endpoint every 5 seconds when any job has status `QUEUED
 // Client-side polling
 const { data } = useSWR(
   `/api/admin/harvest?stateAbbr=${stateAbbr}&status=QUEUED,RUNNING`,
-  { refreshInterval: activeJobs.length > 0 ? 5000 : 0 }
+  { refreshInterval: activeJobs.length > 0 ? 5000 : 0 },
 );
 ```
 
@@ -148,23 +148,23 @@ Returns full job details including the report markdown.
 
 ```typescript
 {
-  id: string
-  stateAbbr: string
-  state: string
-  status: "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED"
-  triggeredBy: "ADMIN" | "CRON" | "CLI"
-  urlsTotal: number
-  urlsProcessed: number
-  urlsFailed: number
-  judgesFound: number
-  judgesNew: number
-  judgesUpdated: number
-  startedAt: string | null
-  completedAt: string | null
-  errorMessage: string | null
-  reportMarkdown: string | null   // full report content (FR-021, FR-022)
-  createdAt: string
-  updatedAt: string
+  id: string;
+  stateAbbr: string;
+  state: string;
+  status: "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED";
+  triggeredBy: "ADMIN" | "CRON" | "CLI";
+  urlsTotal: number;
+  urlsProcessed: number;
+  urlsFailed: number;
+  judgesFound: number;
+  judgesNew: number;
+  judgesUpdated: number;
+  startedAt: string | null;
+  completedAt: string | null;
+  errorMessage: string | null;
+  reportMarkdown: string | null; // full report content (FR-021, FR-022)
+  createdAt: string;
+  updatedAt: string;
 }
 ```
 
@@ -172,8 +172,8 @@ Returns full job details including the report markdown.
 
 ```typescript
 {
-  error: "JOB_NOT_FOUND"
-  message: "Harvest job {jobId} not found"
+  error: "JOB_NOT_FOUND";
+  message: "Harvest job {jobId} not found";
 }
 ```
 
@@ -192,14 +192,14 @@ Returns states that are eligible for harvesting (have approved, scrape-worthy UR
 ```typescript
 {
   states: Array<{
-    stateAbbr: string
-    state: string
-    approvedUrlCount: number
-    lastHarvestAt: string | null      // most recent completed job
-    lastHarvestStatus: string | null  // COMPLETED or FAILED
-    hasActiveJob: boolean
-    activeJobId: string | null
-  }>
+    stateAbbr: string;
+    state: string;
+    approvedUrlCount: number;
+    lastHarvestAt: string | null; // most recent completed job
+    lastHarvestStatus: string | null; // COMPLETED or FAILED
+    hasActiveJob: boolean;
+    activeJobId: string | null;
+  }>;
 }
 ```
 
@@ -208,9 +208,9 @@ Returns states that are eligible for harvesting (have approved, scrape-worthy UR
 ```typescript
 // Aggregate approved URLs per state + latest harvest job
 const states = await prisma.urlCandidate.groupBy({
-  by: ['stateAbbr', 'state'],
+  by: ["stateAbbr", "state"],
   where: {
-    status: 'APPROVED',
+    status: "APPROVED",
     OR: [{ scrapeWorthy: null }, { scrapeWorthy: true }],
   },
   _count: { id: true },
@@ -258,18 +258,18 @@ Schedule: 3:00 AM UTC on the 1st of every month. The endpoint itself determines 
 
 ```typescript
 {
-  statesChecked: number
-  statesStale: number
+  statesChecked: number;
+  statesStale: number;
   jobsCreated: Array<{
-    id: string
-    stateAbbr: string
-    state: string
-  }>
+    id: string;
+    stateAbbr: string;
+    state: string;
+  }>;
   statesSkipped: Array<{
-    stateAbbr: string
-    reason: "fresh" | "active_job"
-    lastHarvestAt: string | null
-  }>
+    stateAbbr: string;
+    reason: "fresh" | "active_job";
+    lastHarvestAt: string | null;
+  }>;
 }
 ```
 
@@ -277,8 +277,8 @@ Schedule: 3:00 AM UTC on the 1st of every month. The endpoint itself determines 
 
 ```typescript
 {
-  error: "UNAUTHORIZED"
-  message: "Invalid or missing cron secret"
+  error: "UNAUTHORIZED";
+  message: "Invalid or missing cron secret";
 }
 ```
 
@@ -302,12 +302,13 @@ threshold.setMonth(threshold.getMonth() - FRESHNESS_MONTHS);
 const lastJob = await prisma.harvestJob.findFirst({
   where: {
     stateAbbr: state.stateAbbr,
-    status: 'COMPLETED',
+    status: "COMPLETED",
   },
-  orderBy: { completedAt: 'desc' },
+  orderBy: { completedAt: "desc" },
 });
 
-const isStale = !lastJob || !lastJob.completedAt || lastJob.completedAt < threshold;
+const isStale =
+  !lastJob || !lastJob.completedAt || lastJob.completedAt < threshold;
 ```
 
 ---
@@ -323,7 +324,7 @@ Updates scrape-worthiness classification for a URL candidate (admin override).
 ```typescript
 // Body
 {
-  scrapeWorthy: boolean | null  // true, false, or null to reset to unclassified
+  scrapeWorthy: boolean | null; // true, false, or null to reset to unclassified
 }
 ```
 
@@ -333,11 +334,11 @@ Updates scrape-worthiness classification for a URL candidate (admin override).
 
 ```typescript
 {
-  id: string
-  url: string
-  scrapeWorthy: boolean | null
-  autoClassifiedAt: string | null  // cleared if admin overrides
-  updatedAt: string
+  id: string;
+  url: string;
+  scrapeWorthy: boolean | null;
+  autoClassifiedAt: string | null; // cleared if admin overrides
+  updatedAt: string;
 }
 ```
 
@@ -345,7 +346,7 @@ Updates scrape-worthiness classification for a URL candidate (admin override).
 
 ```typescript
 {
-  error: "CANDIDATE_NOT_FOUND"
+  error: "CANDIDATE_NOT_FOUND";
 }
 ```
 
@@ -366,11 +367,15 @@ Not an HTTP endpoint — this is the internal protocol between the API route and
 
 ```typescript
 // Development (child_process.spawn)
-const proc = spawn('npx', ['tsx', 'scripts/harvest/runner.ts', '--job-id', jobId], {
-  detached: true,
-  stdio: 'ignore',
-  env: { ...process.env },
-});
+const proc = spawn(
+  "npx",
+  ["tsx", "scripts/harvest/runner.ts", "--job-id", jobId],
+  {
+    detached: true,
+    stdio: "ignore",
+    env: { ...process.env },
+  },
+);
 proc.unref();
 
 // Production CLI
@@ -410,10 +415,10 @@ await prisma.harvestJob.update({
 
 The following endpoints are removed as part of FR-024/FR-025:
 
-| Method | Path | Reason |
-|--------|------|--------|
-| POST | `/api/admin/import/upload` | CSV import removed |
-| POST | `/api/admin/import/process` | CSV import removed |
-| GET | `/api/admin/import/batches` | Import batch management removed |
-| GET | `/api/admin/import/batches/[id]` | Import batch details removed |
-| POST | `/api/admin/import/batches/[id]/rollback` | Batch rollback removed |
+| Method | Path                                      | Reason                          |
+| ------ | ----------------------------------------- | ------------------------------- |
+| POST   | `/api/admin/import/upload`                | CSV import removed              |
+| POST   | `/api/admin/import/process`               | CSV import removed              |
+| GET    | `/api/admin/import/batches`               | Import batch management removed |
+| GET    | `/api/admin/import/batches/[id]`          | Import batch details removed    |
+| POST   | `/api/admin/import/batches/[id]/rollback` | Batch rollback removed          |
