@@ -31,12 +31,15 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
+  const now = new Date();
   const result = await prisma.urlCandidate.updateMany({
     where: { id: { in: ids } },
     data: {
       status: action === "approve" ? "APPROVED" : "REJECTED",
       rejectionReason: action === "reject" ? rejectionReason : null,
-      reviewedAt: new Date(),
+      reviewedAt: now,
+      // Approved URLs are immediately harvestable — no separate promote step needed.
+      promotedAt: action === "approve" ? now : null,
     },
   });
 

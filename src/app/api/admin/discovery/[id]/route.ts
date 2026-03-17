@@ -32,12 +32,15 @@ export async function PATCH(
     return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
   }
 
+  const now = new Date();
   const updated = await prisma.urlCandidate.update({
     where: { id },
     data: {
       status: action === "approve" ? "APPROVED" : "REJECTED",
       rejectionReason: action === "reject" ? rejectionReason : null,
-      reviewedAt: new Date(),
+      reviewedAt: now,
+      // Approved URLs are immediately harvestable — no separate promote step needed.
+      promotedAt: action === "approve" ? now : null,
     },
   });
 

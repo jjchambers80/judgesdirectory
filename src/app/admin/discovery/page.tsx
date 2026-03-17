@@ -88,8 +88,6 @@ export default function AdminDiscoveryPage() {
   const [bulkAction, setBulkAction] = useState<"approve" | "reject" | null>(
     null,
   );
-  const [promoting, setPromoting] = useState(false);
-
   const fetchCandidates = useCallback(
     async (page: number) => {
       setLoading(true);
@@ -160,28 +158,7 @@ export default function AdminDiscoveryPage() {
     fetchCandidates(pagination.page);
   };
 
-  const handlePromote = async () => {
-    if (!stateFilter) return;
-    setPromoting(true);
-    try {
-      const res = await fetch("/api/admin/discovery/promote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stateAbbr: stateFilter }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert(
-          `Promoted ${data.candidatesPromoted} candidate(s). ${data.entriesAdded} new entries added to ${data.configPath}. Total: ${data.entriesTotal}`,
-        );
-        fetchCandidates(pagination.page);
-      } else {
-        alert(`Error: ${data.error}`);
-      }
-    } finally {
-      setPromoting(false);
-    }
-  };
+
 
   const columns: ColumnDef<UrlCandidate>[] = useMemo(
     () => [
@@ -369,15 +346,6 @@ export default function AdminDiscoveryPage() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1>URL Discovery</h1>
-        {stateFilter && (
-          <button
-            onClick={handlePromote}
-            disabled={promoting}
-            className="px-4 py-2 bg-primary text-btn-primary-text rounded-md text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            {promoting ? "Promoting…" : `Promote ${stateFilter} to Config`}
-          </button>
-        )}
       </div>
 
       {/* Bulk actions */}
