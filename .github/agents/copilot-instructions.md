@@ -26,6 +26,7 @@ Auto-generated from all feature plans. Last updated: 2026-02-17
 - TypeScript (strict mode) on Next.js 14.2, React 18 + `@tanstack/react-table` (new), `radix-ui` (existing), `class-variance-authority` + `clsx` + `tailwind-merge` (existing), `lucide-react` (shadcn icon library) (013-admin-data-tables)
 - PostgreSQL via Prisma ORM (existing — no schema changes) (013-admin-data-tables)
 - TypeScript (Node.js runtime, strict mode) + Next.js 14, Prisma ORM, Zod, cheerio, @tanstack/react-table (014-auto-verification)
+- TypeScript (strict mode) on Node.js + Next.js (App Router), Prisma ORM, Zod, PapaParse (removal), OpenAI/Anthropic LLM SDKs (015-autonomous-harvest-pipeline)
 
 - TypeScript 5.x on Node.js 20 LTS + Next.js 14 (App Router, SSR), Prisma ORM 5.x, next-sitemap, slugify (001-foundation)
 
@@ -45,9 +46,9 @@ npm test && npm run lint
 TypeScript 5.x on Node.js 20 LTS: Follow standard conventions
 
 ## Recent Changes
+- 015-autonomous-harvest-pipeline: Added TypeScript (strict mode) on Node.js + Next.js (App Router), Prisma ORM, Zod, PapaParse (removal), OpenAI/Anthropic LLM SDKs
 - 014-auto-verification: Added TypeScript (Node.js runtime, strict mode) + Next.js 14, Prisma ORM, Zod, cheerio, @tanstack/react-table
 - 013-admin-data-tables: Added TypeScript (strict mode) on Next.js 14.2, React 18 + `@tanstack/react-table` (new), `radix-ui` (existing), `class-variance-authority` + `clsx` + `tailwind-merge` (existing), `lucide-react` (shadcn icon library)
-- 012-url-health: Added TypeScript (strict mode), Node.js + Next.js 14, Prisma ORM v6, Tailwind CSS, shadcn/ui
 
 
 <!-- MANUAL ADDITIONS START -->
