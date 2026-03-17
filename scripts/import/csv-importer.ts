@@ -35,6 +35,8 @@ export interface CsvRow {
   'Roster URL': string;
   'Bio Page URL': string;
   'Confidence Score': string;
+  'Source Authority'?: string;
+  'Extraction Method'?: string;
 }
 
 // Parsed judge record ready for database import
@@ -61,6 +63,9 @@ export interface ParsedJudge {
   courthouseAddress: string | null;
   courthousePhone: string | null;
   sourceUrl: string | null;
+  rosterUrl: string | null;
+  sourceAuthority: string;
+  extractionMethod: string | null;
   confidenceScore: number;
 }
 
@@ -131,6 +136,19 @@ function slugify(name: string): string {
 export function parseRow(row: CsvRow): ParsedJudge {
   const name = row['Judge Name']?.trim() || '';
   
+  // Backward compatibility: default Source Authority to COURT_WEBSITE
+  // and Extraction Method to null when columns are absent (FR-012)
+  const VALID_SOURCE_AUTHORITIES = ['OFFICIAL_GOV', 'COURT_WEBSITE', 'ELECTION_RECORDS', 'SECONDARY'];
+  const rawSourceAuthority = row['Source Authority']?.trim() || '';
+  const sourceAuthority = VALID_SOURCE_AUTHORITIES.includes(rawSourceAuthority)
+    ? rawSourceAuthority
+    : 'COURT_WEBSITE';
+
+  const rawExtractionMethod = row['Extraction Method']?.trim() || '';
+  const extractionMethod = rawExtractionMethod === 'deterministic' || rawExtractionMethod === 'llm'
+    ? rawExtractionMethod
+    : null;
+
   return {
     fullName: name,
     slug: slugify(name),
@@ -155,6 +173,9 @@ export function parseRow(row: CsvRow): ParsedJudge {
     courthousePhone: row['Courthouse Phone']?.trim() || null,
     // Prefer bio page URL over roster URL as source
     sourceUrl: row['Bio Page URL']?.trim() || row['Roster URL']?.trim() || null,
+    rosterUrl: row['Roster URL']?.trim() || null,
+    sourceAuthority,
+    extractionMethod,
     confidenceScore: parseFloat(row['Confidence Score']) || 0,
   };
 }

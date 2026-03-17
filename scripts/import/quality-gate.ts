@@ -10,8 +10,14 @@
 import { JudgeStatus } from '@prisma/client';
 import type { ParsedJudge } from './csv-importer';
 
-// Confidence thresholds
-const VERIFIED_THRESHOLD = 0.80;
+// Confidence thresholds — source-aware (per data-model.md)
+const SOURCE_THRESHOLDS: Record<string, number> = {
+  OFFICIAL_GOV: 0.70,
+  COURT_WEBSITE: 0.75,
+  ELECTION_RECORDS: 0.75,
+  SECONDARY: 0.80,
+};
+const DEFAULT_THRESHOLD = 0.80;
 const UNVERIFIED_THRESHOLD = 0.60;
 
 // Known navigation/junk text patterns that indicate bad extraction
@@ -51,6 +57,7 @@ const MAX_NAME_LENGTH = 80;
 export interface QualityResult {
   status: JudgeStatus;
   autoVerified: boolean;
+  verifiedAt: Date | null;
   anomalyFlags: string[];
   reviewReason: string | null;
   shouldSkip: boolean;
@@ -146,20 +153,25 @@ export function evaluateQuality(judge: ParsedJudge): QualityResult {
     reviewReason = reviewReason || 'No source URL and low confidence score';
   }
 
-  // Determine status based on confidence and anomalies
+  // Determine status based on confidence, anomalies, and source authority
   let status: JudgeStatus;
   let autoVerified = false;
+  let verifiedAt: Date | null = null;
+
+  // Resolve source-aware threshold
+  const verifyThreshold = SOURCE_THRESHOLDS[judge.sourceAuthority] ?? DEFAULT_THRESHOLD;
 
   if (shouldSkip) {
     // Items to skip entirely get REJECTED status
     status = 'REJECTED';
   } else if (anomalyFlags.length > 0) {
-    // Any anomalies trigger review
+    // Any anomalies trigger review (FR-007 through FR-010)
     status = 'NEEDS_REVIEW';
-  } else if (judge.confidenceScore >= VERIFIED_THRESHOLD) {
-    // High confidence with no anomalies = auto-verified
+  } else if (judge.confidenceScore >= verifyThreshold) {
+    // Source-aware threshold met with no anomalies = auto-verified
     status = 'VERIFIED';
     autoVerified = true;
+    verifiedAt = new Date();
   } else if (judge.confidenceScore >= UNVERIFIED_THRESHOLD) {
     // Medium confidence = unverified but acceptable
     status = 'UNVERIFIED';
@@ -172,6 +184,7 @@ export function evaluateQuality(judge: ParsedJudge): QualityResult {
   return {
     status,
     autoVerified,
+    verifiedAt,
     anomalyFlags,
     reviewReason,
     shouldSkip,

@@ -165,7 +165,9 @@ async function importJudges(
       courthouseAddress: judge.courthouseAddress,
       courthousePhone: judge.courthousePhone,
       sourceUrl: judge.sourceUrl,
-      sourceAuthority: 'COURT_WEBSITE' as SourceAuthority,
+      rosterUrl: judge.rosterUrl,
+      sourceAuthority: judge.sourceAuthority as SourceAuthority,
+      extractionMethod: judge.extractionMethod,
       status: quality.status,
       autoVerified: quality.autoVerified,
       anomalyFlags: quality.anomalyFlags,
@@ -173,7 +175,7 @@ async function importJudges(
       confidenceScore: judge.confidenceScore,
       importBatchId: batchId,
       lastHarvestAt: new Date(),
-      verifiedAt: quality.autoVerified ? new Date() : null,
+      verifiedAt: quality.verifiedAt,
     };
 
     if (flags.dryRun) {
