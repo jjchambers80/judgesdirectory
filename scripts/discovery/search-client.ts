@@ -40,23 +40,50 @@ interface BraveSearchResponse {
 // ---------------------------------------------------------------------------
 
 /**
+ * States that share a directional prefix with another state, making unquoted
+ * searches ambiguous (e.g. "Carolina" matches both North and South Carolina).
+ * Maps the full state name to a sibling state name to explicitly exclude.
+ */
+const AMBIGUOUS_STATE_EXCLUSIONS: Record<string, string> = {
+  "South Carolina": "North Carolina",
+  "North Carolina": "South Carolina",
+  "South Dakota": "North Dakota",
+  "North Dakota": "South Dakota",
+  "West Virginia": "Virginia",
+  Virginia: "West Virginia",
+};
+
+/**
  * Build search queries for the three court levels of a given state.
+ *
+ * State names are quoted to force exact-match matching and avoid cross-state
+ * contamination (e.g. "South Carolina" searches returning nccourts.gov results).
+ * For directional-prefix pairs (NC/SC, ND/SD, VA/WV) an explicit exclusion
+ * term is appended to the query.
  */
 export function buildQueries(
   stateName: string,
 ): { level: string; query: string }[] {
+  // Wrap state name in quotes to force exact-match — prevents "South Carolina"
+  // queries from matching North Carolina pages on .gov domains.
+  const quotedState = `"${stateName}"`;
+
+  // For ambiguous state name pairs, add an explicit -"OtherState" exclusion.
+  const sibling = AMBIGUOUS_STATE_EXCLUSIONS[stateName];
+  const exclusion = sibling ? ` -"${sibling}"` : "";
+
   return [
     {
       level: "supreme",
-      query: `${stateName} supreme court justices roster site:gov`,
+      query: `${quotedState} supreme court justices roster site:gov${exclusion}`,
     },
     {
       level: "appellate",
-      query: `${stateName} court of appeal judges roster site:gov`,
+      query: `${quotedState} court of appeal judges roster site:gov${exclusion}`,
     },
     {
       level: "trial",
-      query: `${stateName} circuit OR superior OR district court judges roster site:gov`,
+      query: `${quotedState} circuit OR superior OR district court judges roster site:gov${exclusion}`,
     },
   ];
 }

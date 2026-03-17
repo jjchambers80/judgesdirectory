@@ -149,6 +149,92 @@ async function acquireLock(): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
+// Cross-state domain guard
+// ---------------------------------------------------------------------------
+
+/**
+ * Maps US state abbreviations to the hostname fragments that unambiguously
+ * identify that state's official court websites. Used to filter out results
+ * returned by Brave Search that belong to a different state — e.g. nccourts.gov
+ * appearing in a South Carolina discovery run.
+ *
+ * Only include fragments that are unambiguous identifiers of a specific state
+ * (state abbr prefix in domain, state name in domain, etc.).
+ */
+const STATE_DOMAIN_FRAGMENTS: Record<string, string[]> = {
+  AL: ["alabamacourts", "al.gov", "alacourt"],
+  AK: ["akcourts", "ak.gov"],
+  AZ: ["azcourts", "az.gov"],
+  AR: ["courts.arkansas", "ar.gov"],
+  CA: ["courts.ca.gov", "ca.gov"],
+  CO: ["coloradocourts", "co.gov"],
+  CT: ["jud.ct.gov", "ct.gov"],
+  DE: ["courts.delaware", "de.gov"],
+  FL: ["flcourts", "fl.gov"],
+  GA: ["georgiacourts", "ga.gov"],
+  HI: ["courts.hawaii", "hi.gov"],
+  ID: ["isc.idaho", "id.gov"],
+  IL: ["illinoiscourts", "il.gov"],
+  IN: ["courts.in.gov", "in.gov"],
+  IA: ["iowacourts", "ia.gov"],
+  KS: ["kscourts", "ks.gov"],
+  KY: ["courts.ky.gov", "ky.gov"],
+  LA: ["louisianasupremecourt", "la.gov"],
+  ME: ["courts.maine", "me.gov"],
+  MD: ["mdcourts", "md.gov"],
+  MA: ["mass.gov"],
+  MI: ["michigan.gov/courts", "courts.mi.gov"],
+  MN: ["mncourts", "mn.gov"],
+  MS: ["courts.ms.gov", "ms.gov"],
+  MO: ["courts.mo.gov", "mo.gov"],
+  MT: ["courts.mt.gov", "mt.gov"],
+  NE: ["supremecourt.nebraska", "ne.gov"],
+  NV: ["nvcourts", "nv.gov"],
+  NH: ["courts.nh.gov", "nh.gov"],
+  NJ: ["njcourts", "nj.gov"],
+  NM: ["nmcourts", "nm.gov"],
+  NY: ["nycourts", "ny.gov"],
+  NC: ["nccourts", "nc.gov"],
+  ND: ["ndcourts", "nd.gov"],
+  OH: ["supremecourt.ohio", "ohiocourts", "oh.gov"],
+  OK: ["oscn.net", "ok.gov"],
+  OR: ["courts.oregon", "orcourts", "or.gov"],
+  PA: ["pacourts", "pa.gov"],
+  RI: ["courts.ri.gov", "ri.gov"],
+  SC: ["sccourts", "sc.gov"],
+  SD: ["ujs.sd.gov", "sd.gov"],
+  TN: ["tncourts", "tn.gov"],
+  TX: ["txcourts", "tx.gov"],
+  UT: ["utcourts", "utah.gov"],
+  VT: ["vermontjudiciary", "vt.gov"],
+  VA: ["vacourts", "va.gov"],
+  WA: ["courts.wa.gov", "wa.gov"],
+  WV: ["courtswv", "wv.gov"],
+  WI: ["wicourts", "wi.gov"],
+  WY: ["courts.wyo", "wy.gov"],
+};
+
+/**
+ * Returns true if the given domain clearly identifies a state OTHER than the
+ * target state. Used as a fast pre-classification filter.
+ *
+ * Only rejects when we have positive evidence the domain belongs to a different
+ * state — avoids false positives on generic .gov domains.
+ */
+function isDomainForDifferentState(
+  domain: string,
+  targetStateAbbr: string,
+): boolean {
+  for (const [abbr, fragments] of Object.entries(STATE_DOMAIN_FRAGMENTS)) {
+    if (abbr === targetStateAbbr) continue;
+    if (fragments.some((frag) => domain.includes(frag))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
 // Core discovery pipeline for one state
 // ---------------------------------------------------------------------------
 
@@ -213,8 +299,30 @@ async function discoverState(
 
       if (searchResults.length === 0) continue;
 
-      // Classify results with LLM
-      const classifications = await classifyResults(searchResults);
+      // Pre-classification filter: drop results whose domain clearly belongs
+      // to a different state. Catches obvious mismatches like nccourts.gov
+      // appearing in South Carolina searches before they reach the LLM.
+      const filtered = searchResults.filter((r) => {
+        const domain = r.displayLink.toLowerCase();
+        const dominated = isDomainForDifferentState(domain, stateAbbr);
+        if (dominated) {
+          console.warn(
+            `  [Filter] Dropped cross-state URL (expected ${stateAbbr}): ${r.link}`,
+          );
+        }
+        return !dominated;
+      });
+
+      if (filtered.length < searchResults.length) {
+        console.log(
+          `  → ${searchResults.length - filtered.length} filtered as wrong-state domain`,
+        );
+      }
+
+      if (filtered.length === 0) continue;
+
+      // Classify results with LLM (state-scoped — classifier rejects wrong-state URLs)
+      const classifications = await classifyResults(filtered, stateName, stateAbbr);
       const relevant = classifications.filter((c) => c.isJudicialRoster);
       console.log(`  → ${relevant.length} classified as judicial roster`);
 
