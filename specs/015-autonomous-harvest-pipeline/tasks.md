@@ -39,7 +39,7 @@
 
 - [ ] T004 Create scripts/harvest/db-config-loader.ts — export `loadUrlsFromDb(stateAbbr: string)` that queries UrlCandidate table for APPROVED URLs where scrapeWorthy !== false, returning url, fetchMethod, extractionHints, domain, suggestedType, suggestedLevel per data-model.md key queries section
 - [ ] T005 Create scripts/harvest/db-writer.ts — export `writeJudgesToDb(judges: EnrichedJudgeRecord[], jobId: string)` that resolves court via state→county→court lookup (absorb logic from scripts/import/court-resolver.ts), then Prisma upserts each judge using courtId_slug unique key, preserving status/autoVerified/verifiedAt on update, linking to harvestJobId, returning {new: number, updated: number}
-- [ ] T006 Create scripts/harvest/runner.ts — extract core pipeline logic from index.ts, accept --job-id and --state CLI args, manage HarvestJob lifecycle (set RUNNING + startedAt on start, update urlsProcessed/judgesFound/judgesNew/judgesUpdated every 5 URLs, set COMPLETED/FAILED + completedAt on finish), orchestrate: db-config-loader → fetcher → extractor → enrichers → normalizer → deduplicator → db-writer
+- [ ] T006 Create scripts/harvest/runner.ts — extract core pipeline logic from index.ts, accept --job-id and --state CLI args, manage HarvestJob lifecycle (set RUNNING + startedAt on start, update urlsProcessed/judgesFound/judgesNew/judgesUpdated every 5 URLs, set COMPLETED/FAILED + completedAt on finish), orchestrate: db-config-loader → fetcher → extractor → enrichers → normalizer → deduplicator → db-writer. **Preserve checkpoint.ts integration**: call `checkpoint.save()` after each URL batch and `checkpoint.load()` on startup when `--resume` flag is set (Constitution VII)
 - [ ] T007 Update scripts/harvest/config.ts — update StateConfig type to support DB-driven config (add DbUrlConfig interface with url, fetchMethod, extractionHints fields), remove JSON file path references, update loadStateConfig to accept URL array from db-config-loader
 - [ ] T008 Refactor scripts/harvest/index.ts — convert to thin CLI wrapper that parses args (--state, --job-id, --list), creates HarvestJob record if no --job-id provided, delegates execution to runner.ts, removes discoverStates() JSON scanning and Papa.unparse() CSV output
 
@@ -128,7 +128,7 @@
 
 **Independent Test**: Complete a harvest, click on job in history table, verify report shows all metrics
 
-- [ ] T029 [P] [US5] Create scripts/harvest/report-generator.ts — export `generateReport(metrics: HarvestMetrics): { markdown: string, data: ReportData }` that produces markdown with: summary stats (judges new/updated, URLs processed/failed, duration), failed URLs list with HTTP status and reason, court-type breakdown table, quality assessment (field coverage percentages)
+- [ ] T029 [P] [US5] Update scripts/harvest/reporter.ts — modify existing `generateReport()` to accept `(metrics: HarvestMetrics)` and return `{ markdown: string, data: ReportData }`, producing markdown with: summary stats (judges new/updated, URLs processed/failed, duration), failed URLs list with HTTP status and reason, court-type breakdown table, quality assessment (field coverage percentages)
 - [ ] T030 [US5] Integrate report-generator into scripts/harvest/runner.ts — call generateReport() on job completion, write reportMarkdown to HarvestJob record via Prisma update, also write markdown file to scripts/harvest/output/ for archival per research.md R-007
 - [ ] T031 [US5] Add report view to src/app/admin/harvest/page.tsx — when admin clicks a COMPLETED job row in the history table, fetch /api/admin/harvest/[jobId] and render reportMarkdown as formatted HTML (use a markdown renderer or dangerouslySetInnerHTML with sanitization)
 - [ ] T032 [US5] Update src/app/admin/dashboard/page.tsx — replace any ImportBatch statistics with HarvestJob summary: total judges per state, last harvest date per state, staleness indicator (fresh/stale/never harvested) per FR-023
@@ -141,7 +141,7 @@
 
 **Purpose**: Edge case handling and validation
 
-- [ ] T033 [P] Add zero-yield auto-downgrade to scripts/harvest/runner.ts — after harvest completes, query UrlCandidate URLs that have scrapeWorthy=true but yielded zero judges in this AND at least one prior harvest, set scrapeWorthy=false with rejectionReason="zero-yield" per FR-005
+- [ ] T033 [P] Add zero-yield auto-downgrade to scripts/harvest/runner.ts — after each URL batch, update UrlCandidate.lastYieldCount and increment harvestAttempts; after harvest completes, query URLs where scrapeWorthy=true AND lastYieldCount=0 AND harvestAttempts>=2, set scrapeWorthy=false with rejectionReason="zero-yield" per FR-005 (uses new lastYieldCount/harvestAttempts fields from data-model.md)
 - [ ] T034 [P] Add stale-job detector to src/app/api/admin/harvest/route.ts — on GET requests, check for HarvestJob records in RUNNING status with no updatedAt change in >2 hours, mark as FAILED with errorMessage="Job timed out — no progress in 2 hours" per edge case spec
 - [ ] T035 Run quickstart.md end-to-end validation: execute migrate-json-to-db.ts, trigger SC harvest via admin UI, verify judges appear in DB with correct court linkage, verify report is generated, verify import routes return 404
 

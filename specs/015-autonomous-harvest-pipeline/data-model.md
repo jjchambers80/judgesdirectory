@@ -53,6 +53,8 @@ model UrlCandidate {
   autoClassifiedAt  DateTime?       // when auto-classification was applied
   fetchMethod       String          @default("http")   // "http" | "browser"
   extractionHints   Json?           // optional hints for deterministic extraction patterns
+  lastYieldCount    Int?            // judges found in most recent harvest (null=never harvested)
+  harvestAttempts   Int             @default(0)  // total times this URL has been harvested
 
   // --- EXISTING INDEXES (unchanged) ---
   @@index([state])

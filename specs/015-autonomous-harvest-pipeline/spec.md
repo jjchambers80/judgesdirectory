@@ -147,7 +147,7 @@ As an admin, I no longer need the CSV upload/import wizard, column mapper, or ba
 - **FR-011**: System MUST block harvest attempts for states with zero approved URLs, displaying a clear message.
 - **FR-012**: The harvest pipeline MUST write judge records directly to the database, not to intermediate CSV files.
 - **FR-013**: New judges MUST be created with UNVERIFIED status and linked to the harvest job that discovered them.
-- **FR-014**: When a judge already exists in the database (matched by roster URL and name), the system MUST update the existing record rather than create a duplicate.
+- **FR-014**: When a judge already exists in the database (matched by court and slugified name — the `courtId`+`slug` composite unique key), the system MUST update the existing record rather than create a duplicate.
 - **FR-015**: Each harvest job MUST record: state, status (QUEUED/RUNNING/COMPLETED/FAILED), judges found, judges new, judges updated, URLs processed, URLs failed, start time, completion time, trigger source (ADMIN or CRON), and the full report.
 
 **Autonomous Scheduling**

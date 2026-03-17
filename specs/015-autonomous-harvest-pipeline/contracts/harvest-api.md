@@ -14,7 +14,7 @@
 | GET | `/api/admin/harvest/[jobId]` | Basic Auth | Get job details + report | FR-009, FR-022 |
 | GET | `/api/admin/harvest/states` | Basic Auth | List harvestable states | FR-001, FR-011 |
 | POST | `/api/cron/harvest` | CRON_SECRET | Trigger annual delta harvest | FR-016, FR-017, FR-018 |
-| PATCH | `/api/admin/discovery/[candidateId]` | Basic Auth | Override scrape-worthiness | FR-004 |
+| PATCH | `/api/admin/discovery/[id]` | Basic Auth | Override scrape-worthiness | FR-004 |
 
 ---
 
@@ -312,11 +312,11 @@ const isStale = !lastJob || !lastJob.completedAt || lastJob.completedAt < thresh
 
 ---
 
-## PATCH `/api/admin/discovery/[candidateId]`
+## PATCH `/api/admin/discovery/[id]`
 
 Updates scrape-worthiness classification for a URL candidate (admin override).
 
-**File**: `src/app/api/admin/discovery/[candidateId]/route.ts`
+**File**: `src/app/api/admin/discovery/[id]/route.ts`
 
 ### Request
 
