@@ -5,6 +5,7 @@ import {
   ColumnDef,
   SortingState,
   RowSelectionState,
+  ColumnFiltersState,
 } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable } from "@/components/ui/data-table";
@@ -74,8 +75,13 @@ export default function AdminDiscoveryPage() {
       suggestedLevel: false,
     },
   );
-  const [stateFilter, setStateFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  // Derive server-side filter values from columnFilters state
+  const stateFilter =
+    (columnFilters.find((f) => f.id === "stateAbbr")?.value as string) ?? "";
+  const statusFilter =
+    (columnFilters.find((f) => f.id === "status")?.value as string) ?? "";
   const [loading, setLoading] = useState(true);
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -104,7 +110,7 @@ export default function AdminDiscoveryPage() {
       setRowSelection({});
       setLoading(false);
     },
-    [stateFilter, statusFilter, sorting, pagination.limit],
+    [stateFilter, statusFilter, sorting, pagination.limit, columnFilters],
   );
 
   useEffect(() => {
@@ -462,14 +468,26 @@ export default function AdminDiscoveryPage() {
                 type="text"
                 placeholder="State abbr (e.g. FL)"
                 value={stateFilter}
-                onChange={(e) => setStateFilter(e.target.value.toUpperCase())}
+                onChange={(e) => {
+                  const val = e.target.value.toUpperCase();
+                  setColumnFilters((prev) => {
+                    const rest = prev.filter((f) => f.id !== "stateAbbr");
+                    return val ? [...rest, { id: "stateAbbr", value: val }] : rest;
+                  });
+                }}
                 maxLength={2}
                 aria-label="Filter by state"
                 className="h-8 w-40 rounded-md border border-border px-3 text-sm"
               />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setColumnFilters((prev) => {
+                    const rest = prev.filter((f) => f.id !== "status");
+                    return val ? [...rest, { id: "status", value: val }] : rest;
+                  });
+                }}
                 aria-label="Filter by status"
                 className="h-8 rounded-md border border-border px-3 text-sm"
               >
@@ -485,6 +503,8 @@ export default function AdminDiscoveryPage() {
           manualPagination
           sorting={sorting}
           onSortingChange={setSorting}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
           rowSelection={rowSelection}
           onRowSelectionChange={setRowSelection}
           enableRowSelection
