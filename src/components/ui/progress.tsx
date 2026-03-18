@@ -21,8 +21,23 @@ function Progress({
     >
       <ProgressPrimitive.Indicator
         data-slot="progress-indicator"
-        className="h-full w-full flex-1 bg-primary transition-all"
-        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+        className="h-full w-full flex-1 transition-all"
+        style={{
+          transform: `translateX(-${100 - (value || 0)}%)`,
+          backgroundImage:
+            "linear-gradient(" +
+            "135deg," +
+            "var(--color-primary) 25%," +
+            "color-mix(in srgb, var(--color-primary) 60%, transparent) 25%," +
+            "color-mix(in srgb, var(--color-primary) 60%, transparent) 50%," +
+            "var(--color-primary) 50%," +
+            "var(--color-primary) 75%," +
+            "color-mix(in srgb, var(--color-primary) 60%, transparent) 75%," +
+            "color-mix(in srgb, var(--color-primary) 60%, transparent) 100%" +
+            ")",
+          backgroundSize: "1rem 1rem",
+          animation: "progress-stripes 0.6s linear infinite",
+        }}
       />
     </ProgressPrimitive.Root>
   )
