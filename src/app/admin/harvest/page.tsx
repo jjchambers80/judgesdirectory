@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -87,6 +87,108 @@ function duration(
   return `${Math.floor(min / 60)}h ${min % 60}m`;
 }
 
+// ---------------------------------------------------------------------------
+// LiveJobCard — driven by SSE data, includes a live elapsed timer
+// ---------------------------------------------------------------------------
+
+function LiveJobCard({ job }: { job: HarvestJob }) {
+  const [elapsed, setElapsed] = useState(
+    duration(job.startedAt, job.completedAt),
+  );
+
+  // Tick the elapsed timer every second while the job is running
+  useEffect(() => {
+    if (job.status !== "RUNNING") {
+      setElapsed(duration(job.startedAt, job.completedAt));
+      return;
+    }
+
+    const id = setInterval(() => {
+      setElapsed(duration(job.startedAt, null));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [job.startedAt, job.completedAt, job.status]);
+
+  const pct =
+    job.urlsTotal > 0
+      ? Math.round((job.urlsProcessed / job.urlsTotal) * 100)
+      : 0;
+
+  return (
+    <Card className="border-primary/30 overflow-hidden">
+      <CardContent className="pt-4 pb-4">
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            {job.status === "RUNNING" && (
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+              </span>
+            )}
+            <span className="font-semibold text-sm">{job.state} Harvest</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {elapsed}
+            </span>
+            <StatusBadge status={job.status} />
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mb-3">
+          <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+            <span>
+              URLs: {job.urlsProcessed}/{job.urlsTotal}
+              {job.urlsFailed > 0 && (
+                <span className="text-destructive ml-1">
+                  ({job.urlsFailed} failed)
+                </span>
+              )}
+            </span>
+            <span className="tabular-nums font-medium text-foreground">
+              {pct}%
+            </span>
+          </div>
+          <Progress
+            value={pct}
+            className="h-2 transition-all duration-700 ease-out"
+          />
+        </div>
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-md bg-muted/50 px-3 py-2 text-center">
+            <div className="text-xl font-bold tabular-nums leading-none">
+              {job.judgesFound}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-wide">
+              Judges found
+            </div>
+          </div>
+          <div className="rounded-md bg-muted/50 px-3 py-2 text-center">
+            <div className="text-xl font-bold tabular-nums leading-none text-green-500">
+              +{job.judgesNew}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-wide">
+              New
+            </div>
+          </div>
+          <div className="rounded-md bg-muted/50 px-3 py-2 text-center">
+            <div className="text-xl font-bold tabular-nums leading-none text-blue-400">
+              {job.judgesUpdated}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-wide">
+              Updated
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function HarvestPage() {
   const [states, setStates] = useState<HarvestState[]>([]);
   const [selectedState, setSelectedState] = useState<string>("");
@@ -97,42 +199,15 @@ export default function HarvestPage() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [reportMarkdown, setReportMarkdown] = useState<string | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
+
+  // Live job data keyed by job id — updated via SSE
+  const [liveJobs, setLiveJobs] = useState<Record<string, HarvestJob>>({});
+  // Track which job IDs have active EventSource connections
+  const eventSourcesRef = useRef<Record<string, EventSource>>({});
+  // Fallback poll interval for job history table refresh
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Load states on mount
-  useEffect(() => {
-    fetchStates();
-  }, []);
-
-  // Load jobs on mount and set up polling
-  useEffect(() => {
-    fetchJobs();
-    startPolling();
-    return () => stopPolling();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function startPolling() {
-    stopPolling();
-    pollIntervalRef.current = setInterval(async () => {
-      const hasActive = jobs.some(
-        (j) => j.status === "QUEUED" || j.status === "RUNNING",
-      );
-      if (hasActive) {
-        await fetchJobs();
-        await fetchStates();
-      }
-    }, 5000);
-  }
-
-  function stopPolling() {
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
-    }
-  }
-
-  async function fetchStates() {
+  const fetchStates = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/harvest/states");
       if (!res.ok) throw new Error("Failed to load states");
@@ -141,9 +216,9 @@ export default function HarvestPage() {
     } catch (err) {
       console.error("Failed to fetch states:", err);
     }
-  }
+  }, []);
 
-  async function fetchJobs() {
+  const fetchJobs = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/harvest?limit=20");
       if (!res.ok) throw new Error("Failed to load jobs");
@@ -153,7 +228,68 @@ export default function HarvestPage() {
     } catch (err) {
       console.error("Failed to fetch jobs:", err);
     }
-  }
+  }, []);
+
+  // Subscribe to SSE stream for a single job
+  const subscribeToJob = useCallback(
+    (jobId: string) => {
+      if (eventSourcesRef.current[jobId]) return; // already subscribed
+
+      const es = new EventSource(`/api/admin/harvest/${jobId}/stream`);
+
+      es.onmessage = (e) => {
+        try {
+          const snapshot = JSON.parse(e.data) as HarvestJob;
+          setLiveJobs((prev) => ({ ...prev, [jobId]: snapshot }));
+        } catch {
+          /* ignore parse errors */
+        }
+      };
+
+      es.addEventListener("done", () => {
+        es.close();
+        delete eventSourcesRef.current[jobId];
+        // Refresh job list + states once the job finishes
+        fetchJobs();
+        fetchStates();
+      });
+
+      es.onerror = () => {
+        es.close();
+        delete eventSourcesRef.current[jobId];
+      };
+
+      eventSourcesRef.current[jobId] = es;
+    },
+    [fetchJobs, fetchStates],
+  );
+
+  // Watch job list for new active jobs — subscribe to SSE for each
+  useEffect(() => {
+    jobs.forEach((job) => {
+      if (job.status === "QUEUED" || job.status === "RUNNING") {
+        subscribeToJob(job.id);
+      }
+    });
+  }, [jobs, subscribeToJob]);
+
+  // Kick off a light poll for the history table (catches new jobs started elsewhere)
+  useEffect(() => {
+    fetchStates();
+    fetchJobs();
+
+    pollIntervalRef.current = setInterval(() => {
+      fetchJobs();
+    }, 10_000);
+
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      // Close all open EventSources on unmount
+      Object.values(eventSourcesRef.current).forEach((es) => es.close());
+      eventSourcesRef.current = {};
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function startHarvest() {
     if (!selectedState) return;
@@ -182,7 +318,6 @@ export default function HarvestPage() {
         return;
       }
 
-      // Refresh jobs after triggering
       await fetchJobs();
       await fetchStates();
       setSelectedState("");
@@ -220,9 +355,13 @@ export default function HarvestPage() {
     (activeState?.hasActiveJob ?? false) ||
     (activeState?.approvedUrlCount ?? 0) === 0;
 
-  const activeJobs = jobs.filter(
-    (j) => j.status === "QUEUED" || j.status === "RUNNING",
-  );
+  // Merge SSE live data over the fetched job list for active jobs
+  const activeJobs = jobs
+    .filter((j) => j.status === "QUEUED" || j.status === "RUNNING")
+    .map((j) => liveJobs[j.id] ?? j);
+
+  // For history table, also apply live data if available
+  const displayJobs = jobs.map((j) => liveJobs[j.id] ?? j);
 
   return (
     <div>
@@ -278,33 +417,11 @@ export default function HarvestPage() {
         </CardContent>
       </Card>
 
-      {/* Active Jobs */}
+      {/* Active Jobs — live via SSE */}
       {activeJobs.length > 0 && (
         <div className="mb-6 space-y-3">
           {activeJobs.map((job) => (
-            <Card key={job.id} className="border-primary/30">
-              <CardContent className="pt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-medium">{job.state} Harvest</div>
-                  <StatusBadge status={job.status} />
-                </div>
-                {job.urlsTotal > 0 && (
-                  <Progress
-                    value={(job.urlsProcessed / job.urlsTotal) * 100}
-                    className="mb-2"
-                  />
-                )}
-                <div className="text-sm text-muted-foreground flex gap-4">
-                  <span>
-                    URLs: {job.urlsProcessed}/{job.urlsTotal}
-                  </span>
-                  <span>Judges found: {job.judgesFound}</span>
-                  <span>New: {job.judgesNew}</span>
-                  <span>Updated: {job.judgesUpdated}</span>
-                  <span>Duration: {duration(job.startedAt, null)}</span>
-                </div>
-              </CardContent>
-            </Card>
+            <LiveJobCard key={job.id} job={job} />
           ))}
         </div>
       )}
@@ -334,7 +451,7 @@ export default function HarvestPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {jobs.map((job) => (
+                {displayJobs.map((job) => (
                   <TableRow key={job.id}>
                     <TableCell className="font-medium">
                       {job.state} ({job.stateAbbr})
