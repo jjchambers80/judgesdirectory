@@ -158,8 +158,6 @@ export default function AdminDiscoveryPage() {
     fetchCandidates(pagination.page);
   };
 
-
-
   const columns: ColumnDef<UrlCandidate>[] = useMemo(
     () => [
       {
@@ -440,7 +438,9 @@ export default function AdminDiscoveryPage() {
                   const val = e.target.value.toUpperCase();
                   setColumnFilters((prev) => {
                     const rest = prev.filter((f) => f.id !== "stateAbbr");
-                    return val ? [...rest, { id: "stateAbbr", value: val }] : rest;
+                    return val
+                      ? [...rest, { id: "stateAbbr", value: val }]
+                      : rest;
                   });
                 }}
                 maxLength={2}

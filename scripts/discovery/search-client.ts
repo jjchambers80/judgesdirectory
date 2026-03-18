@@ -85,6 +85,21 @@ export function buildQueries(
       level: "trial",
       query: `${quotedState} circuit OR superior OR district court judges roster site:gov${exclusion}`,
     },
+    // Supplemental .org queries — some states host official court websites on
+    // .org domains (e.g. sccourts.org, nycourts.gov sister sites). These run
+    // for every state so no per-state configuration is needed.
+    {
+      level: "supreme_org",
+      query: `${quotedState} supreme court justices roster site:org${exclusion}`,
+    },
+    {
+      level: "appellate_org",
+      query: `${quotedState} court of appeal judges roster site:org${exclusion}`,
+    },
+    {
+      level: "trial_org",
+      query: `${quotedState} circuit OR superior OR district court judges roster site:org${exclusion}`,
+    },
   ];
 }
 

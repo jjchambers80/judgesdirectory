@@ -45,6 +45,22 @@ interface Pagination {
   totalPages: number;
 }
 
+interface StateOption {
+  id: string;
+  name: string;
+  abbreviation: string;
+}
+
+interface CountyOption {
+  id: string;
+  name: string;
+}
+
+interface CourtOption {
+  id: string;
+  type: string;
+}
+
 export default function AdminJudgesPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("judges");
 
@@ -109,7 +125,56 @@ function JudgesView() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [stateFilter, setStateFilter] = useState<string>("");
+  const [countyFilter, setCountyFilter] = useState<string>("");
+  const [courtFilter, setCourtFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
+
+  // Dropdown data
+  const [states, setStates] = useState<StateOption[]>([]);
+  const [counties, setCounties] = useState<CountyOption[]>([]);
+  const [courts, setCourts] = useState<CourtOption[]>([]);
+
+  // Load states once on mount
+  useEffect(() => {
+    fetch("/api/admin/states")
+      .then((r) => r.json())
+      .then((d) => setStates(d.states ?? []));
+  }, []);
+
+  // Load counties when state changes
+  useEffect(() => {
+    if (!stateFilter) {
+      setCounties([]);
+      setCountyFilter("");
+      setCourts([]);
+      setCourtFilter("");
+      return;
+    }
+    fetch(`/api/admin/states/${stateFilter}/counties`)
+      .then((r) => r.json())
+      .then((d) => {
+        setCounties(d.counties ?? []);
+        setCountyFilter("");
+        setCourts([]);
+        setCourtFilter("");
+      });
+  }, [stateFilter]);
+
+  // Load courts when county changes
+  useEffect(() => {
+    if (!countyFilter) {
+      setCourts([]);
+      setCourtFilter("");
+      return;
+    }
+    fetch(`/api/admin/counties/${countyFilter}/courts`)
+      .then((r) => r.json())
+      .then((d) => {
+        setCourts(d.courts ?? []);
+        setCourtFilter("");
+      });
+  }, [countyFilter]);
 
   const fetchJudges = useCallback(
     async (page: number) => {
@@ -119,6 +184,9 @@ function JudgesView() {
       params.set("limit", String(pagination.limit));
       if (debouncedSearch) params.set("search", debouncedSearch);
       if (statusFilter) params.set("status", statusFilter);
+      if (stateFilter) params.set("stateId", stateFilter);
+      if (countyFilter) params.set("countyId", countyFilter);
+      if (courtFilter) params.set("courtId", courtFilter);
       if (sorting.length > 0) {
         params.set("sort", sorting[0].id);
         params.set("order", sorting[0].desc ? "desc" : "asc");
@@ -130,7 +198,15 @@ function JudgesView() {
       setPagination(data.pagination);
       setLoading(false);
     },
-    [debouncedSearch, statusFilter, sorting, pagination.limit],
+    [
+      debouncedSearch,
+      statusFilter,
+      stateFilter,
+      countyFilter,
+      courtFilter,
+      sorting,
+      pagination.limit,
+    ],
   );
 
   useEffect(() => {
@@ -246,7 +322,12 @@ function JudgesView() {
     <div>
       {loading ? (
         <p>Loading...</p>
-      ) : judges.length === 0 && !debouncedSearch && !statusFilter ? (
+      ) : judges.length === 0 &&
+        !debouncedSearch &&
+        !statusFilter &&
+        !stateFilter &&
+        !countyFilter &&
+        !courtFilter ? (
         <p className="text-muted-foreground">
           No judges found.{" "}
           <Link href="/admin/judges/new/" className="text-link hover:underline">
@@ -260,17 +341,65 @@ function JudgesView() {
           data={judges}
           toolbarConfig={toolbarConfig}
           toolbarLeadingContent={
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              aria-label="Filter by status"
-              className="h-8 rounded-md border border-border px-3 text-sm"
-            >
-              <option value="">All Status</option>
-              <option value="VERIFIED">Verified</option>
-              <option value="UNVERIFIED">Unverified</option>
-              <option value="REJECTED">Rejected</option>
-            </select>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                aria-label="Filter by status"
+                className="h-8 rounded-md border border-border px-3 text-sm bg-background text-foreground"
+              >
+                <option value="">All Status</option>
+                <option value="VERIFIED">Verified</option>
+                <option value="UNVERIFIED">Unverified</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+
+              <select
+                value={stateFilter}
+                onChange={(e) => setStateFilter(e.target.value)}
+                aria-label="Filter by state"
+                className="h-8 rounded-md border border-border px-3 text-sm bg-background text-foreground"
+              >
+                <option value="">All States</option>
+                {states.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+
+              {counties.length > 0 && (
+                <select
+                  value={countyFilter}
+                  onChange={(e) => setCountyFilter(e.target.value)}
+                  aria-label="Filter by county"
+                  className="h-8 rounded-md border border-border px-3 text-sm bg-background text-foreground"
+                >
+                  <option value="">All Counties</option>
+                  {counties.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {courts.length > 0 && (
+                <select
+                  value={courtFilter}
+                  onChange={(e) => setCourtFilter(e.target.value)}
+                  aria-label="Filter by court"
+                  className="h-8 rounded-md border border-border px-3 text-sm bg-background text-foreground"
+                >
+                  <option value="">All Courts</option>
+                  {courts.map((ct) => (
+                    <option key={ct.id} value={ct.id}>
+                      {ct.type}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
           }
           manualSorting
           manualFiltering

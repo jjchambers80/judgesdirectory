@@ -122,8 +122,12 @@
 
 /* --- Progress bar animated stripes --- */
 @keyframes progress-stripes {
-  0%   { background-position: 1rem 0; }
-  100% { background-position: 0 0; }
+  0% {
+    background-position: 1rem 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
 }
 
 /* --- Reduced motion (FR-031 / Constitution VI) --- */

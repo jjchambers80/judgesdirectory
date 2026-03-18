@@ -34,15 +34,22 @@ export interface ClassificationResult {
  * to the target state, preventing cross-state contamination (e.g. NC results
  * being classified as relevant during a South Carolina discovery run).
  */
-function buildSystemPrompt(targetState: string, targetStateAbbr: string): string {
+function buildSystemPrompt(
+  targetState: string,
+  targetStateAbbr: string,
+): string {
   return `You are a classifier that determines whether web search results point to official judicial roster pages for **${targetState} (${targetStateAbbr})** courts.
 
 IMPORTANT: Only classify a result as isJudicialRoster=true if the page belongs to a **${targetState}** court. Pages from other states — including similarly named states like ${
-    targetState.startsWith("North") ? targetState.replace("North", "South")
-    : targetState.startsWith("South") ? targetState.replace("South", "North")
-    : targetState === "Virginia" ? "West Virginia"
-    : targetState === "West Virginia" ? "Virginia"
-    : "adjacent states"
+    targetState.startsWith("North")
+      ? targetState.replace("North", "South")
+      : targetState.startsWith("South")
+        ? targetState.replace("South", "North")
+        : targetState === "Virginia"
+          ? "West Virginia"
+          : targetState === "West Virginia"
+            ? "Virginia"
+            : "adjacent states"
   } — must be classified as isJudicialRoster=false even if they are valid judicial roster pages.
 
 For each search result, determine:

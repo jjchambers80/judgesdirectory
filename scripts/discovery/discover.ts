@@ -322,7 +322,11 @@ async function discoverState(
       if (filtered.length === 0) continue;
 
       // Classify results with LLM (state-scoped — classifier rejects wrong-state URLs)
-      const classifications = await classifyResults(filtered, stateName, stateAbbr);
+      const classifications = await classifyResults(
+        filtered,
+        stateName,
+        stateAbbr,
+      );
       const relevant = classifications.filter((c) => c.isJudicialRoster);
       console.log(`  → ${relevant.length} classified as judicial roster`);
 
