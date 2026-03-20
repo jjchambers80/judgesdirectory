@@ -197,6 +197,7 @@ enum DiscoveryRunStatus {
   RUNNING
   COMPLETED
   FAILED
+  CANCELLED
 }
 
 // ---------------------------------------------------------------------------
@@ -316,6 +317,7 @@ model DiscoveryRun {
   state           String
   stateAbbr       String             @db.VarChar(2)
   status          DiscoveryRunStatus @default(RUNNING)
+  queriesTotal    Int                @default(0)
   queriesRun      Int                @default(0)
   candidatesFound Int                @default(0)
   candidatesNew   Int                @default(0)

@@ -12,6 +12,10 @@ import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import type { DataTableToolbarConfig } from "@/components/ui/data-table-toolbar";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DiscoveryRunTrigger } from "@/components/admin/DiscoveryRunTrigger";
+import { DiscoveryRunHistory } from "@/components/admin/DiscoveryRunHistory";
+import { LiveDiscoveryCard } from "@/components/admin/LiveDiscoveryCard";
 
 interface UrlCandidate {
   id: string;
@@ -77,6 +81,11 @@ export default function AdminDiscoveryPage() {
   );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
+  // Discovery run management state
+  const [hasActiveRun, setHasActiveRun] = useState(false);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
   // Derive server-side filter values from columnFilters state
   const stateFilter =
     (columnFilters.find((f) => f.id === "stateAbbr")?.value as string) ?? "";
@@ -101,7 +110,7 @@ export default function AdminDiscoveryPage() {
       if (stateFilter) params.set("state", stateFilter);
       if (statusFilter) params.set("status", statusFilter);
 
-      const res = await fetch(`/api/admin/discovery?${params}`);
+      const res = await fetch(`/api/admin/discovery/?${params}`);
       const data = await res.json();
       setCandidates(data.candidates);
       setPagination(data.pagination);
@@ -116,7 +125,7 @@ export default function AdminDiscoveryPage() {
   }, [fetchCandidates]);
 
   const handleApprove = async (id: string) => {
-    await fetch(`/api/admin/discovery/${id}`, {
+    await fetch(`/api/admin/discovery/${id}/`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "approve" }),
@@ -125,7 +134,7 @@ export default function AdminDiscoveryPage() {
   };
 
   const handleReject = async (id: string, reason: string) => {
-    await fetch(`/api/admin/discovery/${id}`, {
+    await fetch(`/api/admin/discovery/${id}/`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "reject", rejectionReason: reason }),
@@ -146,7 +155,7 @@ export default function AdminDiscoveryPage() {
     reason?: string,
   ) => {
     if (selectedIds.length === 0) return;
-    await fetch("/api/admin/discovery/bulk", {
+    await fetch("/api/admin/discovery/bulk/", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -346,146 +355,188 @@ export default function AdminDiscoveryPage() {
         <h1>URL Discovery</h1>
       </div>
 
-      {/* Bulk actions */}
-      {selectedIds.length > 0 && (
-        <div className="flex gap-2 mb-4 items-center text-sm">
-          <span className="text-muted-foreground">
-            {selectedIds.length} selected
-          </span>
-          <button
-            onClick={() => handleBulkAction("approve")}
-            className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-          >
-            Bulk Approve
-          </button>
-          <button
-            onClick={() => {
-              setBulkAction("reject");
-              setShowRejectModal(true);
-            }}
-            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-          >
-            Bulk Reject
-          </button>
-        </div>
-      )}
+      <Tabs defaultValue="discover" className="w-full">
+        <TabsList>
+          <TabsTrigger value="discover">Discover</TabsTrigger>
+          <TabsTrigger value="results">Results</TabsTrigger>
+        </TabsList>
 
-      {/* Reject reason modal */}
-      {showRejectModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-3">Rejection Reason</h3>
-            <textarea
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Enter reason for rejection…"
-              aria-label="Rejection reason"
-              className="w-full px-3 py-2 border border-border rounded-md text-sm mb-4"
-              rows={3}
+        {/* ── Discover Tab ── */}
+        <TabsContent value="discover" className="space-y-4 mt-4">
+          <DiscoveryRunTrigger
+            hasActiveRun={hasActiveRun}
+            activeRunId={activeRunId}
+            onRunTriggered={(runId) => {
+              setActiveRunId(runId);
+              setHasActiveRun(true);
+              setRefreshKey((k) => k + 1);
+            }}
+            onRunCancelled={() => setRefreshKey((k) => k + 1)}
+          />
+          {activeRunId && (
+            <LiveDiscoveryCard
+              runId={activeRunId}
+              onComplete={() => {
+                setRefreshKey((k) => k + 1);
+                fetchCandidates(pagination.page);
+              }}
+              onCancel={() => setRefreshKey((k) => k + 1)}
             />
-            <div className="flex gap-2 justify-end">
+          )}
+          <DiscoveryRunHistory
+            refreshKey={refreshKey}
+            onActiveRunChange={(active, id) => {
+              setHasActiveRun(active);
+              setActiveRunId(id);
+            }}
+          />
+        </TabsContent>
+
+        {/* ── Results Tab ── */}
+        <TabsContent value="results" className="mt-4">
+          {/* Bulk actions */}
+          {selectedIds.length > 0 && (
+            <div className="flex gap-2 mb-4 items-center text-sm">
+              <span className="text-muted-foreground">
+                {selectedIds.length} selected
+              </span>
               <button
-                onClick={() => {
-                  setShowRejectModal(false);
-                  setRejectReason("");
-                  setBulkAction(null);
-                }}
-                className="px-3 py-1 border border-border rounded text-sm"
+                onClick={() => handleBulkAction("approve")}
+                className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
               >
-                Cancel
+                Bulk Approve
               </button>
               <button
                 onClick={() => {
-                  if (!rejectReason.trim()) return;
-                  if (bulkAction === "reject") {
-                    handleBulkAction("reject", rejectReason);
-                  }
-                  setShowRejectModal(false);
-                  setRejectReason("");
-                  setBulkAction(null);
+                  setBulkAction("reject");
+                  setShowRejectModal(true);
                 }}
-                disabled={!rejectReason.trim()}
-                className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50"
+                className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
               >
-                Reject
+                Bulk Reject
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* DataTable */}
-      {loading ? (
-        <p className="text-muted-foreground">Loading…</p>
-      ) : candidates.length === 0 && !stateFilter && !statusFilter ? (
-        <p className="text-muted-foreground">
-          No candidates found. Run{" "}
-          <code>npx tsx scripts/discovery/discover.ts --state FL</code> to
-          discover URLs.
-        </p>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={candidates}
-          toolbarConfig={toolbarConfig}
-          toolbarLeadingContent={
-            <>
-              <input
-                type="text"
-                placeholder="State abbr (e.g. FL)"
-                value={stateFilter}
-                onChange={(e) => {
-                  const val = e.target.value.toUpperCase();
-                  setColumnFilters((prev) => {
-                    const rest = prev.filter((f) => f.id !== "stateAbbr");
-                    return val
-                      ? [...rest, { id: "stateAbbr", value: val }]
-                      : rest;
-                  });
-                }}
-                maxLength={2}
-                aria-label="Filter by state"
-                className="h-8 w-40 rounded-md border border-border px-3 text-sm"
-              />
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setColumnFilters((prev) => {
-                    const rest = prev.filter((f) => f.id !== "status");
-                    return val ? [...rest, { id: "status", value: val }] : rest;
-                  });
-                }}
-                aria-label="Filter by status"
-                className="h-8 rounded-md border border-border px-3 text-sm"
-              >
-                <option value="">All Statuses</option>
-                <option value="DISCOVERED">Needs Review</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
-            </>
-          }
-          manualSorting
-          manualFiltering
-          manualPagination
-          sorting={sorting}
-          onSortingChange={setSorting}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-          rowSelection={rowSelection}
-          onRowSelectionChange={setRowSelection}
-          enableRowSelection
-          columnVisibility={columnVisibility}
-          onColumnVisibilityChange={setColumnVisibility}
-          pageCount={pagination.totalPages}
-          currentPage={pagination.page}
-          onPageChange={(page) => fetchCandidates(page)}
-          onPageSizeChange={(size) => {
-            setPagination((prev) => ({ ...prev, limit: size }));
-          }}
-        />
-      )}
+          {/* Reject reason modal */}
+          {showRejectModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-semibold mb-3">Rejection Reason</h3>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Enter reason for rejection…"
+                  aria-label="Rejection reason"
+                  className="w-full px-3 py-2 border border-border rounded-md text-sm mb-4"
+                  rows={3}
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => {
+                      setShowRejectModal(false);
+                      setRejectReason("");
+                      setBulkAction(null);
+                    }}
+                    className="px-3 py-1 border border-border rounded text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!rejectReason.trim()) return;
+                      if (bulkAction === "reject") {
+                        handleBulkAction("reject", rejectReason);
+                      }
+                      setShowRejectModal(false);
+                      setRejectReason("");
+                      setBulkAction(null);
+                    }}
+                    disabled={!rejectReason.trim()}
+                    className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* DataTable */}
+          {loading ? (
+            <p className="text-muted-foreground">Loading…</p>
+          ) : candidates.length === 0 && !stateFilter && !statusFilter ? (
+            <p className="text-muted-foreground">
+              No candidates found. Run a discovery from the Discover tab to find
+              URLs.
+            </p>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={candidates}
+              toolbarConfig={toolbarConfig}
+              toolbarLeadingContent={
+                <>
+                  <input
+                    type="text"
+                    placeholder="State abbr (e.g. FL)"
+                    value={stateFilter}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setColumnFilters((prev) => {
+                        const rest = prev.filter((f) => f.id !== "stateAbbr");
+                        return val
+                          ? [...rest, { id: "stateAbbr", value: val }]
+                          : rest;
+                      });
+                    }}
+                    maxLength={2}
+                    aria-label="Filter by state"
+                    className="h-8 w-40 rounded-md border border-border px-3 text-sm"
+                  />
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setColumnFilters((prev) => {
+                        const rest = prev.filter((f) => f.id !== "status");
+                        return val
+                          ? [...rest, { id: "status", value: val }]
+                          : rest;
+                      });
+                    }}
+                    aria-label="Filter by status"
+                    className="h-8 rounded-md border border-border px-3 text-sm"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="DISCOVERED">Needs Review</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="REJECTED">Rejected</option>
+                  </select>
+                </>
+              }
+              manualSorting
+              manualFiltering
+              manualPagination
+              sorting={sorting}
+              onSortingChange={setSorting}
+              columnFilters={columnFilters}
+              onColumnFiltersChange={setColumnFilters}
+              rowSelection={rowSelection}
+              onRowSelectionChange={setRowSelection}
+              enableRowSelection
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
+              pageCount={pagination.totalPages}
+              currentPage={pagination.page}
+              onPageChange={(page) => fetchCandidates(page)}
+              onPageSizeChange={(size) => {
+                setPagination((prev) => ({ ...prev, limit: size }));
+              }}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
