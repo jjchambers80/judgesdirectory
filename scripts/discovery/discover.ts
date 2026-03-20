@@ -88,6 +88,7 @@ interface DiscoverFlags {
   state: string | null;
   dryRun: boolean;
   all: boolean;
+  runId: string | null;
 }
 
 function parseArgs(): DiscoverFlags {
@@ -96,6 +97,7 @@ function parseArgs(): DiscoverFlags {
     state: null,
     dryRun: false,
     all: false,
+    runId: null,
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -108,6 +110,9 @@ function parseArgs(): DiscoverFlags {
         break;
       case "--all":
         flags.all = true;
+        break;
+      case "--run-id":
+        flags.runId = args[++i] ?? null;
         break;
     }
   }
@@ -123,8 +128,11 @@ function resolveState(abbr: string): { abbr: string; name: string } | null {
 // Advisory lock
 // ---------------------------------------------------------------------------
 
-/** Check for running discovery and clean up stale locks. */
-async function acquireLock(): Promise<boolean> {
+/** Check for running discovery and clean up stale locks.
+ *  @param ownRunId — If provided, exclude this run from the conflict check
+ *    (the API pre-creates the RUNNING record before spawning the process).
+ */
+async function acquireLock(ownRunId?: string): Promise<boolean> {
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
   // Clean stale locks (RUNNING for over 1 hour)
@@ -132,6 +140,7 @@ async function acquireLock(): Promise<boolean> {
     where: {
       status: "RUNNING",
       startedAt: { lt: oneHourAgo },
+      ...(ownRunId ? { id: { not: ownRunId } } : {}),
     },
     data: {
       status: "FAILED",
@@ -140,9 +149,12 @@ async function acquireLock(): Promise<boolean> {
     },
   });
 
-  // Check if any RUNNING lock still exists
+  // Check if any OTHER RUNNING lock still exists
   const running = await prisma.discoveryRun.findFirst({
-    where: { status: "RUNNING" },
+    where: {
+      status: "RUNNING",
+      ...(ownRunId ? { id: { not: ownRunId } } : {}),
+    },
   });
 
   return running === null;
@@ -235,6 +247,18 @@ function isDomainForDifferentState(
 }
 
 // ---------------------------------------------------------------------------
+// Cooperative cancellation check
+// ---------------------------------------------------------------------------
+
+async function isCancelled(runId: string): Promise<boolean> {
+  const run = await prisma.discoveryRun.findUnique({
+    where: { id: runId },
+    select: { status: true },
+  });
+  return run?.status === "CANCELLED";
+}
+
+// ---------------------------------------------------------------------------
 // Core discovery pipeline for one state
 // ---------------------------------------------------------------------------
 
@@ -251,6 +275,7 @@ async function discoverState(
   stateName: string,
   stateAbbr: string,
   dryRun: boolean,
+  existingRunId?: string,
 ): Promise<DiscoveryResult> {
   const result: DiscoveryResult = {
     state: stateName,
@@ -261,23 +286,53 @@ async function discoverState(
     rateLimited: false,
   };
 
-  // Create a DiscoveryRun record (skip in dry-run)
+  // Create or reuse a DiscoveryRun record (skip in dry-run)
   let runId: string | null = null;
   if (!dryRun) {
-    const run = await prisma.discoveryRun.create({
-      data: {
-        state: stateName,
-        stateAbbr,
-        status: "RUNNING",
-      },
-    });
-    runId = run.id;
+    if (existingRunId) {
+      // Reuse pre-created run from API
+      runId = existingRunId;
+    } else {
+      const run = await prisma.discoveryRun.create({
+        data: {
+          state: stateName,
+          stateAbbr,
+          status: "RUNNING",
+        },
+      });
+      runId = run.id;
+    }
   }
 
   const queries = buildQueries(stateName);
 
+  // Write queriesTotal so SSE progress stream can calculate %
+  if (runId) {
+    await prisma.discoveryRun.update({
+      where: { id: runId },
+      data: { queriesTotal: queries.length },
+    });
+  }
+
   try {
     for (const { level, query } of queries) {
+      // Cooperative cancellation check before each query
+      if (runId && (await isCancelled(runId))) {
+        console.log("[Discovery] Cancellation detected — stopping gracefully");
+        await prisma.discoveryRun.update({
+          where: { id: runId },
+          data: {
+            status: "FAILED",
+            errorMessage: "Cancelled by user",
+            queriesRun: result.queriesRun,
+            candidatesFound: result.candidatesFound,
+            candidatesNew: result.candidatesNew,
+            completedAt: new Date(),
+          },
+        });
+        return result;
+      }
+
       console.log(
         `[Discovery] Query ${result.queriesRun + 1}/${queries.length}: ${query}`,
       );
@@ -381,6 +436,18 @@ async function discoverState(
         result.candidatesFound++;
         if (created) result.candidatesNew++;
       }
+
+      // Flush metrics after each query so SSE stream picks up progress
+      if (runId) {
+        await prisma.discoveryRun.update({
+          where: { id: runId },
+          data: {
+            queriesRun: result.queriesRun,
+            candidatesFound: result.candidatesFound,
+            candidatesNew: result.candidatesNew,
+          },
+        });
+      }
     }
 
     // Update DiscoveryRun on success
@@ -439,8 +506,9 @@ async function main(): Promise<void> {
   validateSearchEnv();
 
   if (!flags.dryRun) {
-    // Acquire advisory lock
-    const lockAcquired = await acquireLock();
+    // Acquire advisory lock (pass own run-id so we don't conflict with
+    // the RUNNING record the API pre-created for this process)
+    const lockAcquired = await acquireLock(flags.runId);
     if (!lockAcquired) {
       console.error(
         "[Discovery] Another discovery run is in progress. Aborting.",
@@ -504,6 +572,7 @@ async function main(): Promise<void> {
       stateInfo.name,
       stateInfo.abbr,
       flags.dryRun,
+      flags.runId ?? undefined,
     );
 
     console.log("\n[Discovery] === Summary ===");
