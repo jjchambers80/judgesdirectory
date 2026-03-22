@@ -142,60 +142,61 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DSGN-01 | TBD | Pending |
-| DSGN-02 | TBD | Pending |
-| DSGN-03 | TBD | Pending |
-| DSGN-04 | TBD | Pending |
-| DSGN-05 | TBD | Pending |
-| ANLT-01 | TBD | Pending |
-| ANLT-02 | TBD | Pending |
-| ANLT-03 | TBD | Pending |
-| ANLT-04 | TBD | Pending |
-| ANLT-05 | TBD | Pending |
-| ANLT-06 | TBD | Pending |
-| ANLT-07 | TBD | Pending |
-| PERF-01 | TBD | Pending |
-| PERF-02 | TBD | Pending |
-| PERF-03 | TBD | Pending |
-| PERF-04 | TBD | Pending |
-| LEGL-01 | TBD | Pending |
-| LEGL-02 | TBD | Pending |
-| LEGL-03 | TBD | Pending |
-| LEGL-04 | TBD | Pending |
-| ADS-01 | TBD | Pending |
-| ADS-02 | TBD | Pending |
-| ADS-03 | TBD | Pending |
-| ADS-04 | TBD | Pending |
-| ADS-05 | TBD | Pending |
-| AFFL-01 | TBD | Pending |
-| AFFL-02 | TBD | Pending |
-| AFFL-03 | TBD | Pending |
-| AFFL-04 | TBD | Pending |
-| AFFL-05 | TBD | Pending |
-| SPNS-01 | TBD | Pending |
-| SPNS-02 | TBD | Pending |
-| SPNS-03 | TBD | Pending |
-| SPNS-04 | TBD | Pending |
-| SPNS-05 | TBD | Pending |
-| PHOTO-01 | TBD | Pending |
-| PHOTO-02 | TBD | Pending |
-| PHOTO-03 | TBD | Pending |
-| PHOTO-04 | TBD | Pending |
-| CONT-01 | TBD | Pending |
-| CONT-02 | TBD | Pending |
-| CONT-03 | TBD | Pending |
-| EXPN-01 | TBD | Pending |
-| EXPN-02 | TBD | Pending |
-| EXPN-03 | TBD | Pending |
-| EXPN-04 | TBD | Pending |
-| EXPN-05 | TBD | Pending |
-| EXPN-06 | TBD | Pending |
+| DSGN-01 | Phase 1 | Pending |
+| DSGN-02 | Phase 1 | Pending |
+| DSGN-03 | Phase 1 | Pending |
+| DSGN-04 | Phase 1 | Pending |
+| DSGN-05 | Phase 1 | Pending |
+| ANLT-01 | Phase 1 | Pending |
+| ANLT-02 | Phase 1 | Pending |
+| ANLT-03 | Phase 1 | Pending |
+| ANLT-04 | Phase 1 | Pending |
+| ANLT-05 | Phase 1 | Pending |
+| ANLT-06 | Phase 1 | Pending |
+| ANLT-07 | Phase 1 | Pending |
+| PERF-01 | Phase 1 | Pending |
+| PERF-02 | Phase 1 | Pending |
+| PERF-03 | Phase 1 | Pending |
+| PERF-04 | Phase 1 | Pending |
+| LEGL-01 | Phase 1 | Pending |
+| LEGL-02 | Phase 1 | Pending |
+| LEGL-03 | Phase 1 | Pending |
+| LEGL-04 | Phase 1 | Pending |
+| ADS-01 | Phase 2 | Pending |
+| ADS-02 | Phase 2 | Pending |
+| ADS-03 | Phase 2 | Pending |
+| ADS-04 | Phase 2 | Pending |
+| ADS-05 | Phase 2 | Pending |
+| AFFL-01 | Phase 2 | Pending |
+| AFFL-02 | Phase 2 | Pending |
+| AFFL-03 | Phase 2 | Pending |
+| AFFL-04 | Phase 2 | Pending |
+| AFFL-05 | Phase 2 | Pending |
+| SPNS-01 | Phase 2 | Pending |
+| SPNS-02 | Phase 2 | Pending |
+| SPNS-03 | Phase 2 | Pending |
+| SPNS-04 | Phase 2 | Pending |
+| SPNS-05 | Phase 2 | Pending |
+| PHOTO-01 | Phase 1 | Pending |
+| PHOTO-02 | Phase 1 | Pending |
+| PHOTO-03 | Phase 1 | Pending |
+| PHOTO-04 | Phase 1 | Pending |
+| CONT-01 | Phase 1 | Pending |
+| CONT-02 | Phase 1 | Pending |
+| CONT-03 | Phase 1 | Pending |
+| EXPN-01 | Phase 3 | Pending |
+| EXPN-02 | Phase 3 | Pending |
+| EXPN-03 | Phase 3 | Pending |
+| EXPN-04 | Phase 3 | Pending |
+| EXPN-05 | Phase 3 | Pending |
+| EXPN-06 | Phase 3 | Pending |
 
 **Coverage:**
-- v1 requirements: 43 total
-- Mapped to phases: 0
-- Unmapped: 43 (pending roadmap creation)
+- v1 requirements: 48 total
+- Mapped to phases: 48
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-22*
+*Traceability updated: 2026-03-22*
 *Last updated: 2026-03-22 after initialization*
