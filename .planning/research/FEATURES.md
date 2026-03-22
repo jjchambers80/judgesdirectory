@@ -1,0 +1,162 @@
+# Feature Landscape
+
+**Domain:** Legal judge directory with programmatic SEO monetized through display ads, affiliate referrals, and sponsored attorney listings  
+**Researched:** 2026-03-22  
+**Overall Confidence:** HIGH — grounded in existing business docs, competitor analysis (Avvo, FindLaw, Justia, VoterRecords), directory playbook validated patterns, and current Next.js/Vercel ecosystem docs
+
+---
+
+## Table Stakes
+
+Features users and search engines expect. Missing = product feels incomplete, revenue doesn't flow, or SEO underperforms.
+
+| # | Feature | Why Expected | Complexity | Notes |
+|---|---------|--------------|------------|-------|
+| T1 | **Analytics instrumentation (GA4 + Search Console)** | Cannot validate any traffic assumptions, measure RPM, or optimize without data. Every directory operator starts here. Blind without it. | Low | GA4 via `next/script` + Search Console verification. Vercel Analytics as cookie-free supplement for real-time. Must track: pageviews by template type, search queries, click-through to affiliates. |
+| T2 | **Display ad integration (AdSense)** | Lowest-friction monetization. Revenue Stream 1. Every page without ads is leaving money on the table once traffic arrives. AdSense has no minimum threshold. | Low | Script tag + ad placement zones via `@next/third-parties`. Conservative: no above-fold ads on judge profiles. Sidebar + in-content on listing pages. Reserve zones now, activate at launch. |
+| T3 | **Core Web Vitals optimization** | Google uses LCP, INP, CLS as ranking signals (stable metrics as of 2024). Poor CWV = lower rankings = less traffic = less revenue. Non-negotiable for SEO-first site. | Medium | Target: LCP < 2.5s, INP < 200ms, CLS < 0.1. Key actions: ISR/revalidate on public pages for TTFB, `next/image` optimization, font display swap, avoid layout shifts from ad injection. Use `useReportWebVitals` from Next.js for monitoring. |
+| T4 | **Judge photo display on profiles** | Profiles without photos look thin/untrustworthy. Every comparable legal directory (Avvo, Justia, FindLaw) shows photos. Users expect visual identification. | Medium | Pipeline already exists in schema (`photoUrl`). Need: fallback avatar/initials, `next/image` optimization, lazy loading. Photos are the single biggest "thin content" signal for judge pages. |
+| T5 | **XML sitemap generation (dynamic)** | Search engines must discover all programmatic pages efficiently. Static sitemaps won't scale to 30K+ judge pages across 50 states. | Low–Medium | Next.js App Router supports `sitemap.ts` with `generateSitemaps()` for split sitemaps. Must handle: pagination by state, `lastmod` from `updatedAt`, priority hierarchy (state > county > court > judge). |
+| T6 | **Structured data completeness (Schema.org)** | JSON-LD is already in place but needs validation for every template type. Missing structured data = missing rich snippets = lower CTR from SERPs. | Low | Audit existing JSON-LD across all 5 template types. Add `BreadcrumbList` if missing. Validate with Google Rich Results Test. Breadcrumb nav in UI matches structured data. |
+| T7 | **Legal disclaimers and privacy policy** | Required by AdSense, affiliate partners, and general legal compliance. Cannot onboard any ad network or affiliate without Terms of Service + Privacy Policy pages. | Low | Static legal pages: Privacy Policy, Terms of Service, Disclaimer, "About" page explaining data sources. AdSense requires these before approval. |
+| T8 | **Affiliate referral widgets (attorney matching)** | Revenue Stream 2. This is the highest-revenue channel per the monetization plan ($10K+/mo at 50K PVs). Contextual "Need a Lawyer?" prompts on every judge profile / court page. | Medium | Design widget component with practice-area + county targeting. Start with 2-3 partners (Avvo, LegalMatch, FindLaw). Implement UTM tracking per widget. Must include "Sponsored" disclosure per FTC guidelines. |
+| T9 | **Mobile-responsive public pages** | 60%+ of legal search traffic is mobile. Google indexes mobile-first. Broken mobile = invisible to Google. | Medium | Audit all public templates (state/county/court/judge) for mobile breakpoints. Ad placements must adapt. Touch targets ≥ 48px. No horizontal scroll. shadcn/ui components are responsive by default once migration is complete. |
+| T10 | **Design system completion (shadcn/ui migration)** | Half-migrated design system = inconsistent UX, harder to build ad/widget components, slower feature velocity. Technical debt blocking every monetization feature. | Medium–High | Complete 006-design-system-rebuild. Unify admin + public styling under shadcn/ui + Tailwind. This is a prerequisite for consistent ad placement zones, widget components, and mobile responsiveness. |
+| T11 | **Open Graph / social sharing meta tags** | When shared on social media, Reddit, legal forums — missing OG tags means ugly/broken link previews. Reduces shareability and backlink potential. Community posting is part of the go-to-market plan. | Low | `generateMetadata()` per page template. Include: title, description, `og:image` (auto-generated or default), `twitter:card`. |
+| T12 | **404 / empty-state handling for thin jurisdictions** | Counties with no verified judges yet must not show empty pages (thin content penalty) or 404 (lost crawl equity). Need graceful handling before multi-state expansion. | Low–Medium | Options: (1) noindex empty pages, (2) show "coverage coming soon" with related jurisdictions, (3) redirect to parent. Pillar page strategy for thin states. |
+| T13 | **Canonical URLs and redirect rules** | Duplicate content from trailing slashes, www vs non-www, case variations will hurt SEO. Must be airtight before scaling to 50 states. | Low | Verify canonical tags on all templates. Enforce trailing slash convention via `next.config.mjs`. Handle common URL variants with 301 redirects. |
+| T14 | **Search Console property + sitemap submission** | Cannot measure indexing, crawl errors, or search performance without GSC. This is the single most important tool for a programmatic SEO site. | Low | Property setup, sitemap submission, monitor: coverage report, performance by page type, crawl stats. Should be done Day 1 of public launch. |
+| T15 | **Loading states / skeletons** | Prevents layout shift (CLS), improves perceived performance. Core Web Vitals impact. | Low | shadcn `Skeleton` component for judge cards and listing pages. Particularly important when ads lazy-load to avoid CLS penalty. |
+| T16 | **ISR caching on public pages** | SSR without caching = slow TTFB, high Vercel costs at scale. TTFB is a ranking signal proxy (affects LCP). | Low | Add `revalidate` exports to route segments. Can target per-template: judge profiles (daily), listing pages (hourly). Zero-risk performance win. |
+
+---
+
+## Differentiators
+
+Features that set JudgesDirectory apart from legal directories and create competitive advantage. Not expected by users but create real value.
+
+| # | Feature | Value Proposition | Complexity | Notes |
+|---|---------|-------------------|------------|-------|
+| D1 | **Sponsored attorney listing placements** | Revenue Stream 3. Direct B2B sales to law firms. $99-199/month per placement. Provides stable MRR vs volatile display ad revenue (daily swings of 35-100% on display ads). Validated by Sober Nation rehab directory model ($129/month listings). 20 clients × $99 = ~$2K MRR baseline. | High | Requires: Prisma model (SponsoredListing), admin CRUD, public rendering with "Sponsored" badge, practice-area targeting per county/court. Phase 3+ per monetization plan. Start manual (sales outreach), build self-serve later. No Stripe needed yet — manual invoicing for first 20 clients. |
+| D2 | **Pillar pages for high-traffic jurisdictions** | Concentrates topical authority when programmatic pages are thin. "Judges in Miami-Dade County, Florida" as a long-form, curated resource that outranks competitors. Directory operators confirm: one excellent page beats 50 thin ones. Also ad-friendly — long pages support more placements. | Medium | Hand-crafted or semi-automated long-form pages for top 10-20 counties by search volume. Include: court overview, judge list, courthouse addresses, "how courts work" explainer. MDX files in repo — no CMS needed for 10-20 pages. Internal link hub to individual judge profiles. |
+| D3 | **"Term ending soon" alerts / pages** | Unique content that no competitor generates. Programmatic pages like "Florida judges up for re-election 2026" create seasonal SEO traffic and journalist interest. Backlink magnet. | Medium | Computed from `termEnd` field. Generate: state-level "term ending" pages. Future: email-alert signup for term change notifications. Data coverage of `termEnd` must be >50% per state to be useful. |
+| D4 | **Judge photo pipeline (automated scrape + optimize)** | Most judge directories rely on self-submitted photos. Automated scraping of official court bios for judge photos at scale is a coverage advantage competitors can't easily match. | Medium–High | Scrape from `sourceUrl` bio pages. Store optimized via `sharp` + `next/image`. Fallback to generated avatar with initials. Photo attribution to source. Legal: public officials' official photos are generally fair use. |
+| D5 | **Multi-state expansion tooling (config-driven)** | Speed of state expansion = speed of content growth = speed of revenue growth. Config-driven court registration + autonomous harvest pipeline is a moat. Competitor directories add states manually. TX + CA as pilot validation. | Medium | Already partially built (007/008/015/016). Next step: stress-test with TX + CA. Optimize for: court site diversity, extraction success rate, verification throughput. Goal: add a state in < 1 week ops time. |
+| D6 | **Internal search with query analytics** | Existing pg_trgm search (009) captures user intent. Logging search queries reveals: what users want but can't find, what terms to target, and which jurisdictions need better coverage. Feeds content strategy directly. | Low–Medium | Add search query logging (anonymized). Dashboard: top queries, zero-result queries, query-to-click patterns. Privacy: aggregate only, no PII. |
+| D7 | **Evergreen legal explainer content** | "How judges are selected in Florida", "What is a circuit court?" — builds topical authority, attracts backlinks, provides value when programmatic pages are sparse. FindLaw's entire model includes this editorial layer alongside their directory. | Medium | 10-20 hand-written articles targeting informational queries adjacent to judge lookups. Can be AI-assisted drafts with human review. Internal linking to directory pages creates SEO flywheel. MDX in repo. |
+| D8 | **Coverage dashboard (public trust signal)** | "We cover 98% of Florida circuit court judges with verified source attribution." Trust signal for users, advertisers, and potential data customers. No competitor communicates data quality this transparently. Builds confidence in the "verification-first" positioning. | Low | Computed from existing verification + field completeness data. Internal version exists conceptually in admin; public version shows coverage stats on state pages. Low code effort — high trust impact. |
+| D9 | **Click tracking on affiliate + ad widgets** | Beyond basic analytics: track clicks per widget placement, per page template, per jurisdiction. A/B test widget copy and placement. This data optimizes RPM and is what affiliate partners want for reporting. | Medium | Custom event tracking (GA4 events or lightweight custom endpoint via `navigator.sendBeacon`). Track: widget impressions, clicks, CTR by placement zone. Essential for revenue optimization. |
+| D10 | **RSS feed / JSON feed for updates** | Journalists, civic orgs, and legal tech platforms can subscribe to judge updates. Distribution channel that drives backlinks and referral traffic. Low effort, high signaling value. | Low | Next.js Route Handler generating RSS/Atom feed. Include: new judges verified, term changes, state expansion announcements. |
+| D11 | **Email newsletter signup (judge updates by jurisdiction)** | Captures email addresses of high-intent users. Future monetization channel (sponsored newsletter). Distribution hedge against SEO volatility. Reddit/community feedback plan requires a way to capture interested users. | Low–Medium | Simple signup form on state/county pages. Segments: by state/county. Use service like Buttondown or Resend. No complex email platform needed initially. Manual sends are fine early. |
+| D12 | **Performance monitoring (TTFB / SSR response time by template)** | At 30K+ pages, SSR performance at scale matters. Slow TTFB = lower rankings. Need per-template-type visibility to identify which page types need query optimization. | Low–Medium | Use `useReportWebVitals` + Vercel Speed Insights. Dashboard showing TTFB by page template type (state/county/court/judge). Alert on p95 > 1s. |
+| D13 | **Ad-free judge profile core content zone** | Trust signal — ads never interfere with factual judge data above the fold. Conservative ad placement is a positioning decision. Users on legal reference sites are sensitive to feeling "sold to." Ad networks like Mediavine prefer sites with good UX. | Low | Design constraint enforced in ad component placement rules, not code complexity. Above-fold: judge data only. Below-fold: ads + affiliate widgets. Clear visual separation. |
+
+---
+
+## Anti-Features
+
+Features to explicitly NOT build. Either legally risky, operationally expensive, or strategically wrong for this stage.
+
+| # | Anti-Feature | Why Avoid | What to Do Instead |
+|---|-------------|-----------|-------------------|
+| A1 | **User ratings/reviews of judges** | Legal risk (defamation, First Amendment issues). Violates Constitution Principle III (legal neutrality). Moderation nightmare. Avvo does ratings for lawyers — different legal posture for judges. | Present factual, sourced data only. Let users form their own opinions. Link to news articles about judges if relevant (future). |
+| A2 | **Paywall / premium tier for judge data** | Kills SEO (paywalled pages can't be indexed, Google's helpful content guidelines penalize gated content). Reduces traffic volume which reduces ad + affiliate revenue. The entire model depends on free access driving volume. VoterRecords.com validated: free access → monetize traffic. | Monetize the traffic, not the data. Display ads + affiliates + sponsored listings. Data API (B2B) is a Phase 5+ consideration, separate from public pages. |
+| A3 | **Real-time case tracking / docket integration** | Massively complex (PACER integration, per-jurisdiction APIs, costs $0.10/page). Different product category entirely. Would require real-time infrastructure, compliance review, a different data model. | Defer to Year 2+ strategic options. If demand emerges from community feedback, build as separate SaaS product using directory as distribution (the "software on top" strategy from Frey's playbook). |
+| A4 | **Judge comparison / ranking tools** | Implies subjective judgment about public officials. Legally and editorially risky. Rankings require opinion data (sentencing patterns, case outcomes) that we don't have and shouldn't fabricate. Could attract negative attention from the judiciary. | Present factual data neutrally. Let users compare basic facts (education, term length, selection method) through browsing, not through editorial rankings. |
+| A5 | **Complex CMS / content management system** | Over-engineering. Content is generated from structured data, not authored in a CMS. Building a CMS adds maintenance burden without clear value for programmatic pages. | MDX files for 10-20 pillar/explainer pages. Database + templates for everything else. Admin panel handles data operations. |
+| A6 | **OAuth / social login** | Unnecessary complexity. No user-generated content. No personalization requiring auth. Adds privacy compliance burden (GDPR/CCPA). | Keep the site anonymous-access. Only admin panel needs auth (already has it). Newsletter signup uses email-only. |
+| A7 | **Mobile native app** | Wrong distribution channel. Users find judge info via search, not by downloading an app. Would fragment development effort without meaningful adoption. | Mobile-responsive web is sufficient. Optional: PWA manifest for home screen addition is the maximum mobile investment warranted. |
+| A8 | **Aggressive ad density / interstitials / pop-ups** | Destroys trust. Legal information users are particularly sensitive to feeling "sold to." Google penalizes intrusive interstitials in mobile search. Mediavine/Raptive will reject sites with poor UX. | Conservative ad placement. No above-fold ads on profiles, no interstitials, no pop-ups. Clear "Sponsored" labels. Professional, reference-site aesthetic. |
+| A9 | **AI chatbot / Q&A about judges** | Hallucination risk with judicial data is unacceptably high. Wrong information about a judge could be defamatory. Trust is the moat — AI-generated answers undermine it. | Present verified data only. Link to official sources. Structured data and internal search cover user information needs. |
+| A10 | **Self-serve listing signup portal** | Premature. First 20 customers come from cold outreach to local law firms, not inbound. Building self-serve before validating demand wastes engineering time. | Admin CRUD for manual listing management. Add self-serve portal when you have 20+ paying customers and inbound demand signal. |
+| A11 | **Stripe subscription billing** | Over-engineering for pilot phase. Billing infrastructure for <20 customers is wasted complexity. | Manual invoicing or Stripe Invoices (no-code dashboard) for first 20 customers. Build automated billing when recurring revenue exceeds $5K MRR. |
+| A12 | **Session replay / heatmaps** | Expensive, privacy-concerning, premature optimization of UX. No traffic to analyze yet. | Defer until 100K+ PVs and specific UX questions emerge from analytics data. |
+| A13 | **A/B testing framework** | No traffic to test against. Statistical significance requires volume this site doesn't have yet. | Ship one version, measure with analytics, iterate based on real data. A/B testing becomes useful at 50K+ monthly visitors. |
+| A14 | **Multi-language / i18n** | U.S. courts are English-language. No ROI signal for translation. Adds complexity to every template. | Out of scope indefinitely. |
+
+---
+
+## Feature Dependencies
+
+```
+T10 (Design System) ─┬─→ T2 (Ad Zones) ── requires consistent layout components
+                      ├─→ T8 (Affiliate Widgets) ── requires reusable widget components  
+                      ├─→ T9 (Mobile Responsive) ── requires responsive component system
+                      ├─→ T15 (Loading Skeletons) ── requires design system components
+                      ├─→ D1 (Sponsored Listings) ── requires listing card components
+                      └─→ T4 (Judge Photos) ── requires profile component update
+
+T1 (Analytics) ───────┬─→ T3 (CWV Optimization) ── need baseline before optimizing
+                       ├─→ D9 (Click Tracking) ── GA4 must be live before custom events
+                       └─→ D12 (Performance Monitoring) ── needs reporting infrastructure
+
+T14 (Search Console) ─→ T5 (Dynamic Sitemaps) ── sitemaps must exist before submission
+
+T7 (Legal Pages) ─────┬─→ T2 (AdSense) ── AdSense requires privacy policy + ToS
+                       └─→ T8 (Affiliate Partners) ── affiliates require ToS + disclaimer
+
+T16 (ISR Caching) ────→ T3 (CWV Optimization) ── caching improves TTFB which affects LCP
+
+T4 (Judge Photos) ────→ D4 (Photo Pipeline) ── display requires pipeline to populate
+
+D5 (Multi-State) ─────┬─→ D2 (Pillar Pages) ── pillar pages scale with state expansion
+                       └─→ D3 (Term Ending) ── needs multi-state termEnd data
+
+T12 (Empty States) ───→ D2 (Pillar Pages) ── pillar pages ARE the solution for thin content
+
+D6 (Search Analytics) ─→ D7 (Explainer Content) ── query data reveals what to write about
+
+D11 (Newsletter) ─────→ D3 (Term Ending) ── term alerts are newsletter content
+```
+
+---
+
+## MVP Recommendation (Next Milestone)
+
+### Must-have (ship before or at public launch)
+
+Prioritize in this order based on dependency chain and revenue criticality:
+
+1. **T10 — Design system completion** — Unblocks everything. Without consistent components, ad zones / widgets / mobile are all harder.
+2. **T7 — Legal pages** — Gates AdSense and affiliate onboarding. Write once, ship.
+3. **T16 — ISR caching** — Immediate TTFB improvement, reduces Vercel costs, zero risk. Do early.
+4. **T1 + T14 — Analytics + Search Console** — Day 1 instrumentation. Cannot operate blind.
+5. **T5 + T6 + T13 — SEO fundamentals** (sitemaps, structured data audit, canonicals) — Technical SEO that determines whether pages get indexed at all.
+6. **T3 + T15 — Core Web Vitals + skeletons** — Optimize before launch, not after. Performance is a ranking signal.
+7. **T4 — Judge photos** — Biggest single visual upgrade to judge profiles. Addresses thin content.
+8. **T9 + T11 — Mobile audit + OG tags** — Verify responsive behavior, enable social sharing.
+9. **T12 — Empty state handling** — Prevent thin-content penalties before multi-state.
+10. **T2 — AdSense integration** — Revenue from Day 1 of traffic. Requires T7 first.
+11. **T8 — Affiliate widgets** — Revenue at month 1-3 of traffic. Highest revenue potential.
+
+### Should-have (within first 3 months post-launch)
+
+12. **D5 — Multi-state expansion (TX + CA)** — Content growth = traffic growth = revenue.
+13. **D4 — Photo pipeline** — Scalable photo sourcing for new states.
+14. **D2 — Pillar pages for top counties** — Authority concentration for highest-value jurisdictions.
+15. **D6 — Search query analytics** — Learn what users actually want.
+16. **D9 — Click tracking** — Optimize affiliate revenue.
+17. **D13 — Ad-free content zone** — Design constraint applied during ad integration.
+18. **D8 — Coverage dashboard** — Trust signal on state pages.
+
+### Defer (month 3-6+)
+
+19. **D1 — Sponsored attorney listings** — Requires meaningful traffic to demonstrate value to advertisers. 20 clients × $99 = $2K MRR but need traffic proof first.
+20. **D3 — Term ending pages** — Requires multi-state termEnd data coverage >50%.
+21. **D7 — Explainer content** — Informed by search query data from D6.
+22. **D11 — Newsletter** — Requires audience to justify effort.
+23. **D10 — RSS feed** — Low effort but low priority.
+24. **D12 — Performance dashboard** — Important at scale, not critical at launch.
+
+---
+
+## Sources
+
+- **Project docs** (HIGH confidence): PROJECT.md, monetization-plan.md, icp-and-monetization.md, business-analysis.md, competitor-analysis-voterrecords.md, directory-playbook-2025-notes.md, directory-playbook-frey-podcast-notes.md, stats-revenue-and-content-strategy.md, monetization-timing-and-strategy-notes.md, pillar-pages-vs-programmatic-seo.md
+- **Competitor analysis** (HIGH confidence): Avvo.com (attorney directory — practice area + location hierarchy, "find a lawyer" widgets, free listings + paid promotion), Justia.com (free lawyer directory — claim-your-profile model, practice area + location coverage, free for attorneys to claim), FindLaw.com (Thomson Reuters — editorial content + legal issues library + lawyer directory, blogs, legal forms/services, 35K+ articles + 1.2M law firms)
+- **VoterRecords.com model** (HIGH confidence): Validated programmatic SEO → affiliate/ad monetization at 100M+ pages scale. Affiliate referrals to people-search services as primary revenue. Documented in competitor-analysis-voterrecords.md
+- **Directory playbook** (HIGH confidence): Documented patterns from successful directory operators — evergreen + location-based, convenience moat, ads + featured listings monetization, 6-month SEO ramp, "software on top" for Year 2+ compounding
+- **Next.js analytics docs** (HIGH confidence): Official docs for `useReportWebVitals`, `instrumentation-client.ts`, GA4 integration, `@next/third-parties` for script loading
+- **Core Web Vitals** (HIGH confidence): Google Web Vitals initiative — LCP < 2.5s, INP < 200ms, CLS < 0.1 are stable ranking signals as of 2024. INP replaced FID in March 2024
+- **Ad network thresholds** (MEDIUM confidence): AdSense no minimum; Mediavine Journey 5K sessions (launched May 2024, accepts as low as 3K); Mediavine full 50K sessions; Raptive 100K pageviews. Sourced from business docs + directory playbook analysis
+- **Sober Nation benchmark** (MEDIUM confidence): ~$129/month featured listings in rehab directory model. Cited in directory playbook notes, validates $99-199/month pricing assumptions
