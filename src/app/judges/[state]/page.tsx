@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
-import { countyListTitle, buildItemListJsonLd, buildOpenGraph, buildTwitterCard } from "@/lib/seo";
+import {
+  countyListTitle,
+  buildItemListJsonLd,
+  buildOpenGraph,
+  buildTwitterCard,
+} from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import JudgeGrid from "@/components/JudgeGrid";
 import Breadcrumbs from "@/components/Breadcrumbs";

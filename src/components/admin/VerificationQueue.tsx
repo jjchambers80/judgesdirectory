@@ -68,6 +68,9 @@ export default function VerificationQueue({
   const [states, setStates] = useState<StateOption[]>([]);
   const [harvestJobs, setHarvestJobs] = useState<HarvestJobOption[]>([]);
   const [batchActionLoading, setBatchActionLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchDebounceTimer, setSearchDebounceTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/states")
@@ -90,6 +93,16 @@ export default function VerificationQueue({
       .catch(() => {});
   }, []);
 
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchQuery(value);
+      if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+      const timer = setTimeout(() => setDebouncedSearch(value), 300);
+      setSearchDebounceTimer(timer);
+    },
+    [searchDebounceTimer],
+  );
+
   const fetchQueue = useCallback(
     async (page: number) => {
       setLoading(true);
@@ -98,6 +111,7 @@ export default function VerificationQueue({
       params.set("status", statusFilter);
       if (stateId) params.set("stateId", stateId);
       if (harvestJobId) params.set("harvestJobId", harvestJobId);
+      if (debouncedSearch) params.set("search", debouncedSearch);
       if (sorting.length > 0) {
         params.set("sort", sorting[0].id);
         params.set("order", sorting[0].desc ? "desc" : "asc");
@@ -119,13 +133,13 @@ export default function VerificationQueue({
         setLoading(false);
       }
     },
-    [statusFilter, stateId, harvestJobId, sorting, onStatsChange, pagination],
+    [statusFilter, stateId, harvestJobId, debouncedSearch, sorting, onStatsChange, pagination],
   );
 
   useEffect(() => {
     fetchQueue(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, stateId, harvestJobId, sorting]);
+  }, [statusFilter, stateId, harvestJobId, debouncedSearch, sorting]);
 
   const handleAction = async (
     judgeId: string,
@@ -465,6 +479,8 @@ export default function VerificationQueue({
           toolbarConfig={toolbarConfig}
           toolbarLeadingContent={serverFilters}
           toolbarTrailingContent={recordCount}
+          textFilterValue={searchQuery}
+          onTextFilterChange={handleSearchChange}
           manualSorting
           manualFiltering
           manualPagination

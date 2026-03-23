@@ -17,9 +17,7 @@ export default function TermsPage() {
   return (
     <article className="prose prose-neutral dark:prose-invert max-w-3xl mx-auto py-8">
       <h1>Terms of Service</h1>
-      <p className="text-muted-foreground text-sm">
-        Last updated: March 2026
-      </p>
+      <p className="text-muted-foreground text-sm">Last updated: March 2026</p>
 
       <h2>Acceptance of Terms</h2>
       <p>
@@ -47,8 +45,13 @@ export default function TermsPage() {
       <h2>Acceptable Use</h2>
       <p>You agree not to:</p>
       <ul>
-        <li>Use automated tools to scrape or bulk-download data from this site</li>
-        <li>Reproduce, distribute, or commercially exploit the compiled directory data</li>
+        <li>
+          Use automated tools to scrape or bulk-download data from this site
+        </li>
+        <li>
+          Reproduce, distribute, or commercially exploit the compiled directory
+          data
+        </li>
         <li>Use the site for any unlawful purpose</li>
         <li>Attempt to interfere with the site&apos;s operation or security</li>
       </ul>
@@ -56,9 +59,10 @@ export default function TermsPage() {
       <h2>Intellectual Property</h2>
       <p>
         Individual judge biographical facts are public information. However, the
-        compilation, organization, and presentation of this directory — including
-        the site design, code, and curated data structure — are protected by
-        copyright. You may link to any page on this site without restriction.
+        compilation, organization, and presentation of this directory —
+        including the site design, code, and curated data structure — are
+        protected by copyright. You may link to any page on this site without
+        restriction.
       </p>
 
       <h2>Limitation of Liability</h2>
@@ -87,7 +91,8 @@ export default function TermsPage() {
       <h2>Contact</h2>
       <p>
         For questions about these terms, contact us at{" "}
-        <a href="mailto:legal@judgesdirectory.org">legal@judgesdirectory.org</a>.
+        <a href="mailto:legal@judgesdirectory.org">legal@judgesdirectory.org</a>
+        .
       </p>
     </article>
   );

@@ -55,7 +55,11 @@ export default function JudgeGrid({ judges }: JudgeGridProps) {
             )}
           >
             {/* Avatar */}
-            <JudgeAvatar photoUrl={judge.photoUrl} fullName={judge.fullName} size="sm" />
+            <JudgeAvatar
+              photoUrl={judge.photoUrl}
+              fullName={judge.fullName}
+              size="sm"
+            />
 
             {/* Info */}
             <div className="min-w-0 flex-1">

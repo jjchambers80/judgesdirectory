@@ -355,7 +355,11 @@ export function SearchInput({
                 index !== suggestions.length - 1 && "border-b border-input/50",
               )}
             >
-              <JudgeAvatar photoUrl={judge.photoUrl} fullName={judge.fullName} size="xs" />
+              <JudgeAvatar
+                photoUrl={judge.photoUrl}
+                fullName={judge.fullName}
+                size="xs"
+              />
               <div className="min-w-0 flex-1">
                 <div className="font-medium truncate">
                   {highlightMatch(judge.fullName, value)}

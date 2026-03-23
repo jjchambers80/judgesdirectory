@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
-import { judgeListTitle, buildItemListJsonLd, buildOpenGraph, buildTwitterCard } from "@/lib/seo";
+import {
+  judgeListTitle,
+  buildItemListJsonLd,
+  buildOpenGraph,
+  buildTwitterCard,
+} from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
@@ -109,7 +114,8 @@ export default async function JudgeListPage({ params }: PageProps) {
         <aside className="py-12 text-center border rounded-lg bg-muted/50 mt-6">
           <h2 className="text-lg font-semibold mb-2">Coverage Coming Soon</h2>
           <p className="text-muted-foreground mb-4">
-            We&apos;re working on verifying judges for the {court.type} in {county.name}.
+            We&apos;re working on verifying judges for the {court.type} in{" "}
+            {county.name}.
           </p>
           <nav className="flex flex-wrap justify-center gap-3">
             <Link

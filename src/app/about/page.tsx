@@ -9,7 +9,11 @@ export const metadata: Metadata = {
   title,
   description,
   alternates: { canonical: `${SITE_URL}/about/` },
-  openGraph: buildOpenGraph({ title: `About — ${SITE_NAME}`, description, url: `${SITE_URL}/about/` }),
+  openGraph: buildOpenGraph({
+    title: `About — ${SITE_NAME}`,
+    description,
+    url: `${SITE_URL}/about/`,
+  }),
   twitter: buildTwitterCard({ title: `About — ${SITE_NAME}`, description }),
 };
 
@@ -48,8 +52,9 @@ export default function AboutPage() {
 
       <h2>Methodology</h2>
       <p>
-        Our data collection process combines automated harvesting of public court
-        websites with structured verification. We use the following approach:
+        Our data collection process combines automated harvesting of public
+        court websites with structured verification. We use the following
+        approach:
       </p>
       <ol>
         <li>
@@ -57,13 +62,13 @@ export default function AboutPage() {
           judicial roster pages for each jurisdiction.
         </li>
         <li>
-          <strong>Harvesting:</strong> Automated tools extract judge names, court
-          assignments, and term information from these official sources.
+          <strong>Harvesting:</strong> Automated tools extract judge names,
+          court assignments, and term information from these official sources.
         </li>
         <li>
-          <strong>Verification:</strong> Each extracted record is cross-referenced
-          against multiple public sources before being published. Only verified
-          judges appear on the public site.
+          <strong>Verification:</strong> Each extracted record is
+          cross-referenced against multiple public sources before being
+          published. Only verified judges appear on the public site.
         </li>
         <li>
           <strong>Updates:</strong> We regularly re-harvest and re-verify to
@@ -75,9 +80,9 @@ export default function AboutPage() {
       <p>
         Every judge profile on {SITE_NAME} carries a verification status. Only
         judges marked as <strong>Verified</strong> appear on the public site.
-        Verification means the judge&apos;s identity, court assignment, and basic
-        information have been confirmed against at least one authoritative public
-        source.
+        Verification means the judge&apos;s identity, court assignment, and
+        basic information have been confirmed against at least one authoritative
+        public source.
       </p>
       <p>
         We maintain source attribution for every record — you can see where each
@@ -96,8 +101,10 @@ export default function AboutPage() {
       <p>
         If you find inaccurate information or have an update to suggest, please
         contact us at{" "}
-        <a href="mailto:corrections@judgesdirectory.org">corrections@judgesdirectory.org</a>.
-        We take accuracy seriously and investigate all credible reports.
+        <a href="mailto:corrections@judgesdirectory.org">
+          corrections@judgesdirectory.org
+        </a>
+        . We take accuracy seriously and investigate all credible reports.
       </p>
 
       <h2>Contact</h2>

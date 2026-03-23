@@ -90,7 +90,11 @@ function ResultCard({
       )}
     >
       {/* Avatar */}
-      <JudgeAvatar photoUrl={result.photoUrl} fullName={result.fullName} size="sm" />
+      <JudgeAvatar
+        photoUrl={result.photoUrl}
+        fullName={result.fullName}
+        size="sm"
+      />
 
       {/* Info */}
       <div className="min-w-0 flex-1">
@@ -169,7 +173,10 @@ function LoadingSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="flex items-start gap-4 p-4 rounded-lg border bg-card animate-pulse">
+        <div
+          key={i}
+          className="flex items-start gap-4 p-4 rounded-lg border bg-card animate-pulse"
+        >
           <div className="w-11 h-11 rounded-full bg-muted shrink-0" />
           <div className="flex-1 space-y-2">
             <div className="h-5 w-32 bg-muted rounded" />

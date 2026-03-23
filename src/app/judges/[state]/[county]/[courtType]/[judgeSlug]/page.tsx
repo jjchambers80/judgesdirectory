@@ -2,7 +2,12 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
-import { judgeProfileTitle, buildPersonJsonLd, buildOpenGraph, buildTwitterCard } from "@/lib/seo";
+import {
+  judgeProfileTitle,
+  buildPersonJsonLd,
+  buildOpenGraph,
+  buildTwitterCard,
+} from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import { Badge } from "@/components/ui/badge";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -344,7 +349,6 @@ export default async function JudgeProfilePage({ params }: PageProps) {
           </a>
         </p>
       )}
-
     </>
   );
 }
