@@ -31,12 +31,20 @@ export async function generateMetadata({
   const description = `Explore court types and judges in ${county.name}, ${state.name}. Find circuit, county, and district court judges.`;
   const url = `${SITE_URL}/judges/${state.slug}/${county.slug}/`;
 
+  const verifiedCount = await prisma.judge.count({
+    where: {
+      status: "VERIFIED",
+      court: { countyId: county.id },
+    },
+  });
+
   return {
     title,
     description,
     alternates: { canonical: url },
     openGraph: buildOpenGraph({ title, description, url }),
     twitter: buildTwitterCard({ title, description }),
+    ...(verifiedCount < 3 ? { robots: { index: false, follow: true } } : {}),
   };
 }
 

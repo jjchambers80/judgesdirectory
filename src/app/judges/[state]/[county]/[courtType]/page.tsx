@@ -39,12 +39,20 @@ export async function generateMetadata({
   const description = `All verified ${court.type} judges in ${county.name}, ${state.name}. View assigned judges with term dates and court details.`;
   const url = `${SITE_URL}/judges/${state.slug}/${county.slug}/${court.slug}/`;
 
+  const verifiedCount = await prisma.judge.count({
+    where: {
+      status: "VERIFIED",
+      courtId: court.id,
+    },
+  });
+
   return {
     title,
     description,
     alternates: { canonical: url },
     openGraph: buildOpenGraph({ title, description, url }),
     twitter: buildTwitterCard({ title, description }),
+    ...(verifiedCount < 3 ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
