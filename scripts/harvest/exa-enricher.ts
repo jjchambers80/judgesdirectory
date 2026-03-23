@@ -319,9 +319,9 @@ export async function enrichWithExa(
 
   // Track provenance
   if (fieldsEnriched.length > 0) {
-    judge.fieldsFromExternal = [
-      ...new Set([...judge.fieldsFromExternal, ...fieldsEnriched]),
-    ];
+    judge.fieldsFromExternal = Array.from(
+      new Set([...judge.fieldsFromExternal, ...fieldsEnriched]),
+    );
   }
 
   return {
