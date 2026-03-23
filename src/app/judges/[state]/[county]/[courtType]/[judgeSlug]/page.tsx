@@ -193,7 +193,6 @@ export default async function JudgeProfilePage({ params }: PageProps) {
               width={150}
               height={180}
               className="object-cover w-full h-full"
-              unoptimized
             />
           ) : (
             <JudgeSilhouette />

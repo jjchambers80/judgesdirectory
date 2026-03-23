@@ -98,7 +98,6 @@ function ResultCard({
             width={44}
             height={44}
             className="object-cover w-full h-full"
-            unoptimized
           />
         ) : (
           <svg

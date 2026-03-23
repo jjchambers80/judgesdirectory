@@ -363,7 +363,6 @@ export function SearchInput({
                     width={32}
                     height={32}
                     className="object-cover w-full h-full"
-                    unoptimized
                   />
                 ) : (
                   <svg
