@@ -5,7 +5,9 @@
  * @module scripts/harvest/bio-enricher
  */
 
-import { fetchPage } from "./fetcher";
+import { getPageContent } from "./hybrid-fetcher";
+import type { FetchMethod } from "./hybrid-fetcher";
+import { extractPhotoFromHtml } from "./photo-extractor";
 import {
   extractBioPage,
   type BioPageData,
@@ -76,7 +78,17 @@ export async function enrichWithBioPages(
         const bioUrl = resolveUrl(judge.bioPageUrl, courtEntry.url);
         console.log(`    Fetching bio: ${bioUrl}`);
 
-        const fetchResult = await fetchPage(bioUrl);
+        const fetchResult = await getPageContent(
+          bioUrl,
+          (courtEntry.fetchMethod ?? "http") as FetchMethod,
+        );
+
+        if (!fetchResult) {
+          console.warn(`    Bio fetch skipped (fetchMethod=${courtEntry.fetchMethod})`);
+          bioPagesFailed++;
+          continue;
+        }
+
         const bioData = await extractBioPage(
           fetchResult.markdown,
           judge.name,
@@ -85,6 +97,20 @@ export async function enrichWithBioPages(
 
         // Merge bio data into record
         mergeAndTrackBioData(record, bioData, fieldsEnriched);
+
+        // Deterministic photo extraction from rawHtml (images are stripped
+        // from markdown by NOISE_SELECTORS, so the LLM can never see them).
+        // Only run if the LLM didn't already find a photo.
+        if (!record.photoUrl && fetchResult.rawHtml) {
+          const extractedPhoto = extractPhotoFromHtml(fetchResult.rawHtml, bioUrl);
+          if (extractedPhoto) {
+            record.photoUrl = extractedPhoto;
+            record.fieldsFromBio.push("photoUrl");
+            fieldsEnriched["photoUrl"] = (fieldsEnriched["photoUrl"] ?? 0) + 1;
+            console.log(`    Photo extracted: ${extractedPhoto}`);
+          }
+        }
+
         record.bioPageUrl = bioUrl;
         bioPagesSucceeded++;
       } catch (err) {

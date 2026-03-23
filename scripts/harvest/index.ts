@@ -61,6 +61,8 @@ import {
 import { seedStateCourts } from "./court-seeder";
 import { loadCheckpoint, saveCheckpoint, resetCheckpoint } from "./checkpoint";
 import { fetchPage } from "./fetcher";
+import { getPageContent } from "./hybrid-fetcher";
+import type { FetchMethod } from "./hybrid-fetcher";
 import { extractJudges, type JudgeRecord } from "./extractor";
 import { enrichWithBioPages } from "./bio-enricher";
 import { enrichAllWithBallotpedia } from "./ballotpedia-enricher";
@@ -1017,11 +1019,11 @@ async function runEnrichedPipeline(
       continue;
     }
 
-    // Skip entries requiring unsupported fetch methods (browser, manual)
-    if (entry.fetchMethod === "browser" || entry.fetchMethod === "manual") {
+    // Skip entries requiring manual fetch only
+    if (entry.fetchMethod === "manual") {
       skippedFetchMethod++;
       console.warn(
-        `\n[skip:${entry.fetchMethod}] ${entry.label} — requires ${entry.fetchMethod}-based fetching (not yet supported)`,
+        `\n[skip:${entry.fetchMethod}] ${entry.label} — requires manual fetching`,
       );
       console.warn(`  URL: ${entry.url}`);
       continue;
@@ -1034,8 +1036,18 @@ async function runEnrichedPipeline(
     console.log(`  URL: ${entry.url}`);
 
     try {
-      // Fetch and clean HTML
-      const fetchResult = await fetchPage(entry.url);
+      // Fetch via dispatcher (routes by fetchMethod: http, scrapling, auto, browser)
+      const fetchResult = await getPageContent(
+        entry.url,
+        (entry.fetchMethod ?? "http") as FetchMethod,
+        stateConfig.rateLimit,
+      );
+
+      if (!fetchResult) {
+        skippedFetchMethod++;
+        continue;
+      }
+
       console.log(
         `  Fetched: ${formatBytes(fetchResult.htmlSize)} HTML → ${formatBytes(fetchResult.markdownSize)} Markdown`,
       );
@@ -1311,11 +1323,11 @@ async function runExtractionPipeline(
       continue;
     }
 
-    // Skip entries requiring unsupported fetch methods (browser, manual)
-    if (entry.fetchMethod === "browser" || entry.fetchMethod === "manual") {
+    // Skip entries requiring manual fetch only
+    if (entry.fetchMethod === "manual") {
       skippedFetchMethod++;
       console.warn(
-        `\n[skip:${entry.fetchMethod}] ${entry.label} — requires ${entry.fetchMethod}-based fetching (not yet supported)`,
+        `\n[skip:${entry.fetchMethod}] ${entry.label} — requires manual fetching`,
       );
       console.warn(`  URL: ${entry.url}`);
       continue;
@@ -1328,8 +1340,18 @@ async function runExtractionPipeline(
     console.log(`  URL: ${entry.url}`);
 
     try {
-      // Fetch and clean HTML
-      const fetchResult = await fetchPage(entry.url);
+      // Fetch via dispatcher (routes by fetchMethod: http, scrapling, auto, browser)
+      const fetchResult = await getPageContent(
+        entry.url,
+        (entry.fetchMethod ?? "http") as FetchMethod,
+        stateConfig?.rateLimit,
+      );
+
+      if (!fetchResult) {
+        skippedFetchMethod++;
+        continue;
+      }
+
       console.log(
         `  Fetched: ${formatBytes(fetchResult.htmlSize)} HTML → ${formatBytes(fetchResult.markdownSize)} Markdown`,
       );

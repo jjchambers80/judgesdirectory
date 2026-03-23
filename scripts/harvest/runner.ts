@@ -33,6 +33,8 @@ import {
 } from "./config";
 import { loadCheckpoint, saveCheckpoint, resetCheckpoint } from "./checkpoint";
 import { fetchPage } from "./fetcher";
+import { getPageContent } from "./hybrid-fetcher";
+import type { FetchMethod } from "./hybrid-fetcher";
 import { extractJudges } from "./extractor";
 import { enrichWithBioPages } from "./bio-enricher";
 import { enrichAllWithBallotpedia } from "./ballotpedia-enricher";
@@ -150,7 +152,7 @@ function toCourtUrlEntry(dbUrl: DbUrlConfig): CourtUrlEntry {
     level: (dbUrl.suggestedLevel || "trial") as string,
     counties: [],
     label: `${dbUrl.suggestedType || "Court"} (${dbUrl.domain})`,
-    fetchMethod: (dbUrl.fetchMethod || "http") as "http" | "browser" | "manual",
+    fetchMethod: (dbUrl.fetchMethod || "http") as CourtUrlEntry["fetchMethod"],
     deterministic: hints?.pattern ? true : false,
     selectorHint: hints?.selector ? String(hints.selector) : null,
   };
@@ -398,8 +400,8 @@ async function run(): Promise<void> {
         continue;
       }
 
-      // Skip unsupported fetch methods
-      if (entry.fetchMethod === "browser" || entry.fetchMethod === "manual") {
+      // Skip entries requiring manual fetch only
+      if (entry.fetchMethod === "manual") {
         console.warn(`[skip:${entry.fetchMethod}] ${entry.label}`);
         continue;
       }
@@ -411,7 +413,16 @@ async function run(): Promise<void> {
       console.log(`  URL: ${entry.url}`);
 
       try {
-        const fetchResult = await fetchPage(entry.url);
+        const fetchResult = await getPageContent(
+          entry.url,
+          (entry.fetchMethod ?? "http") as FetchMethod,
+        );
+
+        if (!fetchResult) {
+          console.warn(`[skip] ${entry.label} — dispatcher returned null`);
+          continue;
+        }
+
         console.log(
           `  Fetched: ${formatBytes(fetchResult.htmlSize)} HTML → ${formatBytes(fetchResult.markdownSize)} Markdown`,
         );

@@ -45,7 +45,7 @@ export const CourtEntrySchema = z.object({
   division: z.string().nullable().optional().default(null),
   judicialDistrict: z.number().int().nullable().optional().default(null),
   parentCourt: z.string().nullable().optional().default(null),
-  fetchMethod: z.enum(["http", "browser", "manual"]).default("http"),
+  fetchMethod: z.enum(["http", "browser", "manual", "scrapling", "auto"]).default("http"),
   deterministic: z.boolean().default(false),
   selectorHint: z.string().nullable().optional().default(null),
   notes: z.string().nullable().optional().default(null),
