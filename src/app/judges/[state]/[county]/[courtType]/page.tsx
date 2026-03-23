@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
 import { judgeListTitle, buildItemListJsonLd } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 interface PageProps {
   params: Promise<{ state: string; county: string; courtType: string }>;
@@ -78,77 +79,14 @@ export default async function JudgeListPage({ params }: PageProps) {
   return (
     <>
       <JsonLd data={jsonLd} />
-      <nav
-        aria-label="Breadcrumb"
-        className="mb-4 text-sm text-muted-foreground"
-      >
-        <ol className="flex flex-wrap items-center gap-1.5 list-none m-0 p-0">
-          <li>
-            <Link href="/judges/" className="text-link hover:underline">
-              States
-            </Link>
-          </li>
-          <li aria-hidden="true">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </li>
-          <li>
-            <Link
-              href={`/judges/${state.slug}/`}
-              className="text-link hover:underline"
-            >
-              {state.name}
-            </Link>
-          </li>
-          <li aria-hidden="true">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </li>
-          <li>
-            <Link
-              href={`/judges/${state.slug}/${county.slug}/`}
-              className="text-link hover:underline"
-            >
-              {county.name}
-            </Link>
-          </li>
-          <li aria-hidden="true">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </li>
-          <li aria-current="page">{court.type}</li>
-        </ol>
-      </nav>
+      <Breadcrumbs
+        segments={[
+          { label: "States", href: "/judges/" },
+          { label: state.name, href: `/judges/${state.slug}/` },
+          { label: county.name, href: `/judges/${state.slug}/${county.slug}/` },
+        ]}
+        currentPage={court.type}
+      />
       <h1>
         {court.type} Judges in {county.name}, {state.name}
       </h1>
