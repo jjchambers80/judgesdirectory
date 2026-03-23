@@ -1,12 +1,12 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
 import { judgeProfileTitle, buildPersonJsonLd, buildOpenGraph, buildTwitterCard } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import { Badge } from "@/components/ui/badge";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import JudgeAvatar from "@/components/JudgeAvatar";
 
 export const revalidate = 86400;
 
@@ -89,44 +89,6 @@ export async function generateMetadata({
   };
 }
 
-// Judge silhouette SVG for when no photo is available
-function JudgeSilhouette() {
-  return (
-    <svg
-      viewBox="0 0 120 120"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-full h-full bg-muted rounded-lg"
-      aria-hidden="true"
-    >
-      {/* Background circle for head */}
-      <circle cx="60" cy="40" r="22" className="fill-muted-foreground" />
-      {/* Shoulders/robe */}
-      <path
-        d="M20 120 C20 85 40 70 60 70 C80 70 100 85 100 120"
-        className="fill-foreground/60"
-      />
-      {/* Judicial collar/robe detail */}
-      <path
-        d="M45 75 L60 90 L75 75"
-        className="stroke-foreground"
-        strokeWidth="3"
-        fill="none"
-      />
-      {/* Gavel icon hint */}
-      <rect
-        x="85"
-        y="95"
-        width="20"
-        height="6"
-        rx="2"
-        className="fill-muted-foreground"
-        transform="rotate(-30 85 95)"
-      />
-    </svg>
-  );
-}
-
 export default async function JudgeProfilePage({ params }: PageProps) {
   const {
     state: stateSlug,
@@ -184,20 +146,11 @@ export default async function JudgeProfilePage({ params }: PageProps) {
 
       {/* Header with Photo */}
       <div className="flex flex-col gap-6 mb-8 sm:flex-row sm:items-start">
-        {/* Photo or Silhouette */}
-        <div className="w-[150px] h-[180px] shrink-0 rounded-lg overflow-hidden shadow-md">
-          {judge.photoUrl ? (
-            <Image
-              src={judge.photoUrl}
-              alt={`Photo of ${judge.fullName}`}
-              width={150}
-              height={180}
-              className="object-cover w-full h-full"
-            />
-          ) : (
-            <JudgeSilhouette />
-          )}
-        </div>
+        <JudgeAvatar
+          photoUrl={judge.photoUrl}
+          fullName={judge.fullName}
+          size="lg"
+        />
 
         {/* Name and Title */}
         <div className="flex-1">
