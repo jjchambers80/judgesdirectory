@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Roboto } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_NAME, SITE_DESCRIPTION, TITLE_TEMPLATE } from "@/lib/constants";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -22,6 +24,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "https://judgesdirectory.org",
   ),
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || "",
+  },
 };
 
 export default function RootLayout({
@@ -71,6 +76,8 @@ export default function RootLayout({
         </main>
 
         <SiteFooter />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
