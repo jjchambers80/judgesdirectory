@@ -17,20 +17,20 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Analytics & SEO Foundation
 
-- [ ] **ANLT-01**: Vercel Analytics and Speed Insights instrumented on all public pages (cookie-free, zero GDPR banner)
-- [ ] **ANLT-02**: Google Search Console property configured with sitemap submitted
-- [ ] **ANLT-03**: Core Web Vitals baseline captured (LCP, INP, CLS per page template type)
-- [ ] **ANLT-04**: Dynamic XML sitemaps generated per state with lastmod from updatedAt, split for >50K URLs
-- [ ] **ANLT-05**: Open Graph and Twitter Card meta tags on all public page templates via generateMetadata()
-- [ ] **ANLT-06**: Canonical URLs enforced on all pages; trailing slash convention consistent; 301 redirects for common variants
-- [ ] **ANLT-07**: Existing Schema.org JSON-LD validated across all 5 template types; BreadcrumbList added if missing
+- [x] **ANLT-01**: Vercel Analytics and Speed Insights instrumented on all public pages (cookie-free, zero GDPR banner)
+- [x] **ANLT-02**: Google Search Console property configured with sitemap submitted
+- [x] **ANLT-03**: Core Web Vitals baseline captured (LCP, INP, CLS per page template type)
+- [x] **ANLT-04**: Dynamic XML sitemaps generated per state with lastmod from updatedAt, split for >50K URLs
+- [x] **ANLT-05**: Open Graph and Twitter Card meta tags on all public page templates via generateMetadata()
+- [x] **ANLT-06**: Canonical URLs enforced on all pages; trailing slash convention consistent; 301 redirects for common variants
+- [x] **ANLT-07**: Existing Schema.org JSON-LD validated across all 5 template types; BreadcrumbList added if missing
 
 ### Performance
 
-- [ ] **PERF-01**: ISR caching enabled on all public routes (judge profiles revalidate daily, listing pages hourly)
-- [ ] **PERF-02**: On-demand revalidation triggered after harvest pipeline imports new data (revalidatePath/revalidateTag)
-- [ ] **PERF-03**: LCP < 2.5s, INP < 200ms, CLS < 0.1 on all public page templates
-- [ ] **PERF-04**: Judge photos optimized via sharp + next/image with lazy loading and fallback avatar
+- [x] **PERF-01**: ISR caching enabled on all public routes (judge profiles revalidate daily, listing pages hourly)
+- [x] **PERF-02**: On-demand revalidation triggered after harvest pipeline imports new data (revalidatePath/revalidateTag)
+- [x] **PERF-03**: LCP < 2.5s, INP < 200ms, CLS < 0.1 on all public page templates
+- [x] **PERF-04**: Judge photos optimized via sharp + next/image with lazy loading and fallback avatar
 
 ### Legal Pages
 
@@ -147,17 +147,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DSGN-03     | Phase 1 | Complete |
 | DSGN-04     | Phase 1 | Complete |
 | DSGN-05     | Phase 1 | Complete |
-| ANLT-01     | Phase 1 | Pending |
-| ANLT-02     | Phase 1 | Pending |
-| ANLT-03     | Phase 1 | Pending |
-| ANLT-04     | Phase 1 | Pending |
-| ANLT-05     | Phase 1 | Pending |
-| ANLT-06     | Phase 1 | Pending |
-| ANLT-07     | Phase 1 | Pending |
-| PERF-01     | Phase 1 | Pending |
-| PERF-02     | Phase 1 | Pending |
-| PERF-03     | Phase 1 | Pending |
-| PERF-04     | Phase 1 | Pending |
+| ANLT-01     | Phase 1 | Complete |
+| ANLT-02     | Phase 1 | Complete |
+| ANLT-03     | Phase 1 | Complete |
+| ANLT-04     | Phase 1 | Complete |
+| ANLT-05     | Phase 1 | Complete |
+| ANLT-06     | Phase 1 | Complete |
+| ANLT-07     | Phase 1 | Complete |
+| PERF-01     | Phase 1 | Complete |
+| PERF-02     | Phase 1 | Complete |
+| PERF-03     | Phase 1 | Complete |
+| PERF-04     | Phase 1 | Complete |
 | LEGL-01     | Phase 1 | Pending |
 | LEGL-02     | Phase 1 | Pending |
 | LEGL-03     | Phase 1 | Pending |
