@@ -7,6 +7,8 @@ import JsonLd from "@/components/seo/JsonLd";
 import JudgeGrid from "@/components/JudgeGrid";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
+export const revalidate = 3600;
+
 interface PageProps {
   params: Promise<{ state: string; county: string }>;
 }

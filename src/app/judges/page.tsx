@@ -4,6 +4,8 @@ import { SITE_URL } from "@/lib/constants";
 import { buildOpenGraph, buildTwitterCard } from "@/lib/seo";
 import { JudgeSearch } from "@/components/search";
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "U.S. Judges Directory — All Judges",
   description:

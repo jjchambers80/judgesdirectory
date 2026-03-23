@@ -8,6 +8,8 @@ import JsonLd from "@/components/seo/JsonLd";
 import { Badge } from "@/components/ui/badge";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
+export const revalidate = 86400;
+
 interface PageProps {
   params: Promise<{
     state: string;

@@ -7,6 +7,8 @@ import { judgeListTitle, buildItemListJsonLd, buildOpenGraph, buildTwitterCard }
 import JsonLd from "@/components/seo/JsonLd";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
+export const revalidate = 3600;
+
 interface PageProps {
   params: Promise<{ state: string; county: string; courtType: string }>;
 }
