@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
-import { courtTypesTitle, buildItemListJsonLd } from "@/lib/seo";
+import { courtTypesTitle, buildItemListJsonLd, buildOpenGraph, buildTwitterCard } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import JudgeGrid from "@/components/JudgeGrid";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -24,11 +24,16 @@ export async function generateMetadata({
   });
   if (!county) return {};
 
+  const title = courtTypesTitle(county.name, state.name);
+  const description = `Explore court types and judges in ${county.name}, ${state.name}. Find circuit, county, and district court judges.`;
+  const url = `${SITE_URL}/judges/${state.slug}/${county.slug}/`;
+
   return {
-    title: courtTypesTitle(county.name, state.name),
-    alternates: {
-      canonical: `${SITE_URL}/judges/${state.slug}/${county.slug}/`,
-    },
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: buildOpenGraph({ title, description, url }),
+    twitter: buildTwitterCard({ title, description }),
   };
 }
 
