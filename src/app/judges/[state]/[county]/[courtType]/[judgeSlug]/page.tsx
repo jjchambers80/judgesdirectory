@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
-import { judgeProfileTitle, buildPersonJsonLd } from "@/lib/seo";
+import { judgeProfileTitle, buildPersonJsonLd, buildOpenGraph, buildTwitterCard } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import { Badge } from "@/components/ui/badge";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -59,16 +59,31 @@ export async function generateMetadata({
 
   const { state, county, court, judge } = data;
 
+  const title = judgeProfileTitle(
+    judge.fullName,
+    court.type,
+    county.name,
+    state.name,
+  );
+  const description = `Judge ${judge.fullName} serves on the ${court.type} in ${county.name}, ${state.name}. View term dates, court information, and official records.`;
+  const url = `${SITE_URL}/judges/${state.slug}/${county.slug}/${court.slug}/${judge.slug}/`;
+
   return {
-    title: judgeProfileTitle(
-      judge.fullName,
-      court.type,
-      county.name,
-      state.name,
-    ),
-    alternates: {
-      canonical: `${SITE_URL}/judges/${state.slug}/${county.slug}/${court.slug}/${judge.slug}/`,
-    },
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: buildOpenGraph({
+      title,
+      description,
+      url,
+      type: "profile",
+      imageUrl: judge.photoUrl || undefined,
+    }),
+    twitter: buildTwitterCard({
+      title,
+      description,
+      imageUrl: judge.photoUrl || undefined,
+    }),
   };
 }
 
