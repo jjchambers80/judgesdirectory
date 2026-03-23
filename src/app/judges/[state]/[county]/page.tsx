@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
 import { courtTypesTitle, buildItemListJsonLd, buildOpenGraph, buildTwitterCard } from "@/lib/seo";
@@ -77,6 +78,57 @@ export default async function CountyJudgesPage({ params }: PageProps) {
       },
     },
   });
+
+  if (judges.length === 0) {
+    const neighbors = await prisma.county.findMany({
+      where: {
+        stateId: state.id,
+        id: { not: county.id },
+        courts: { some: { judges: { some: { status: "VERIFIED" } } } },
+      },
+      take: 5,
+      orderBy: { name: "asc" },
+      select: { name: true, slug: true },
+    });
+
+    return (
+      <>
+        <Breadcrumbs
+          segments={[
+            { label: "States", href: "/judges/" },
+            { label: state.name, href: `/judges/${state.slug}/` },
+          ]}
+          currentPage={county.name}
+        />
+        <h1>
+          Judges in {county.name}, {state.name}
+        </h1>
+        <aside className="py-12 text-center border rounded-lg bg-muted/50 mt-6">
+          <h2 className="text-lg font-semibold mb-2">Coverage Coming Soon</h2>
+          <p className="text-muted-foreground mb-4">
+            We&apos;re working on adding verified judge information for {county.name}.
+          </p>
+          <nav className="flex flex-wrap justify-center gap-3">
+            <Link
+              href={`/judges/${state.slug}/`}
+              className="text-sm text-link underline"
+            >
+              &larr; Back to {state.name}
+            </Link>
+            {neighbors.map((n) => (
+              <Link
+                key={n.slug}
+                href={`/judges/${state.slug}/${n.slug}/`}
+                className="text-sm px-3 py-1 rounded-md bg-muted hover:bg-muted/80"
+              >
+                {n.name}
+              </Link>
+            ))}
+          </nav>
+        </aside>
+      </>
+    );
+  }
 
   const jsonLd = buildItemListJsonLd(
     judges.map((judge, index) => ({

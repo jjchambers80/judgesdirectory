@@ -98,11 +98,20 @@ export default async function JudgeListPage({ params }: PageProps) {
         {court.type} Judges in {county.name}, {state.name}
       </h1>
       {judges.length === 0 ? (
-        <p className="text-muted-foreground mt-4 py-8 text-center">
-          No verified judge records available for {court.type} in {county.name}{" "}
-          yet. Judge data will be added as part of our ongoing data collection
-          effort.
-        </p>
+        <aside className="py-12 text-center border rounded-lg bg-muted/50 mt-6">
+          <h2 className="text-lg font-semibold mb-2">Coverage Coming Soon</h2>
+          <p className="text-muted-foreground mb-4">
+            We&apos;re working on verifying judges for the {court.type} in {county.name}.
+          </p>
+          <nav className="flex flex-wrap justify-center gap-3">
+            <Link
+              href={`/judges/${state.slug}/${county.slug}/`}
+              className="text-sm text-link underline"
+            >
+              &larr; Back to {county.name}
+            </Link>
+          </nav>
+        </aside>
       ) : (
         <>
           <p className="text-muted-foreground mb-8">
