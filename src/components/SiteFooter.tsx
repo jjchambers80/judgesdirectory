@@ -1,4 +1,5 @@
 import { SITE_NAME } from "@/lib/constants";
+import Link from "next/link";
 
 export default function SiteFooter() {
   return (
@@ -7,6 +8,17 @@ export default function SiteFooter() {
         <p className="text-sm text-muted-foreground">
           &copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
         </p>
+        <nav aria-label="Footer navigation" className="flex gap-4 mt-2">
+          <Link href="/about/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            About
+          </Link>
+          <Link href="/privacy/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Privacy Policy
+          </Link>
+          <Link href="/terms/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Terms of Service
+          </Link>
+        </nav>
         <aside
           role="note"
           aria-label="Legal disclaimer"
