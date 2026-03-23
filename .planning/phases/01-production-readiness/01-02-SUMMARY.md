@@ -2,7 +2,16 @@
 phase: 01-production-readiness
 plan: "02"
 subsystem: seo, analytics, performance
-tags: [vercel-analytics, speed-insights, open-graph, twitter-card, isr, sharp, revalidation]
+tags:
+  [
+    vercel-analytics,
+    speed-insights,
+    open-graph,
+    twitter-card,
+    isr,
+    sharp,
+    revalidation,
+  ]
 
 # Dependency graph
 requires:
@@ -21,11 +30,30 @@ affects: [phase-02-revenue, phase-03-expansion]
 # Tech tracking
 tech-stack:
   added: ["@vercel/analytics", "@vercel/speed-insights", "sharp"]
-  patterns: ["buildOpenGraph/buildTwitterCard helpers in seo.ts", "ISR revalidate exports per route segment", "timingSafeEqual for API auth tokens"]
+  patterns:
+    [
+      "buildOpenGraph/buildTwitterCard helpers in seo.ts",
+      "ISR revalidate exports per route segment",
+      "timingSafeEqual for API auth tokens",
+    ]
 
 key-files:
   created: ["public/og-default.png", "src/app/api/revalidate/route.ts"]
-  modified: ["package.json", "src/app/layout.tsx", "src/lib/seo.ts", "src/app/judges/page.tsx", "src/app/judges/[state]/page.tsx", "src/app/judges/[state]/[county]/page.tsx", "src/app/judges/[state]/[county]/[courtType]/page.tsx", "src/app/judges/[state]/[county]/[courtType]/[judgeSlug]/page.tsx", "next.config.mjs", "src/components/JudgeGrid.tsx", "src/components/search/SearchInput.tsx", "src/components/search/SearchResults.tsx"]
+  modified:
+    [
+      "package.json",
+      "src/app/layout.tsx",
+      "src/lib/seo.ts",
+      "src/app/judges/page.tsx",
+      "src/app/judges/[state]/page.tsx",
+      "src/app/judges/[state]/[county]/page.tsx",
+      "src/app/judges/[state]/[county]/[courtType]/page.tsx",
+      "src/app/judges/[state]/[county]/[courtType]/[judgeSlug]/page.tsx",
+      "next.config.mjs",
+      "src/components/JudgeGrid.tsx",
+      "src/components/search/SearchInput.tsx",
+      "src/components/search/SearchResults.tsx",
+    ]
 
 key-decisions:
   - "Used crypto.timingSafeEqual for revalidation token comparison instead of simple equality"
@@ -37,7 +65,20 @@ patterns-established:
   - "ISR per-route: listing pages 3600s, profiles 86400s"
   - "Revalidation API: POST /api/revalidate/ with x-revalidation-token header"
 
-requirements-completed: [ANLT-01, ANLT-02, ANLT-03, ANLT-04, ANLT-05, ANLT-06, ANLT-07, PERF-01, PERF-02, PERF-03, PERF-04]
+requirements-completed:
+  [
+    ANLT-01,
+    ANLT-02,
+    ANLT-03,
+    ANLT-04,
+    ANLT-05,
+    ANLT-06,
+    ANLT-07,
+    PERF-01,
+    PERF-02,
+    PERF-03,
+    PERF-04,
+  ]
 
 # Metrics
 duration: 13min
@@ -118,6 +159,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. [Rule 2 - Security] Used timingSafeEqual for revalidation token**
+
 - **Found during:** Task 14
 - **Issue:** Plan suggested simple string equality was acceptable for token comparison
 - **Fix:** Used crypto.timingSafeEqual to prevent timing attacks on the revalidation secret

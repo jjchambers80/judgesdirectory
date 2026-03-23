@@ -20,6 +20,7 @@ The key risks are: (1) thin content penalties when expanding to states with spar
 The existing stack (Next.js 14, React 18, Prisma 6, PostgreSQL, Tailwind CSS 4, shadcn/ui, Vercel) remains unchanged — no migrations. The milestone adds only targeted dependencies. See [STACK.md](STACK.md) for full details.
 
 **Core technologies:**
+
 - **@vercel/analytics + @vercel/speed-insights**: Cookie-free, zero-config analytics + real CWV monitoring — free on Vercel plan, no GDPR cookie banner needed
 - **@next/third-parties**: Official Next.js package for loading ad scripts without wrecking CWV — handles deferred loading and worker threads
 - **sharp**: Explicit installation for consistent image optimization across dev/prod for judge photos
@@ -33,6 +34,7 @@ The existing stack (Next.js 14, React 18, Prisma 6, PostgreSQL, Tailwind CSS 4, 
 See [FEATURES.md](FEATURES.md) for the complete landscape with dependency graph.
 
 **Must have (table stakes — ship at or before public launch):**
+
 - Design system completion (T10) — root dependency for all monetization UI
 - Legal pages: Privacy Policy, ToS, disclaimers (T7) — gates AdSense and affiliate approval
 - Analytics instrumentation + Search Console (T1, T14) — cannot operate blind
@@ -45,6 +47,7 @@ See [FEATURES.md](FEATURES.md) for the complete landscape with dependency graph.
 - Affiliate referral widgets (T8) — highest revenue potential ($10K+/mo at 50K PVs)
 
 **Should have (competitive differentiators, first 3 months post-launch):**
+
 - Sponsored attorney listing placements (D1) — stable MRR, $99–199/month per placement
 - Multi-state expansion: TX + CA as pilots (D5) — content growth = traffic growth
 - Pillar pages for top counties (D2) — authority concentration, thin content mitigation
@@ -53,6 +56,7 @@ See [FEATURES.md](FEATURES.md) for the complete landscape with dependency graph.
 - Coverage dashboard as trust signal (D8) — transparency about data quality
 
 **Defer (v2+):**
+
 - Self-serve listing signup portal (A10) — premature before 20+ paying customers
 - Stripe subscription billing (A11) — manual invoicing sufficient for pilot
 - Term ending pages (D3) — needs multi-state termEnd data > 50% coverage
@@ -64,6 +68,7 @@ See [FEATURES.md](FEATURES.md) for the complete landscape with dependency graph.
 The architecture follows a "server renders shell, client hydrates monetization" pattern. ISR-cached pages deliver fast, stable HTML with empty monetization slot containers. Client Components hydrate to fill ads (dynamic, auction-based), track events, and load third-party scripts — keeping the cached server output deterministic and fast. See [ARCHITECTURE.md](ARCHITECTURE.md) for full diagrams and data flows.
 
 **Major components:**
+
 1. **ISR + On-Demand Revalidation Layer** — Time-based ISR (1-hour default) as safety net, supplemented by explicit `revalidatePath`/`revalidateTag` after harvests and sponsor changes. Prisma queries wrapped with `unstable_cache` for DB-level caching.
 2. **Monetization Layer** — Three Client Components: `AdSlot` (display ads with network abstraction for AdSense→Mediavine swap), `AffiliateWidget` (contextual CTAs with UTM tracking), `SponsoredListing` (DB-backed sponsored cards with impression/click tracking). Feature-flagged via env vars.
 3. **Analytics Layer** — GA4 via `@next/third-parties` + Vercel Analytics/Speed Insights + lightweight `analytics_events` PostgreSQL table for internal monetization metrics. No separate analytics DB needed at this scale.
@@ -84,60 +89,70 @@ See [PITFALLS.md](PITFALLS.md) for full analysis with warning signs and preventi
 Based on the dependency chains in FEATURES.md, the build order in ARCHITECTURE.md, and the phase-specific warnings in PITFALLS.md, the following phase structure is recommended:
 
 ### Phase 1: Design System Completion
+
 **Rationale:** Root dependency — unblocks all monetization UI, ad slot components, widget components, mobile responsiveness, and loading skeletons. FEATURES.md shows T10 feeding into T2, T4, T8, T9, T15, and D1. Completing this first eliminates the "half-migrated design system" technical debt that blocks everything downstream.
 **Delivers:** Complete shadcn/ui migration across public pages (18→27 components), unified admin + public styling, responsive component system.
 **Addresses:** T10 (Design System), T15 (Loading Skeletons), T9 (Mobile Responsive — partial).
 **Avoids:** Pitfall — "mid-monetization UI changes break ad slot positioning and CWV measurements."
 
 ### Phase 2: Analytics & SEO Foundation
-**Rationale:** Must precede all monetization. Analytics establishes the CWV baseline needed to measure ad impact. Search Console reveals indexing issues before scaling content. SEO fundamentals determine whether pages get indexed at all. PITFALLS.md warns: "instrument analytics *first*, collect 30 days of baseline CWV + traffic data, *then* add ads."
+
+**Rationale:** Must precede all monetization. Analytics establishes the CWV baseline needed to measure ad impact. Search Console reveals indexing issues before scaling content. SEO fundamentals determine whether pages get indexed at all. PITFALLS.md warns: "instrument analytics _first_, collect 30 days of baseline CWV + traffic data, _then_ add ads."
 **Delivers:** Vercel Analytics + Speed Insights, Google Search Console integration, enhanced sitemaps with `lastmod`, canonical URL enforcement, structured data audit, OG meta tags.
 **Addresses:** T1 (Analytics), T14 (Search Console), T5 (Sitemaps), T6 (Structured Data), T13 (Canonicals), T11 (OG Tags).
 **Avoids:** Pitfall 2 — operating blind on CWV performance before adding revenue features.
 
 ### Phase 3: Performance & ISR Migration
+
 **Rationale:** ISR must precede ads — ad networks penalize slow sites, and SSR without caching means high TTFB + expensive Vercel costs at scale. ARCHITECTURE.md dependency chain: Analytics → ISR → Ads. Converts all public pages from pure SSR to ISR-cached with Prisma query caching and on-demand revalidation.
 **Delivers:** ISR on all public routes, Prisma query caching via `unstable_cache`, harvest→revalidation pipeline, image optimization with sharp + next/image, CWV optimization pass.
 **Addresses:** T16 (ISR Caching), T3 (Core Web Vitals), T4 (Judge Photos — display optimization).
 **Avoids:** Performance traps — N+1 queries, sitemap generation timeouts, unoptimized images.
 
 ### Phase 4: Legal Pages & Ad Compliance
+
 **Rationale:** AdSense requires Privacy Policy + Terms of Service before approval. Affiliate partners require legal disclaimers. Hard gate for monetization — small phase but non-negotiable. FTC disclosure requirements and attorney referral compliance copy must be finalized before any revenue widget goes live.
 **Delivers:** Privacy Policy, Terms of Service, Legal Advertising Disclaimer, About page, FTC-compliant disclosure templates, empty-state handling for thin jurisdictions.
 **Addresses:** T7 (Legal Disclaimers), T12 (Empty State Handling).
 **Avoids:** Pitfall 3 — attorney referral compliance violations, Pitfall 7 — AdSense policy violations.
 
 ### Phase 5: Display Ad Integration (AdSense)
+
 **Rationale:** Lowest-friction revenue stream. No data model changes needed. AdSense has no minimum traffic threshold. The `AdSlot` abstraction enables later swap to Mediavine without page changes. Conservative placement (no above-fold ads on profiles) protects CWV and user trust.
 **Delivers:** `AdSlot` + `AdProvider` components, AdSense integration via `@next/third-parties`, ad placement zones per page type, CLS prevention via reserved dimensions, feature flags for ad control.
 **Addresses:** T2 (Display Ads), D13 (Ad-free content zone design constraint).
 **Avoids:** Pitfall 2 — CWV destruction (lazy loading, reserved slots, performance budgets), Pitfall 5 — premature Mediavine migration, Pitfall 7 — AdSense suspension (apply with quality FL pages first).
 
 ### Phase 6: Affiliate Referral Widgets
+
 **Rationale:** Highest revenue potential per monetization plan ($10K+/mo at 50K PVs). Requires analytics for click tracking and legal compliance for disclosures. Contextual targeting leverages the state→county→court hierarchy already in the data model.
 **Delivers:** `AffiliateWidget` component with contextual targeting, UTM-tracked affiliate URLs, click event tracking to GA4 + internal analytics, `rel="sponsored noopener"` enforcement, FTC disclosure in every widget.
 **Addresses:** T8 (Affiliate Widgets), D9 (Click Tracking).
 **Avoids:** Pitfall 3 — compliance violations (advertising language only, mandatory disclosures, state bar rule review).
 
 ### Phase 7: Sponsored Attorney Listings
+
 **Rationale:** Stable MRR revenue stream ($99–199/month per placement). Requires analytics tracking infrastructure. Build admin CRUD for manual sales first; self-serve comes much later. Validated by Sober Nation model ($129/month listings).
 **Delivers:** `SponsoredListing` Prisma model + migration, admin CRUD at `/admin/sponsors/*`, public rendering with "Sponsored" badge, practice-area + jurisdiction targeting, impression/click tracking via `analytics_events` table.
 **Addresses:** D1 (Sponsored Listings), analytics_events data model from ARCHITECTURE.md.
 **Avoids:** Over-engineering — no Stripe, no self-serve portal, no auction system. Manual invoicing for first 20 customers.
 
 ### Phase 8: Judge Photo Pipeline
+
 **Rationale:** Photos are the biggest "thin content" signal on judge profiles. Every comparable directory shows photos. Display optimization handled in Phase 3; this phase builds the automated scraping pipeline to populate photos at scale.
 **Delivers:** Automated photo scraping from official court bio pages, image optimization pipeline (sharp), fallback avatar with initials, photo attribution to source.
 **Addresses:** T4 (Judge Photos — sourcing), D4 (Photo Pipeline automation).
 **Avoids:** Unoptimized images tanking LCP (uses next/image with WebP/AVIF).
 
 ### Phase 9: Multi-State Expansion (TX + CA Pilot)
+
 **Rationale:** Content growth = traffic growth = revenue growth. But expansion without monetization infrastructure is pointless, and expansion without ISR will overload the database. All monetization and performance phases must be validated in FL first. TX (254 counties) and CA (58 counties) are deliberate worst-case stress tests.
 **Delivers:** TX + CA harvesting with cost-capped pipelines, coverage-gated publishing (noindex below threshold), state config registry, CMS fingerprint library, refresh automation, staleness alerting.
 **Addresses:** D5 (Multi-State Expansion).
 **Avoids:** Pitfall 1 — thin content penalty (publishing gates), Pitfall 4 — pipeline cost explosion (reconnaissance, CMS fingerprinting, cost caps), Pitfall 6 — stale data (refresh automation).
 
 ### Phase 10: Pillar Pages & Content Strategy
+
 **Rationale:** Dual purpose: (1) concentrate topical authority for high-value jurisdictions, (2) provide editorial content Mediavine requires for approval. Informed by search query data from Phase 2 analytics.
 **Delivers:** 10-20 long-form pillar pages for high-traffic counties, "how courts work" explainer content, internal linking hub structure, content supporting Mediavine application.
 **Addresses:** D2 (Pillar Pages), D7 (Explainer Content), D8 (Coverage Dashboard).
@@ -157,12 +172,14 @@ Based on the dependency chains in FEATURES.md, the build order in ARCHITECTURE.m
 ### Research Flags
 
 Phases likely needing deeper research during planning:
+
 - **Phase 5 (Display Ads):** AdSense integration with ISR pages needs specific testing — CWV impact measurement requires controlled rollout strategy.
 - **Phase 6 (Affiliate Widgets):** State bar rules for attorney referral vs. advertising classification vary by state. FL, TX, CA rules need specific legal review.
 - **Phase 7 (Sponsored Listings):** Pricing model validation — $99–199/month is assumed from comparable directories. May need pilot testing with FL law firms.
 - **Phase 9 (Multi-State Expansion):** TX and CA court website diversity is unknown. Reconnaissance survey is a prerequisite.
 
 Phases with standard patterns (skip research-phase):
+
 - **Phase 1 (Design System):** shadcn/ui CLI add + component wiring — well-documented, existing codebase patterns.
 - **Phase 2 (Analytics & SEO):** Vercel Analytics + Search Console setup is drop-in. Official Next.js docs cover everything.
 - **Phase 3 (ISR Migration):** `revalidate` exports and `unstable_cache` wrappers are standard Next.js 14 patterns.
@@ -171,12 +188,12 @@ Phases with standard patterns (skip research-phase):
 
 ## Confidence Assessment
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | All versions verified against npm registry (2026-03-22). Existing stack is production-proven. Additions are official Vercel/Next.js packages. |
-| Features | HIGH | Grounded in existing business docs, competitor analysis (Avvo, FindLaw, Justia, VoterRecords), directory playbook patterns, and current project state. |
-| Architecture | HIGH | Verified against Next.js 14 official docs, Vercel platform docs, Prisma docs. ISR + on-demand revalidation is the established pattern. |
-| Pitfalls | HIGH | Based on Google official spam policies, FTC guidelines, AdSense policies, and documented programmatic SEO failure patterns. |
+| Area         | Confidence | Notes                                                                                                                                                  |
+| ------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Stack        | HIGH       | All versions verified against npm registry (2026-03-22). Existing stack is production-proven. Additions are official Vercel/Next.js packages.          |
+| Features     | HIGH       | Grounded in existing business docs, competitor analysis (Avvo, FindLaw, Justia, VoterRecords), directory playbook patterns, and current project state. |
+| Architecture | HIGH       | Verified against Next.js 14 official docs, Vercel platform docs, Prisma docs. ISR + on-demand revalidation is the established pattern.                 |
+| Pitfalls     | HIGH       | Based on Google official spam policies, FTC guidelines, AdSense policies, and documented programmatic SEO failure patterns.                            |
 
 **Overall confidence:** HIGH
 
@@ -191,6 +208,7 @@ Phases with standard patterns (skip research-phase):
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - Project codebase: 17 completed feature specs (001–017), production pipeline, schema definitions — verified against live code
 - npm registry: @vercel/analytics 2.0.1, @vercel/speed-insights 2.0.0, @next/third-parties 14.2.35, sharp 0.34.5 — verified 2026-03-22
 - Next.js 14 official docs: ISR, caching, App Router, `@next/third-parties`, `generateStaticParams`
@@ -201,16 +219,19 @@ Phases with standard patterns (skip research-phase):
 - FTC Endorsement Guides: affiliate disclosure requirements
 
 ### Secondary (MEDIUM confidence)
+
 - Project business docs: monetization-plan.md, icp-and-monetization.md, business-analysis.md, competitor analyses, directory playbook notes
 - Ad network thresholds: AdSense (no minimum), Mediavine Journey (5K sessions), Mediavine (50K), Raptive (100K PVs)
 - Sober Nation benchmark: ~$129/month featured listings — validates $99–199/month pricing assumptions
 - VoterRecords.com model: programmatic SEO → affiliate revenue at 100M+ pages
 
 ### Tertiary (LOW confidence)
+
 - Mediavine acceptance criteria for programmatic SEO directories — inferred, not directly verified for this site category
 - TX/CA court website diversity — anecdotal from FL pipeline experience, not directly surveyed
 - Judge photo source licensing per state — general fair use assumption for public officials' official photos
 
 ---
-*Research completed: 2026-03-22*
-*Ready for roadmap: yes*
+
+_Research completed: 2026-03-22_
+_Ready for roadmap: yes_

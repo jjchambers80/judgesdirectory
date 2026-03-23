@@ -1,0 +1,8 @@
+{
+  "name": "create-architectural-decision-record",
+  "source": "github-awesome-copilot",
+  "description": "Create an Architectural Decision Record (ADR) document for AI-optimized decision documentation.",
+  "whenToUse": "Create an ADR document for `${input:DecisionTitle}` using structured formatting optimized for AI consumption and human readability.",
+  "categories": [],
+  "installedAt": "2026-03-20T02:03:00.880Z"
+}

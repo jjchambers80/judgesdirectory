@@ -108,13 +108,14 @@
 
 ### 1. Rendering & Caching Layer
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| **ISR Pages** | Pre-render public pages, serve from cache, revalidate on schedule or on-demand | Prisma (read), Monetization DB (read) |
-| **On-Demand Revalidation** | Invalidate cached pages after harvest completes or sponsor data changes | Harvest pipeline (trigger), Admin panel (trigger) |
-| **`unstable_cache` wrappers** | Cache Prisma query results with tags for targeted invalidation | Prisma ORM |
+| Component                     | Responsibility                                                                 | Communicates With                                 |
+| ----------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------- |
+| **ISR Pages**                 | Pre-render public pages, serve from cache, revalidate on schedule or on-demand | Prisma (read), Monetization DB (read)             |
+| **On-Demand Revalidation**    | Invalidate cached pages after harvest completes or sponsor data changes        | Harvest pipeline (trigger), Admin panel (trigger) |
+| **`unstable_cache` wrappers** | Cache Prisma query results with tags for targeted invalidation                 | Prisma ORM                                        |
 
 **Why ISR over pure SSR:** Judge data changes infrequently (monthly harvests). Pages at scale (50 states × 3K counties × N courts × N judges = hundreds of thousands of pages) cannot sustain per-request DB queries. ISR gives:
+
 - Near-zero TTFB for cached pages (Vercel edge serves from CDN cache)
 - Automatic background regeneration keeping data fresh
 - No cold-start penalty — cached HTML served instantly
@@ -126,26 +127,31 @@
 export const revalidate = 3600; // 1 hour time-based ISR
 
 // In harvest completion webhook/action
-import { revalidatePath } from 'next/cache';
-revalidatePath('/judges/florida/'); // invalidate after harvest
+import { revalidatePath } from "next/cache";
+revalidatePath("/judges/florida/"); // invalidate after harvest
 ```
 
 For Prisma queries (not `fetch`), wrap with `unstable_cache`:
 
 ```typescript
-import { unstable_cache } from 'next/cache';
-import { prisma } from '@/lib/db';
+import { unstable_cache } from "next/cache";
+import { prisma } from "@/lib/db";
 
 export const getStateJudges = unstable_cache(
   async (stateSlug: string) => {
     return prisma.judge.findMany({
-      where: { status: 'VERIFIED', court: { county: { state: { slug: stateSlug } } } },
-      orderBy: { fullName: 'asc' },
-      select: { /* ... */ },
+      where: {
+        status: "VERIFIED",
+        court: { county: { state: { slug: stateSlug } } },
+      },
+      orderBy: { fullName: "asc" },
+      select: {
+        /* ... */
+      },
     });
   },
-  ['state-judges'],
-  { revalidate: 3600, tags: ['judges'] }
+  ["state-judges"],
+  { revalidate: 3600, tags: ["judges"] },
 );
 ```
 
@@ -155,13 +161,14 @@ Three distinct components, each a Client Component rendered within ISR Server Co
 
 #### 2a. Display Ad System (`AdSlot`)
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| **`AdSlot`** (Client Component) | Render ad container div, load ad network script, manage ad refresh on navigation | AdSense/Mediavine external script |
-| **`AdProvider`** (Client Component, layout-level) | Initialize ad network SDK once, manage global ad state | `AdSlot` children, external ad network |
-| **Ad Config** (server lib) | Define slot positions per page type, enforce placement rules | Page components |
+| Component                                         | Responsibility                                                                   | Communicates With                      |
+| ------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------- |
+| **`AdSlot`** (Client Component)                   | Render ad container div, load ad network script, manage ad refresh on navigation | AdSense/Mediavine external script      |
+| **`AdProvider`** (Client Component, layout-level) | Initialize ad network SDK once, manage global ad state                           | `AdSlot` children, external ad network |
+| **Ad Config** (server lib)                        | Define slot positions per page type, enforce placement rules                     | Page components                        |
 
 **Placement rules (from monetization-plan.md):**
+
 - No ads above the fold on judge profiles
 - Sidebar ad on desktop, in-content on long listing pages
 - No interstitials or pop-ups
@@ -192,18 +199,20 @@ Three distinct components, each a Client Component rendered within ISR Server Co
 
 ```typescript
 // src/lib/ads/provider.ts — swap implementation here
-export type AdProvider = 'adsense' | 'mediavine' | 'none';
-export const AD_PROVIDER: AdProvider = (process.env.NEXT_PUBLIC_AD_PROVIDER as AdProvider) || 'none';
+export type AdProvider = "adsense" | "mediavine" | "none";
+export const AD_PROVIDER: AdProvider =
+  (process.env.NEXT_PUBLIC_AD_PROVIDER as AdProvider) || "none";
 ```
 
 #### 2b. Affiliate Widget System (`AffiliateWidget`)
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
+| Component                                | Responsibility                                                  | Communicates With                     |
+| ---------------------------------------- | --------------------------------------------------------------- | ------------------------------------- |
 | **`AffiliateWidget`** (Client Component) | Render contextual CTA, track outbound clicks, handle UTM params | Affiliate partner URLs, Analytics API |
-| **Affiliate Config** (server lib) | Map page context → appropriate affiliate partner + CTA copy | Page components |
+| **Affiliate Config** (server lib)        | Map page context → appropriate affiliate partner + CTA copy     | Page components                       |
 
 **Data flow:**
+
 1. Server Component determines page context (court type, county, state)
 2. Passes context props to `AffiliateWidget` Client Component
 3. Widget renders "Need a Lawyer for [Court Type] in [County]?" CTA
@@ -214,11 +223,14 @@ export const AD_PROVIDER: AdProvider = (process.env.NEXT_PUBLIC_AD_PROVIDER as A
 
 ```typescript
 // src/lib/affiliates/config.ts
-export function buildAffiliateUrl(partner: string, context: AffiliateContext): string {
+export function buildAffiliateUrl(
+  partner: string,
+  context: AffiliateContext,
+): string {
   const base = AFFILIATE_PARTNERS[partner].baseUrl;
   const params = new URLSearchParams({
-    utm_source: 'judgesdirectory',
-    utm_medium: 'affiliate',
+    utm_source: "judgesdirectory",
+    utm_medium: "affiliate",
     utm_campaign: `${context.state}-${context.county}`,
     practice_area: context.courtType,
   });
@@ -228,11 +240,11 @@ export function buildAffiliateUrl(partner: string, context: AffiliateContext): s
 
 #### 2c. Sponsored Listing System (`SponsoredListing`)
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| **`SponsoredListing`** (Server Component) | Query active sponsors for this page's jurisdiction, render cards | Prisma (SponsoredListing model) |
-| **`SponsoredListingCard`** (Client Component) | Track impressions/clicks, handle outbound navigation | Analytics API |
-| **Sponsor Admin** (`/admin/sponsors/**`) | CRUD for sponsors, placement targeting, billing status | Prisma, Stripe (future) |
+| Component                                     | Responsibility                                                   | Communicates With               |
+| --------------------------------------------- | ---------------------------------------------------------------- | ------------------------------- |
+| **`SponsoredListing`** (Server Component)     | Query active sponsors for this page's jurisdiction, render cards | Prisma (SponsoredListing model) |
+| **`SponsoredListingCard`** (Client Component) | Track impressions/clicks, handle outbound navigation             | Analytics API                   |
+| **Sponsor Admin** (`/admin/sponsors/**`)      | CRUD for sponsors, placement targeting, billing status           | Prisma, Stripe (future)         |
 
 **Data model (new Prisma models):**
 
@@ -243,28 +255,28 @@ model SponsoredListing {
   firmUrl         String
   contactEmail    String
   practiceAreas   String[] // e.g., ["criminal-defense", "family-law"]
-  
+
   // Targeting
   targetStates    String[] // state abbreviations, empty = all
   targetCountyIds String[] // specific counties, empty = all in state
   targetPageTypes String[] // ["state", "county", "court", "judge"]
-  
+
   // Display
   headline        String
   description     String   @db.Text
   logoUrl         String?
-  
+
   // Billing
   tier            SponsorTier @default(COUNTY)
   monthlyPriceCents Int
   status          SponsorStatus @default(PENDING)
   startsAt        DateTime
   expiresAt       DateTime?
-  
+
   // Tracking
   totalImpressions Int @default(0)
   totalClicks      Int @default(0)
-  
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -298,30 +310,30 @@ export const getSponsorsForPage = unstable_cache(
     const now = new Date();
     return prisma.sponsoredListing.findMany({
       where: {
-        status: 'ACTIVE',
+        status: "ACTIVE",
         startsAt: { lte: now },
         OR: [{ expiresAt: null }, { expiresAt: { gte: now } }],
         targetStates: { has: stateAbbr },
         targetPageTypes: pageType ? { has: pageType } : undefined,
       },
       take: 3, // max sponsors per page
-      orderBy: { tier: 'asc' }, // higher tiers first
+      orderBy: { tier: "asc" }, // higher tiers first
     });
   },
-  ['sponsors'],
-  { revalidate: 300, tags: ['sponsors'] } // 5-minute cache for sponsor changes
+  ["sponsors"],
+  { revalidate: 300, tags: ["sponsors"] }, // 5-minute cache for sponsor changes
 );
 ```
 
 ### 3. Analytics Layer
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| **GA4 via `@next/third-parties`** | Pageviews, user demographics, traffic sources, Search Console integration | Google servers (client-side) |
-| **Vercel Analytics** | Real user performance (Core Web Vitals), per-route TTFB/LCP/CLS | Vercel platform (automatic) |
-| **Vercel Speed Insights** | Detailed Web Vitals dashboard, route-level perf breakdown | Vercel platform (automatic) |
-| **Custom Event Tracker** (Client Component) | Ad impressions, affiliate clicks, sponsored listing views/clicks | Internal API route → PostgreSQL |
-| **`WebVitals`** (Client Component) | Report Core Web Vitals to GA4 | GA4 via `sendGAEvent` |
+| Component                                   | Responsibility                                                            | Communicates With               |
+| ------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------- |
+| **GA4 via `@next/third-parties`**           | Pageviews, user demographics, traffic sources, Search Console integration | Google servers (client-side)    |
+| **Vercel Analytics**                        | Real user performance (Core Web Vitals), per-route TTFB/LCP/CLS           | Vercel platform (automatic)     |
+| **Vercel Speed Insights**                   | Detailed Web Vitals dashboard, route-level perf breakdown                 | Vercel platform (automatic)     |
+| **Custom Event Tracker** (Client Component) | Ad impressions, affiliate clicks, sponsored listing views/clicks          | Internal API route → PostgreSQL |
+| **`WebVitals`** (Client Component)          | Report Core Web Vitals to GA4                                             | GA4 via `sendGAEvent`           |
 
 **Analytics initialization (root layout):**
 
@@ -375,7 +387,7 @@ model AnalyticsEvent {
   countySlug  String?
   metadata    Json?    // flexible: { partner, adSlot, sponsorId, etc. }
   createdAt   DateTime @default(now())
-  
+
   @@index([eventType, createdAt])
   @@index([stateAbbr, eventType])
   @@index([createdAt])
@@ -387,11 +399,11 @@ model AnalyticsEvent {
 
 ### 4. Multi-State Expansion Layer
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| **State Config Registry** (`src/lib/states/`) | Per-state court structure, extraction URLs, court type mappings | Harvest pipeline, page rendering |
-| **ISR with `generateStaticParams`** | Pre-render known states/counties at build, on-demand for new | Prisma (read) |
-| **Harvest → Revalidate Pipeline** | After harvest completes for a state, invalidate all cached pages for that state | Harvest pipeline → `revalidatePath` |
+| Component                                     | Responsibility                                                                  | Communicates With                   |
+| --------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------- |
+| **State Config Registry** (`src/lib/states/`) | Per-state court structure, extraction URLs, court type mappings                 | Harvest pipeline, page rendering    |
+| **ISR with `generateStaticParams`**           | Pre-render known states/counties at build, on-demand for new                    | Prisma (read)                       |
+| **Harvest → Revalidate Pipeline**             | After harvest completes for a state, invalidate all cached pages for that state | Harvest pipeline → `revalidatePath` |
 
 **State config pattern:**
 
@@ -400,11 +412,11 @@ model AnalyticsEvent {
 export interface StateConfig {
   abbreviation: string;
   name: string;
-  courtTypes: string[];        // valid court types for this state
-  courtSystemUrl?: string;     // state judiciary website
+  courtTypes: string[]; // valid court types for this state
+  courtSystemUrl?: string; // state judiciary website
   harvestConfig: {
-    deterministic: boolean;    // has CSS/XPath extractors
-    needsBrowser: boolean;     // requires Scrapling fallback
+    deterministic: boolean; // has CSS/XPath extractors
+    needsBrowser: boolean; // requires Scrapling fallback
   };
 }
 
@@ -429,17 +441,17 @@ export async function generateStaticParams() {
 }
 
 export const dynamicParams = true; // allow new states without rebuild
-export const revalidate = 3600;    // revalidate every hour
+export const revalidate = 3600; // revalidate every hour
 ```
 
 ### 5. Performance Optimization Layer
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| **ISR Cache** (Vercel) | Cache pre-rendered HTML at edge, serve without hitting origin | CDN edge nodes |
-| **Prisma Query Cache** (`unstable_cache`) | Cache DB query results server-side with tag-based invalidation | Prisma ORM |
-| **Ad Lazy Loading** | Defer ad script loading until after page content renders | `next/dynamic` with `ssr: false` |
-| **Image Optimization** | Judge photos via `next/image` with responsive sizing | Vercel Image Optimization |
+| Component                                 | Responsibility                                                 | Communicates With                |
+| ----------------------------------------- | -------------------------------------------------------------- | -------------------------------- |
+| **ISR Cache** (Vercel)                    | Cache pre-rendered HTML at edge, serve without hitting origin  | CDN edge nodes                   |
+| **Prisma Query Cache** (`unstable_cache`) | Cache DB query results server-side with tag-based invalidation | Prisma ORM                       |
+| **Ad Lazy Loading**                       | Defer ad script loading until after page content renders       | `next/dynamic` with `ssr: false` |
+| **Image Optimization**                    | Judge photos via `next/image` with responsive sizing           | Vercel Image Optimization        |
 
 **Ad loading strategy — critical for Core Web Vitals:**
 
@@ -459,8 +471,8 @@ const AdRuntime = dynamic(() => import('./AdRuntime'), { ssr: false });
 
 export function AdSlot({ slot, format, targeting }: AdSlotProps) {
   return (
-    <div 
-      className="ad-slot" 
+    <div
+      className="ad-slot"
       style={{ minHeight: AD_FORMAT_HEIGHTS[format] }} // prevent CLS
       data-slot={slot}
     >
@@ -652,15 +664,15 @@ Admin creates sponsored listing via /admin/sponsors/new
 
 ## Scalability Considerations
 
-| Concern | At 1 state (FL) | At 5 states (FL, TX, CA, NY, IL) | At 50 states |
-|---------|------------------|-----------------------------------|--------------|
-| Page count | ~2K pages | ~20K pages | ~200K+ pages |
-| DB queries/sec | Low (SSR is fine) | Medium (ISR essential) | High (ISR + query caching critical) |
-| Build time | < 1 min | ~5 min with `generateStaticParams` | Use `dynamicParams=true`, build only known paths |
-| Ad revenue per page | Low traffic per page | Moderate (concentrated in high-pop counties) | Long tail — most pages get < 10 views/month |
-| Sponsor inventory | 10 counties | 50+ counties | 3,000+ counties — self-serve needed |
-| ISR cache size | Negligible | ~50MB | ~2GB (Vercel handles, no limit on Pro plan) |
-| Analytics table size | ~10K rows/month | ~100K rows/month | ~1M rows/month → 90-day prune keeps it manageable |
+| Concern              | At 1 state (FL)      | At 5 states (FL, TX, CA, NY, IL)             | At 50 states                                      |
+| -------------------- | -------------------- | -------------------------------------------- | ------------------------------------------------- |
+| Page count           | ~2K pages            | ~20K pages                                   | ~200K+ pages                                      |
+| DB queries/sec       | Low (SSR is fine)    | Medium (ISR essential)                       | High (ISR + query caching critical)               |
+| Build time           | < 1 min              | ~5 min with `generateStaticParams`           | Use `dynamicParams=true`, build only known paths  |
+| Ad revenue per page  | Low traffic per page | Moderate (concentrated in high-pop counties) | Long tail — most pages get < 10 views/month       |
+| Sponsor inventory    | 10 counties          | 50+ counties                                 | 3,000+ counties — self-serve needed               |
+| ISR cache size       | Negligible           | ~50MB                                        | ~2GB (Vercel handles, no limit on Pro plan)       |
+| Analytics table size | ~10K rows/month      | ~100K rows/month                             | ~1M rows/month → 90-day prune keeps it manageable |
 
 ---
 
@@ -675,7 +687,7 @@ Phase 1: Analytics Foundation
 └── WHY FIRST: Need traffic data before optimizing anything else.
     Can't validate monetization without knowing visitor volume.
 
-Phase 2: Performance / ISR Migration  
+Phase 2: Performance / ISR Migration
 ├── Add `revalidate` to all public pages
 ├── Add `generateStaticParams` to pre-render known paths
 ├── Wrap Prisma queries with `unstable_cache`
@@ -697,7 +709,7 @@ Phase 4: Sponsored Listing Data Model + Admin
 ├── SponsoredListing server component (query + render)
 ├── SponsoredListingCard client component (impression/click tracking)
 ├── Analytics events table for tracking
-└── DEPENDS ON: Analytics (Phase 1) for tracking. 
+└── DEPENDS ON: Analytics (Phase 1) for tracking.
     Before affiliates because it validates the sales motion.
 
 Phase 5: Affiliate Widget System
@@ -717,6 +729,7 @@ Phase 6: Multi-State Expansion Architecture
 ```
 
 **Key dependency chain:**
+
 ```
 Analytics → ISR → Ads → Sponsors → Affiliates → Multi-State
     │                      │            │

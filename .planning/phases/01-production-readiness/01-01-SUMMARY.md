@@ -17,7 +17,11 @@ affects: [01-02, 01-03, public-pages, seo]
 
 tech-stack:
   added: [skeleton, breadcrumb, avatar (shadcn/ui components)]
-  patterns: [shared Breadcrumbs component with JSON-LD, loading.tsx skeleton pattern per route segment]
+  patterns:
+    [
+      shared Breadcrumbs component with JSON-LD,
+      loading.tsx skeleton pattern per route segment,
+    ]
 
 key-files:
   created:
@@ -96,6 +100,7 @@ Each task was committed atomically:
 ## Files Created/Modified
 
 **Created:**
+
 - `src/components/ui/skeleton.tsx` — Skeleton component with animate-pulse
 - `src/components/ui/breadcrumb.tsx` — Full breadcrumb component set with aria support
 - `src/components/ui/avatar.tsx` — Avatar with Radix UI fallback handling
@@ -107,6 +112,7 @@ Each task was committed atomically:
 - `src/app/judges/[state]/[county]/[courtType]/[judgeSlug]/loading.tsx` — Full profile skeleton with photo placeholder
 
 **Modified:**
+
 - `src/app/judges/[state]/page.tsx` — Replaced inline breadcrumb with shared component
 - `src/app/judges/[state]/[county]/page.tsx` — Replaced inline breadcrumb with shared component
 - `src/app/judges/[state]/[county]/[courtType]/page.tsx` — Replaced inline breadcrumb with shared component
@@ -126,6 +132,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. [Rule 3 - Blocking] Fix null-to-undefined type in discover.ts**
+
 - **Found during:** Task 12 (build verification)
 - **Issue:** `flags.runId` is `string | null` but `acquireLock()` expects `string | undefined`
 - **Fix:** Added `?? undefined` coercion
@@ -133,6 +140,7 @@ Each task was committed atomically:
 - **Committed in:** `9b29983`
 
 **2. [Rule 3 - Blocking] Fix Set iteration in exa-enricher.ts**
+
 - **Found during:** Task 12 (build verification)
 - **Issue:** `...new Set()` requires downlevelIteration or ES2015+ target
 - **Fix:** Changed to `Array.from(new Set(...))`
@@ -140,6 +148,7 @@ Each task was committed atomically:
 - **Committed in:** `9b29983`
 
 **3. [Rule 3 - Blocking] Exclude skills/ from TypeScript compilation**
+
 - **Found during:** Task 12 (build verification)
 - **Issue:** `skills/self-improving-agent/hooks/openclaw/handler.ts` imports non-existent `openclaw/hooks` module
 - **Fix:** Added `"skills"` to tsconfig `exclude` array

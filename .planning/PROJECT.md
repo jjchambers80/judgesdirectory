@@ -53,6 +53,7 @@ Every judge profile is accurate, source-attributed, and discoverable via search 
 ## Context
 
 **Technical Environment:**
+
 - Next.js 14 (App Router, SSR) with React 18, deployed on Vercel
 - PostgreSQL via Prisma ORM v6 (State → County → Court → Judge hierarchy)
 - Harvesting pipeline: deterministic CSS/XPath extraction first, LLM fallback (OpenAI gpt-4o-mini default), Scrapling browser automation for JS-heavy sites
@@ -60,12 +61,14 @@ Every judge profile is accurate, source-attributed, and discoverable via search 
 - Design system in transition: CSS custom properties → shadcn/ui + Tailwind (006 incomplete)
 
 **Prior Work:**
+
 - Florida fully harvested with 19/27 court sites using deterministic extraction (free)
 - Identity resolution, deduplication, quality reporting all production-ready
 - Admin panel with CSV import, verification queue, URL discovery, health monitoring
 - Site search with pg_trgm fuzzy text matching
 
 **Business Context:**
+
 - Legal traffic: $5–50+ CPC, $15–30 RPM display — exceptionally high-value
 - VoterRecords.com validates the directory-affiliate model (100M+ pages, affiliate revenue)
 - Target: 100K pageviews ≈ $1.5–2.5K/month (AdSense); at scale, affiliate could reach $75K/month
@@ -73,6 +76,7 @@ Every judge profile is accurate, source-attributed, and discoverable via search 
 - 6-month organic SEO ramp expected — this is a patience business
 
 **Known Issues:**
+
 - shadcn/ui migration incomplete (006) — public pages use CSS variables, admin uses mixed styling
 - No analytics instrumentation yet — can't validate traffic assumptions
 - No monetization widgets live — all revenue is theoretical until launched
@@ -91,22 +95,23 @@ Every judge profile is accurate, source-attributed, and discoverable via search 
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| Programmatic SEO + directory model | Long-tail search capture across 50 states × 3K+ counties; validated by VoterRecords.com benchmarks | ✓ Good |
-| Deterministic extraction before LLM | 19/27 FL sites free; LLM only for unknowns; massive cost savings | ✓ Good |
-| OpenAI gpt-4o-mini as default LLM | 10x cheaper than Claude, sufficient for structured JSON extraction | ✓ Good |
-| Verification-first publishing | Only VERIFIED records public; prevents inaccurate judicial data from being indexed | ✓ Good |
-| Florida as first state | Rich court structure, good test coverage, manageable scope | ✓ Good |
-| Next.js SSR on Vercel | Native SSR, edge deployment, preview deploys; SEO-first architecture | ✓ Good |
-| shadcn/ui + Tailwind migration | Modern component library, accessible defaults, consistent admin + public styling | — Pending (incomplete) |
-| Display ads before affiliate | Lowest friction monetization; validate traffic quality before complex affiliate integrations | — Pending |
+| Decision                            | Rationale                                                                                          | Outcome                |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------- | ---------------------- |
+| Programmatic SEO + directory model  | Long-tail search capture across 50 states × 3K+ counties; validated by VoterRecords.com benchmarks | ✓ Good                 |
+| Deterministic extraction before LLM | 19/27 FL sites free; LLM only for unknowns; massive cost savings                                   | ✓ Good                 |
+| OpenAI gpt-4o-mini as default LLM   | 10x cheaper than Claude, sufficient for structured JSON extraction                                 | ✓ Good                 |
+| Verification-first publishing       | Only VERIFIED records public; prevents inaccurate judicial data from being indexed                 | ✓ Good                 |
+| Florida as first state              | Rich court structure, good test coverage, manageable scope                                         | ✓ Good                 |
+| Next.js SSR on Vercel               | Native SSR, edge deployment, preview deploys; SEO-first architecture                               | ✓ Good                 |
+| shadcn/ui + Tailwind migration      | Modern component library, accessible defaults, consistent admin + public styling                   | — Pending (incomplete) |
+| Display ads before affiliate        | Lowest friction monetization; validate traffic quality before complex affiliate integrations       | — Pending              |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 **After each phase transition** (via `/gsd-transition`):
+
 1. Requirements invalidated? → Move to Out of Scope with reason
 2. Requirements validated? → Move to Validated with phase reference
 3. New requirements emerged? → Add to Active
@@ -114,10 +119,12 @@ This document evolves at phase transitions and milestone boundaries.
 5. "What This Is" still accurate? → Update if drifted
 
 **After each milestone** (via `/gsd-complete-milestone`):
+
 1. Full review of all sections
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-22 after initialization*
+
+_Last updated: 2026-03-22 after initialization_

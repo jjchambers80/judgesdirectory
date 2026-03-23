@@ -109,6 +109,7 @@ Each task was committed atomically:
 ## Files Created/Modified
 
 ### Created
+
 - `src/app/privacy/page.tsx` — Privacy Policy with cookie-free analytics disclosure
 - `src/app/terms/page.tsx` — Terms of Service with no-legal-advice disclaimer
 - `src/app/about/page.tsx` — About page with mission, methodology, verification process
@@ -116,6 +117,7 @@ Each task was committed atomically:
 - `scripts/harvest/photo-pipeline.ts` — Photo extraction, optimization, Vercel Blob upload
 
 ### Modified
+
 - `src/app/globals.css` — Added @plugin for @tailwindcss/typography
 - `src/components/SiteFooter.tsx` — Added nav links to About, Privacy, Terms
 - `src/app/judges/[state]/[county]/page.tsx` — Empty state + noindex for thin content
@@ -139,6 +141,7 @@ Each task was committed atomically:
 ### Auto-fixed Issues
 
 **1. [Rule 1 - Bug] Fixed cheerio.Element type error in photo pipeline**
+
 - **Found during:** Task 12 (build verification)
 - **Issue:** `cheerio.Element` type doesn't exist in cheerio v1.1.0; the namespace has no `Element` export
 - **Fix:** Changed parameter type to `ReturnType<ReturnType<typeof cheerio.load>>` which resolves correctly
