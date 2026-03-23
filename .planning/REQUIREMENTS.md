@@ -9,11 +9,11 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Design System
 
-- [ ] **DSGN-01**: All public pages use shadcn/ui components with consistent Tailwind CSS styling (complete 006 migration)
-- [ ] **DSGN-02**: Admin panel styling unified under shadcn/ui + Tailwind (no more CSS variable / inline style mix)
-- [ ] **DSGN-03**: Loading skeleton components render during data fetches to prevent CLS
-- [ ] **DSGN-04**: All public pages are mobile-responsive with touch targets ≥ 48px and no horizontal scroll
-- [ ] **DSGN-05**: Breadcrumb navigation component matches URL hierarchy and Schema.org BreadcrumbList structured data
+- [x] **DSGN-01**: All public pages use shadcn/ui components with consistent Tailwind CSS styling (complete 006 migration)
+- [x] **DSGN-02**: Admin panel styling unified under shadcn/ui + Tailwind (no more CSS variable / inline style mix)
+- [x] **DSGN-03**: Loading skeleton components render during data fetches to prevent CLS
+- [x] **DSGN-04**: All public pages are mobile-responsive with touch targets ≥ 48px and no horizontal scroll
+- [x] **DSGN-05**: Breadcrumb navigation component matches URL hierarchy and Schema.org BreadcrumbList structured data
 
 ### Analytics & SEO Foundation
 
@@ -119,84 +119,86 @@ Deferred to future milestone. Tracked but not in current roadmap.
 
 Explicitly excluded. Documented to prevent scope creep.
 
-| Feature | Reason |
-|---------|--------|
-| User ratings/reviews of judges | Legal risk (defamation); violates Constitution Principle III (neutrality) |
-| Real-time case tracking / PACER integration | Different product category; massive complexity ($0.10/page PACER fees) |
-| Judge comparison / ranking tools | Implies subjective judgment about public officials; legally risky |
-| AI chatbot / Q&A about judges | Hallucination risk with judicial data unacceptably high; undermines trust moat |
-| OAuth / social login | No user-generated content; unnecessary auth complexity |
-| Mobile native app | Users find judge info via search, not app downloads; mobile-responsive web sufficient |
-| Complex CMS | Content is generated from structured data; MDX for pillar pages sufficient |
-| Aggressive ad density / interstitials | Destroys trust; Google penalizes intrusive interstitials; Mediavine rejects poor UX |
-| Session replay / heatmaps | Premature; no traffic volume to analyze yet |
-| A/B testing framework | No statistical significance at current traffic levels; defer to v2 |
-| Multi-language / i18n | U.S. courts are English-language; no ROI signal |
-| Stripe subscription billing | Over-engineering for <20 customers; manual invoicing first |
-| Paywall / premium tier | Kills SEO; entire model depends on free access driving volume |
-| Next.js 15/16 upgrade | Risk without benefit; current v14 is stable and sufficient |
+| Feature                                     | Reason                                                                                |
+| ------------------------------------------- | ------------------------------------------------------------------------------------- |
+| User ratings/reviews of judges              | Legal risk (defamation); violates Constitution Principle III (neutrality)             |
+| Real-time case tracking / PACER integration | Different product category; massive complexity ($0.10/page PACER fees)                |
+| Judge comparison / ranking tools            | Implies subjective judgment about public officials; legally risky                     |
+| AI chatbot / Q&A about judges               | Hallucination risk with judicial data unacceptably high; undermines trust moat        |
+| OAuth / social login                        | No user-generated content; unnecessary auth complexity                                |
+| Mobile native app                           | Users find judge info via search, not app downloads; mobile-responsive web sufficient |
+| Complex CMS                                 | Content is generated from structured data; MDX for pillar pages sufficient            |
+| Aggressive ad density / interstitials       | Destroys trust; Google penalizes intrusive interstitials; Mediavine rejects poor UX   |
+| Session replay / heatmaps                   | Premature; no traffic volume to analyze yet                                           |
+| A/B testing framework                       | No statistical significance at current traffic levels; defer to v2                    |
+| Multi-language / i18n                       | U.S. courts are English-language; no ROI signal                                       |
+| Stripe subscription billing                 | Over-engineering for <20 customers; manual invoicing first                            |
+| Paywall / premium tier                      | Kills SEO; entire model depends on free access driving volume                         |
+| Next.js 15/16 upgrade                       | Risk without benefit; current v14 is stable and sufficient                            |
 
 ## Traceability
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| DSGN-01 | Phase 1 | Pending |
-| DSGN-02 | Phase 1 | Pending |
-| DSGN-03 | Phase 1 | Pending |
-| DSGN-04 | Phase 1 | Pending |
-| DSGN-05 | Phase 1 | Pending |
-| ANLT-01 | Phase 1 | Pending |
-| ANLT-02 | Phase 1 | Pending |
-| ANLT-03 | Phase 1 | Pending |
-| ANLT-04 | Phase 1 | Pending |
-| ANLT-05 | Phase 1 | Pending |
-| ANLT-06 | Phase 1 | Pending |
-| ANLT-07 | Phase 1 | Pending |
-| PERF-01 | Phase 1 | Pending |
-| PERF-02 | Phase 1 | Pending |
-| PERF-03 | Phase 1 | Pending |
-| PERF-04 | Phase 1 | Pending |
-| LEGL-01 | Phase 1 | Pending |
-| LEGL-02 | Phase 1 | Pending |
-| LEGL-03 | Phase 1 | Pending |
-| LEGL-04 | Phase 1 | Pending |
-| ADS-01 | Phase 2 | Pending |
-| ADS-02 | Phase 2 | Pending |
-| ADS-03 | Phase 2 | Pending |
-| ADS-04 | Phase 2 | Pending |
-| ADS-05 | Phase 2 | Pending |
-| AFFL-01 | Phase 2 | Pending |
-| AFFL-02 | Phase 2 | Pending |
-| AFFL-03 | Phase 2 | Pending |
-| AFFL-04 | Phase 2 | Pending |
-| AFFL-05 | Phase 2 | Pending |
-| SPNS-01 | Phase 2 | Pending |
-| SPNS-02 | Phase 2 | Pending |
-| SPNS-03 | Phase 2 | Pending |
-| SPNS-04 | Phase 2 | Pending |
-| SPNS-05 | Phase 2 | Pending |
-| PHOTO-01 | Phase 1 | Pending |
-| PHOTO-02 | Phase 1 | Pending |
-| PHOTO-03 | Phase 1 | Pending |
-| PHOTO-04 | Phase 1 | Pending |
-| CONT-01 | Phase 1 | Pending |
-| CONT-02 | Phase 1 | Pending |
-| CONT-03 | Phase 1 | Pending |
-| EXPN-01 | Phase 3 | Pending |
-| EXPN-02 | Phase 3 | Pending |
-| EXPN-03 | Phase 3 | Pending |
-| EXPN-04 | Phase 3 | Pending |
-| EXPN-05 | Phase 3 | Pending |
-| EXPN-06 | Phase 3 | Pending |
+| Requirement | Phase   | Status  |
+| ----------- | ------- | ------- |
+| DSGN-01     | Phase 1 | Complete |
+| DSGN-02     | Phase 1 | Complete |
+| DSGN-03     | Phase 1 | Complete |
+| DSGN-04     | Phase 1 | Complete |
+| DSGN-05     | Phase 1 | Complete |
+| ANLT-01     | Phase 1 | Pending |
+| ANLT-02     | Phase 1 | Pending |
+| ANLT-03     | Phase 1 | Pending |
+| ANLT-04     | Phase 1 | Pending |
+| ANLT-05     | Phase 1 | Pending |
+| ANLT-06     | Phase 1 | Pending |
+| ANLT-07     | Phase 1 | Pending |
+| PERF-01     | Phase 1 | Pending |
+| PERF-02     | Phase 1 | Pending |
+| PERF-03     | Phase 1 | Pending |
+| PERF-04     | Phase 1 | Pending |
+| LEGL-01     | Phase 1 | Pending |
+| LEGL-02     | Phase 1 | Pending |
+| LEGL-03     | Phase 1 | Pending |
+| LEGL-04     | Phase 1 | Pending |
+| ADS-01      | Phase 2 | Pending |
+| ADS-02      | Phase 2 | Pending |
+| ADS-03      | Phase 2 | Pending |
+| ADS-04      | Phase 2 | Pending |
+| ADS-05      | Phase 2 | Pending |
+| AFFL-01     | Phase 2 | Pending |
+| AFFL-02     | Phase 2 | Pending |
+| AFFL-03     | Phase 2 | Pending |
+| AFFL-04     | Phase 2 | Pending |
+| AFFL-05     | Phase 2 | Pending |
+| SPNS-01     | Phase 2 | Pending |
+| SPNS-02     | Phase 2 | Pending |
+| SPNS-03     | Phase 2 | Pending |
+| SPNS-04     | Phase 2 | Pending |
+| SPNS-05     | Phase 2 | Pending |
+| PHOTO-01    | Phase 1 | Pending |
+| PHOTO-02    | Phase 1 | Pending |
+| PHOTO-03    | Phase 1 | Pending |
+| PHOTO-04    | Phase 1 | Pending |
+| CONT-01     | Phase 1 | Pending |
+| CONT-02     | Phase 1 | Pending |
+| CONT-03     | Phase 1 | Pending |
+| EXPN-01     | Phase 3 | Pending |
+| EXPN-02     | Phase 3 | Pending |
+| EXPN-03     | Phase 3 | Pending |
+| EXPN-04     | Phase 3 | Pending |
+| EXPN-05     | Phase 3 | Pending |
+| EXPN-06     | Phase 3 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 48 total
 - Mapped to phases: 48
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-03-22*
-*Traceability updated: 2026-03-22*
-*Last updated: 2026-03-22 after initialization*
+
+_Requirements defined: 2026-03-22_
+_Traceability updated: 2026-03-22_
+_Last updated: 2026-03-22 after initialization_
