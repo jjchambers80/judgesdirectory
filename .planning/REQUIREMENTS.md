@@ -34,10 +34,10 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Legal Pages
 
-- [ ] **LEGL-01**: Privacy Policy page published at /privacy
-- [ ] **LEGL-02**: Terms of Service page published at /terms
-- [ ] **LEGL-03**: About page explaining data sources, methodology, and verification process at /about
-- [ ] **LEGL-04**: Informational disclaimer displayed on every public page (existing — verify completeness)
+- [x] **LEGL-01**: Privacy Policy page published at /privacy
+- [x] **LEGL-02**: Terms of Service page published at /terms
+- [x] **LEGL-03**: About page explaining data sources, methodology, and verification process at /about
+- [x] **LEGL-04**: Informational disclaimer displayed on every public page (existing — verify completeness)
 
 ### Display Advertising
 
@@ -65,16 +65,16 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Judge Photos
 
-- [ ] **PHOTO-01**: Judge photo displayed on profile page via next/image with optimized dimensions
-- [ ] **PHOTO-02**: Fallback avatar with initials when no photo available
-- [ ] **PHOTO-03**: Photo scraping pipeline extracts photos from official court bio pages during harvest
-- [ ] **PHOTO-04**: Photos stored optimized via sharp (WebP, resized to profile dimensions)
+- [x] **PHOTO-01**: Judge photo displayed on profile page via next/image with optimized dimensions
+- [x] **PHOTO-02**: Fallback avatar with initials when no photo available
+- [x] **PHOTO-03**: Photo scraping pipeline extracts photos from official court bio pages during harvest
+- [x] **PHOTO-04**: Photos stored optimized via sharp (WebP, resized to profile dimensions)
 
 ### Content Quality
 
-- [ ] **CONT-01**: Empty jurisdictions (no verified judges) show "coverage coming soon" with related jurisdictions, not empty/404
-- [ ] **CONT-02**: Pages with insufficient data use noindex until coverage threshold met
-- [ ] **CONT-03**: 404 page with helpful navigation to existing jurisdictions
+- [x] **CONT-01**: Empty jurisdictions (no verified judges) show "coverage coming soon" with related jurisdictions, not empty/404
+- [x] **CONT-02**: Pages with insufficient data use noindex until coverage threshold met
+- [x] **CONT-03**: 404 page with helpful navigation to existing jurisdictions
 
 ### Multi-State Expansion
 
@@ -158,10 +158,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PERF-02     | Phase 1 | Complete |
 | PERF-03     | Phase 1 | Complete |
 | PERF-04     | Phase 1 | Complete |
-| LEGL-01     | Phase 1 | Pending |
-| LEGL-02     | Phase 1 | Pending |
-| LEGL-03     | Phase 1 | Pending |
-| LEGL-04     | Phase 1 | Pending |
+| LEGL-01     | Phase 1 | Complete |
+| LEGL-02     | Phase 1 | Complete |
+| LEGL-03     | Phase 1 | Complete |
+| LEGL-04     | Phase 1 | Complete |
 | ADS-01      | Phase 2 | Pending |
 | ADS-02      | Phase 2 | Pending |
 | ADS-03      | Phase 2 | Pending |
@@ -177,13 +177,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SPNS-03     | Phase 2 | Pending |
 | SPNS-04     | Phase 2 | Pending |
 | SPNS-05     | Phase 2 | Pending |
-| PHOTO-01    | Phase 1 | Pending |
-| PHOTO-02    | Phase 1 | Pending |
-| PHOTO-03    | Phase 1 | Pending |
-| PHOTO-04    | Phase 1 | Pending |
-| CONT-01     | Phase 1 | Pending |
-| CONT-02     | Phase 1 | Pending |
-| CONT-03     | Phase 1 | Pending |
+| PHOTO-01    | Phase 1 | Complete |
+| PHOTO-02    | Phase 1 | Complete |
+| PHOTO-03    | Phase 1 | Complete |
+| PHOTO-04    | Phase 1 | Complete |
+| CONT-01     | Phase 1 | Complete |
+| CONT-02     | Phase 1 | Complete |
+| CONT-03     | Phase 1 | Complete |
 | EXPN-01     | Phase 3 | Pending |
 | EXPN-02     | Phase 3 | Pending |
 | EXPN-03     | Phase 3 | Pending |

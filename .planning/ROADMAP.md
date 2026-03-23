@@ -38,7 +38,7 @@ Plans:
 
 - [x] 01-01: Design system completion + mobile responsiveness
 - [x] 01-02: Analytics, SEO foundation & ISR performance
-- [ ] 01-03: Legal pages, content quality & judge photos
+- [x] 01-03: Legal pages, content quality & judge photos
 
 ### Phase 2: Revenue Integration
 
