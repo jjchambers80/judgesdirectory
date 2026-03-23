@@ -11,8 +11,8 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
+import JudgeAvatar from "@/components/JudgeAvatar";
 import type { SearchResult, SearchResponse } from "@/lib/search";
 
 interface SearchInputProps {
@@ -355,36 +355,7 @@ export function SearchInput({
                 index !== suggestions.length - 1 && "border-b border-input/50",
               )}
             >
-              <div className="relative w-8 h-8 shrink-0 rounded-full overflow-hidden bg-muted ring-1 ring-border">
-                {judge.photoUrl ? (
-                  <Image
-                    src={judge.photoUrl}
-                    alt=""
-                    width={32}
-                    height={32}
-                    className="object-cover w-full h-full"
-                  />
-                ) : (
-                  <svg
-                    viewBox="0 0 32 32"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-full h-full"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      cx="16"
-                      cy="11"
-                      r="5"
-                      className="fill-muted-foreground/50"
-                    />
-                    <path
-                      d="M6 32 C6 24 10 20 16 20 C22 20 26 24 26 32"
-                      className="fill-muted-foreground/30"
-                    />
-                  </svg>
-                )}
-              </div>
+              <JudgeAvatar photoUrl={judge.photoUrl} fullName={judge.fullName} size="xs" />
               <div className="min-w-0 flex-1">
                 <div className="font-medium truncate">
                   {highlightMatch(judge.fullName, value)}
