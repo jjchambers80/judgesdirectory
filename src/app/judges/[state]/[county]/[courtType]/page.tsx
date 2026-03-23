@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
-import { judgeListTitle, buildItemListJsonLd } from "@/lib/seo";
+import { judgeListTitle, buildItemListJsonLd, buildOpenGraph, buildTwitterCard } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
@@ -33,11 +33,16 @@ export async function generateMetadata({
   });
   if (!court) return {};
 
+  const title = judgeListTitle(court.type, county.name, state.name);
+  const description = `All verified ${court.type} judges in ${county.name}, ${state.name}. View assigned judges with term dates and court details.`;
+  const url = `${SITE_URL}/judges/${state.slug}/${county.slug}/${court.slug}/`;
+
   return {
-    title: judgeListTitle(court.type, county.name, state.name),
-    alternates: {
-      canonical: `${SITE_URL}/judges/${state.slug}/${county.slug}/${court.slug}/`,
-    },
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: buildOpenGraph({ title, description, url }),
+    twitter: buildTwitterCard({ title, description }),
   };
 }
 
