@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { SITE_URL, SITE_NAME } from "@/lib/constants";
 
 /**
@@ -101,4 +102,50 @@ export function judgeProfileTitle(
   stateName: string,
 ): string {
   return `Judge ${judgeName} — ${courtType}, ${countyName}, ${stateName}`;
+}
+
+/**
+ * Build Open Graph metadata for any page template.
+ */
+export function buildOpenGraph(opts: {
+  title: string;
+  description: string;
+  url: string;
+  type?: "website" | "profile";
+  imageUrl?: string;
+}): Metadata["openGraph"] {
+  return {
+    title: opts.title,
+    description: opts.description,
+    url: opts.url,
+    siteName: SITE_NAME,
+    type: opts.type ?? "website",
+    locale: "en_US",
+    images: [
+      {
+        url: opts.imageUrl ?? `${SITE_URL}/og-default.png`,
+        width: 1200,
+        height: 630,
+        alt: opts.title,
+      },
+    ],
+  };
+}
+
+/**
+ * Build Twitter Card metadata for any page template.
+ */
+export function buildTwitterCard(opts: {
+  title: string;
+  description: string;
+  imageUrl?: string;
+}): Metadata["twitter"] {
+  return {
+    card: opts.imageUrl ? "summary_large_image" : "summary",
+    title: opts.title,
+    description: opts.description,
+    ...(opts.imageUrl
+      ? { images: [{ url: opts.imageUrl, alt: opts.title }] }
+      : {}),
+  };
 }
