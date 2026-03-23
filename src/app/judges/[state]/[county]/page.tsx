@@ -3,9 +3,17 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
-import { courtTypesTitle, buildItemListJsonLd } from "@/lib/seo";
+import {
+  courtTypesTitle,
+  buildItemListJsonLd,
+  buildOpenGraph,
+  buildTwitterCard,
+} from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import JudgeGrid from "@/components/JudgeGrid";
+import Breadcrumbs from "@/components/Breadcrumbs";
+
+export const revalidate = 3600;
 
 interface PageProps {
   params: Promise<{ state: string; county: string }>;
@@ -24,11 +32,24 @@ export async function generateMetadata({
   });
   if (!county) return {};
 
-  return {
-    title: courtTypesTitle(county.name, state.name),
-    alternates: {
-      canonical: `${SITE_URL}/judges/${state.slug}/${county.slug}/`,
+  const title = courtTypesTitle(county.name, state.name);
+  const description = `Explore court types and judges in ${county.name}, ${state.name}. Find circuit, county, and district court judges.`;
+  const url = `${SITE_URL}/judges/${state.slug}/${county.slug}/`;
+
+  const verifiedCount = await prisma.judge.count({
+    where: {
+      status: "VERIFIED",
+      court: { countyId: county.id },
     },
+  });
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: buildOpenGraph({ title, description, url }),
+    twitter: buildTwitterCard({ title, description }),
+    ...(verifiedCount < 3 ? { robots: { index: false, follow: true } } : {}),
   };
 }
 
@@ -71,6 +92,58 @@ export default async function CountyJudgesPage({ params }: PageProps) {
     },
   });
 
+  if (judges.length === 0) {
+    const neighbors = await prisma.county.findMany({
+      where: {
+        stateId: state.id,
+        id: { not: county.id },
+        courts: { some: { judges: { some: { status: "VERIFIED" } } } },
+      },
+      take: 5,
+      orderBy: { name: "asc" },
+      select: { name: true, slug: true },
+    });
+
+    return (
+      <>
+        <Breadcrumbs
+          segments={[
+            { label: "States", href: "/judges/" },
+            { label: state.name, href: `/judges/${state.slug}/` },
+          ]}
+          currentPage={county.name}
+        />
+        <h1>
+          Judges in {county.name}, {state.name}
+        </h1>
+        <aside className="py-12 text-center border rounded-lg bg-muted/50 mt-6">
+          <h2 className="text-lg font-semibold mb-2">Coverage Coming Soon</h2>
+          <p className="text-muted-foreground mb-4">
+            We&apos;re working on adding verified judge information for{" "}
+            {county.name}.
+          </p>
+          <nav className="flex flex-wrap justify-center gap-3">
+            <Link
+              href={`/judges/${state.slug}/`}
+              className="text-sm text-link underline"
+            >
+              &larr; Back to {state.name}
+            </Link>
+            {neighbors.map((n) => (
+              <Link
+                key={n.slug}
+                href={`/judges/${state.slug}/${n.slug}/`}
+                className="text-sm px-3 py-1 rounded-md bg-muted hover:bg-muted/80"
+              >
+                {n.name}
+              </Link>
+            ))}
+          </nav>
+        </aside>
+      </>
+    );
+  }
+
   const jsonLd = buildItemListJsonLd(
     judges.map((judge, index) => ({
       name: judge.fullName,
@@ -84,55 +157,13 @@ export default async function CountyJudgesPage({ params }: PageProps) {
   return (
     <>
       <JsonLd data={jsonLd} />
-      <nav
-        aria-label="Breadcrumb"
-        className="mb-4 text-sm text-muted-foreground"
-      >
-        <ol className="flex flex-wrap items-center gap-1.5 list-none m-0 p-0">
-          <li>
-            <Link href="/judges/" className="text-link hover:underline">
-              All Judges
-            </Link>
-          </li>
-          <li aria-hidden="true">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </li>
-          <li>
-            <Link
-              href={`/judges/${state.slug}/`}
-              className="text-link hover:underline"
-            >
-              {state.name}
-            </Link>
-          </li>
-          <li aria-hidden="true">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </li>
-          <li aria-current="page">{county.name}</li>
-        </ol>
-      </nav>
+      <Breadcrumbs
+        segments={[
+          { label: "States", href: "/judges/" },
+          { label: state.name, href: `/judges/${state.slug}/` },
+        ]}
+        currentPage={county.name}
+      />
       <h1>
         Judges in {county.name}, {state.name}
       </h1>

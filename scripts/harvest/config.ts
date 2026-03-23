@@ -58,7 +58,7 @@ export interface CourtUrlEntry {
   counties: string[];
   label: string;
   // Pipeline hints from CourtEntry
-  fetchMethod?: "http" | "browser" | "manual";
+  fetchMethod?: "http" | "browser" | "manual" | "scrapling" | "auto";
   deterministic?: boolean;
   selectorHint?: string | null;
   district?: number | null;

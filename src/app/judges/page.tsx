@@ -1,7 +1,10 @@
 import { Metadata } from "next";
 import { Suspense } from "react";
 import { SITE_URL } from "@/lib/constants";
+import { buildOpenGraph, buildTwitterCard } from "@/lib/seo";
 import { JudgeSearch } from "@/components/search";
+
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "U.S. Judges Directory — All Judges",
@@ -10,6 +13,17 @@ export const metadata: Metadata = {
   alternates: {
     canonical: `${SITE_URL}/judges/`,
   },
+  openGraph: buildOpenGraph({
+    title: "U.S. Judges Directory — All Judges",
+    description:
+      "Browse all verified U.S. judges alphabetically. Find judges by name, state, county, or court type.",
+    url: `${SITE_URL}/judges/`,
+  }),
+  twitter: buildTwitterCard({
+    title: "U.S. Judges Directory — All Judges",
+    description:
+      "Browse all verified U.S. judges alphabetically. Find judges by name, state, county, or court type.",
+  }),
 };
 
 export default function JudgesPage() {

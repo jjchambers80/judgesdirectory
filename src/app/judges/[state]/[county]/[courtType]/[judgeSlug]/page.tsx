@@ -1,12 +1,19 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
-import { judgeProfileTitle, buildPersonJsonLd } from "@/lib/seo";
+import {
+  judgeProfileTitle,
+  buildPersonJsonLd,
+  buildOpenGraph,
+  buildTwitterCard,
+} from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import { Badge } from "@/components/ui/badge";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import JudgeAvatar from "@/components/JudgeAvatar";
+
+export const revalidate = 86400;
 
 interface PageProps {
   params: Promise<{
@@ -59,55 +66,32 @@ export async function generateMetadata({
 
   const { state, county, court, judge } = data;
 
-  return {
-    title: judgeProfileTitle(
-      judge.fullName,
-      court.type,
-      county.name,
-      state.name,
-    ),
-    alternates: {
-      canonical: `${SITE_URL}/judges/${state.slug}/${county.slug}/${court.slug}/${judge.slug}/`,
-    },
-  };
-}
-
-// Judge silhouette SVG for when no photo is available
-function JudgeSilhouette() {
-  return (
-    <svg
-      viewBox="0 0 120 120"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-full h-full bg-muted rounded-lg"
-      aria-hidden="true"
-    >
-      {/* Background circle for head */}
-      <circle cx="60" cy="40" r="22" className="fill-muted-foreground" />
-      {/* Shoulders/robe */}
-      <path
-        d="M20 120 C20 85 40 70 60 70 C80 70 100 85 100 120"
-        className="fill-foreground/60"
-      />
-      {/* Judicial collar/robe detail */}
-      <path
-        d="M45 75 L60 90 L75 75"
-        className="stroke-foreground"
-        strokeWidth="3"
-        fill="none"
-      />
-      {/* Gavel icon hint */}
-      <rect
-        x="85"
-        y="95"
-        width="20"
-        height="6"
-        rx="2"
-        className="fill-muted-foreground"
-        transform="rotate(-30 85 95)"
-      />
-    </svg>
+  const title = judgeProfileTitle(
+    judge.fullName,
+    court.type,
+    county.name,
+    state.name,
   );
+  const description = `Judge ${judge.fullName} serves on the ${court.type} in ${county.name}, ${state.name}. View term dates, court information, and official records.`;
+  const url = `${SITE_URL}/judges/${state.slug}/${county.slug}/${court.slug}/${judge.slug}/`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: buildOpenGraph({
+      title,
+      description,
+      url,
+      type: "profile",
+      imageUrl: judge.photoUrl || undefined,
+    }),
+    twitter: buildTwitterCard({
+      title,
+      description,
+      imageUrl: judge.photoUrl || undefined,
+    }),
+  };
 }
 
 export default async function JudgeProfilePage({ params }: PageProps) {
@@ -152,118 +136,26 @@ export default async function JudgeProfilePage({ params }: PageProps) {
     <>
       <JsonLd data={jsonLd} />
 
-      {/* Breadcrumb Navigation */}
-      <nav
-        aria-label="Breadcrumb"
-        className="mb-6 text-sm text-muted-foreground"
-      >
-        <ol className="flex flex-wrap items-center gap-1.5 list-none m-0 p-0">
-          <li>
-            <Link href="/judges/" className="text-link hover:underline">
-              States
-            </Link>
-          </li>
-          <li aria-hidden="true">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </li>
-          <li>
-            <Link
-              href={`/judges/${state.slug}/`}
-              className="text-link hover:underline"
-            >
-              {state.name}
-            </Link>
-          </li>
-          <li aria-hidden="true">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </li>
-          <li>
-            <Link
-              href={`/judges/${state.slug}/${county.slug}/`}
-              className="text-link hover:underline"
-            >
-              {county.name}
-            </Link>
-          </li>
-          <li aria-hidden="true">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </li>
-          <li>
-            <Link
-              href={`/judges/${state.slug}/${county.slug}/${court.slug}/`}
-              className="text-link hover:underline"
-            >
-              {court.type}
-            </Link>
-          </li>
-          <li aria-hidden="true">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </li>
-          <li aria-current="page">{judge.fullName}</li>
-        </ol>
-      </nav>
+      <Breadcrumbs
+        segments={[
+          { label: "States", href: "/judges/" },
+          { label: state.name, href: `/judges/${state.slug}/` },
+          { label: county.name, href: `/judges/${state.slug}/${county.slug}/` },
+          {
+            label: court.type,
+            href: `/judges/${state.slug}/${county.slug}/${court.slug}/`,
+          },
+        ]}
+        currentPage={judge.fullName}
+      />
 
       {/* Header with Photo */}
       <div className="flex flex-col gap-6 mb-8 sm:flex-row sm:items-start">
-        {/* Photo or Silhouette */}
-        <div className="w-[150px] h-[180px] shrink-0 rounded-lg overflow-hidden shadow-md">
-          {judge.photoUrl ? (
-            <Image
-              src={judge.photoUrl}
-              alt={`Photo of ${judge.fullName}`}
-              width={150}
-              height={180}
-              className="object-cover w-full h-full"
-              unoptimized
-            />
-          ) : (
-            <JudgeSilhouette />
-          )}
-        </div>
+        <JudgeAvatar
+          photoUrl={judge.photoUrl}
+          fullName={judge.fullName}
+          size="lg"
+        />
 
         {/* Name and Title */}
         <div className="flex-1">
@@ -457,7 +349,6 @@ export default async function JudgeProfilePage({ params }: PageProps) {
           </a>
         </p>
       )}
-
     </>
   );
 }

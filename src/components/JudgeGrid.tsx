@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
+import JudgeAvatar from "@/components/JudgeAvatar";
 
 interface JudgeItem {
   id: string;
@@ -55,43 +55,11 @@ export default function JudgeGrid({ judges }: JudgeGridProps) {
             )}
           >
             {/* Avatar */}
-            <div className="relative w-11 h-11 shrink-0 rounded-full overflow-hidden bg-muted ring-1 ring-border">
-              {judge.photoUrl ? (
-                <Image
-                  src={judge.photoUrl}
-                  alt=""
-                  width={44}
-                  height={44}
-                  className="object-cover w-full h-full"
-                  unoptimized
-                />
-              ) : (
-                <svg
-                  viewBox="0 0 44 44"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-full h-full"
-                  aria-hidden="true"
-                >
-                  <circle
-                    cx="22"
-                    cy="16"
-                    r="7"
-                    className="fill-muted-foreground/50"
-                  />
-                  <path
-                    d="M8 44 C8 33 14 27 22 27 C30 27 36 33 36 44"
-                    className="fill-muted-foreground/30"
-                  />
-                  <path
-                    d="M18 29 L22 33 L26 29"
-                    className="stroke-muted-foreground/40"
-                    strokeWidth="1.2"
-                    fill="none"
-                  />
-                </svg>
-              )}
-            </div>
+            <JudgeAvatar
+              photoUrl={judge.photoUrl}
+              fullName={judge.fullName}
+              size="sm"
+            />
 
             {/* Info */}
             <div className="min-w-0 flex-1">

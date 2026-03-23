@@ -167,6 +167,8 @@ export function buildSearchWhereClause(
   const where: Prisma.JudgeWhereInput = {
     // Constitution Principle I: Only VERIFIED judges in public results
     status: JudgeStatus.VERIFIED,
+    // Defensive: exclude records with empty names (bad data)
+    fullName: { not: "" },
   };
 
   // Name search filter (case-insensitive partial match)

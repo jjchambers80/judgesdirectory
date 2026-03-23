@@ -15,6 +15,9 @@
 /* --- Existing theme variables (light/dark/system) --- */
 @import "./theme-vars.css";
 
+/* --- Typography plugin for prose content (legal pages, about, etc.) --- */
+@plugin "@tailwindcss/typography";
+
 /* --- Dark mode: wire Tailwind dark: variant to data-theme attribute --- */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 

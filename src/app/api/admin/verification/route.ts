@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
   const countyId = searchParams.get("countyId") || undefined;
   const harvestJobId = searchParams.get("harvestJobId") || undefined;
   const status = searchParams.get("status") || "UNVERIFIED";
+  const search = searchParams.get("search")?.trim() || undefined;
   const sort = searchParams.get("sort") || "createdAt";
   const order = searchParams.get("order") === "asc" ? "asc" : "desc";
 
@@ -35,6 +36,9 @@ export async function GET(request: NextRequest) {
     where.court = { countyId };
   } else if (stateId) {
     where.court = { county: { stateId } };
+  }
+  if (search) {
+    where.fullName = { contains: search, mode: "insensitive" };
   }
 
   const [judges, total] = await Promise.all([

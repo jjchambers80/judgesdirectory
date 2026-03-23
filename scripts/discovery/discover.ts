@@ -508,7 +508,7 @@ async function main(): Promise<void> {
   if (!flags.dryRun) {
     // Acquire advisory lock (pass own run-id so we don't conflict with
     // the RUNNING record the API pre-created for this process)
-    const lockAcquired = await acquireLock(flags.runId);
+    const lockAcquired = await acquireLock(flags.runId ?? undefined);
     if (!lockAcquired) {
       console.error(
         "[Discovery] Another discovery run is in progress. Aborting.",

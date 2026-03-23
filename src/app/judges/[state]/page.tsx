@@ -1,12 +1,19 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
-import { countyListTitle, buildItemListJsonLd } from "@/lib/seo";
+import {
+  countyListTitle,
+  buildItemListJsonLd,
+  buildOpenGraph,
+  buildTwitterCard,
+} from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import JudgeGrid from "@/components/JudgeGrid";
+import Breadcrumbs from "@/components/Breadcrumbs";
+
+export const revalidate = 3600;
 
 interface PageProps {
   params: Promise<{ state: string }>;
@@ -25,11 +32,16 @@ export async function generateMetadata({
 
   if (!state) return {};
 
+  const title = countyListTitle(state.name);
+  const description = `Browse all verified judges in ${state.name} by county. Find circuit court, county court, and district court judges.`;
+  const url = `${SITE_URL}/judges/${state.slug}/`;
+
   return {
-    title: countyListTitle(state.name),
-    alternates: {
-      canonical: `${SITE_URL}/judges/${state.slug}/`,
-    },
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: buildOpenGraph({ title, description, url }),
+    twitter: buildTwitterCard({ title, description }),
   };
 }
 
@@ -81,33 +93,10 @@ export default async function StateJudgesPage({ params }: PageProps) {
   return (
     <>
       <JsonLd data={jsonLd} />
-      <nav
-        aria-label="Breadcrumb"
-        className="mb-4 text-sm text-muted-foreground"
-      >
-        <ol className="flex flex-wrap items-center gap-1.5 list-none m-0 p-0">
-          <li>
-            <Link href="/judges/" className="text-link hover:underline">
-              All Judges
-            </Link>
-          </li>
-          <li aria-hidden="true">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4"
-            >
-              <path
-                fillRule="evenodd"
-                d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </li>
-          <li aria-current="page">{state.name}</li>
-        </ol>
-      </nav>
+      <Breadcrumbs
+        segments={[{ label: "States", href: "/judges/" }]}
+        currentPage={state.name}
+      />
       <h1>Judges in {state.name}</h1>
       <p className="text-sm text-muted-foreground mb-4">
         {judges.length} verified {judges.length === 1 ? "judge" : "judges"} in{" "}

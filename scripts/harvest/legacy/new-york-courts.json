@@ -21,7 +21,7 @@
       "level": "supreme",
       "label": "New York Court of Appeals",
       "counties": [],
-      "fetchMethod": "browser",
+      "fetchMethod": "scrapling",
       "notes": "Court of last resort — 7 judges (Chief Judge + 6 Associate Judges). Cloudflare Turnstile blocks all programmatic access."
     },
     {
@@ -31,7 +31,7 @@
       "label": "Appellate Division — 1st Department",
       "department": 1,
       "counties": ["New York", "Bronx"],
-      "fetchMethod": "browser",
+      "fetchMethod": "scrapling",
       "notes": "Cloudflare Turnstile blocks all programmatic access to nycourts.gov."
     },
     {
@@ -40,7 +40,7 @@
       "level": "appellate",
       "label": "Appellate Division — 2nd Department",
       "department": 2,
-      "fetchMethod": "browser",
+      "fetchMethod": "scrapling",
       "notes": "Cloudflare Turnstile blocks all programmatic access to nycourts.gov.",
       "counties": [
         "Kings",
@@ -61,7 +61,7 @@
       "level": "appellate",
       "label": "Appellate Division — 3rd Department",
       "department": 3,
-      "fetchMethod": "browser",
+      "fetchMethod": "scrapling",
       "notes": "Cloudflare Turnstile blocks all programmatic access to nycourts.gov.",
       "counties": [
         "Albany",
@@ -105,7 +105,7 @@
       "level": "appellate",
       "label": "Appellate Division — 4th Department",
       "department": 4,
-      "fetchMethod": "browser",
+      "fetchMethod": "scrapling",
       "notes": "Cloudflare Turnstile blocks all programmatic access to nycourts.gov.",
       "counties": [
         "Allegany",
@@ -133,7 +133,7 @@
       "level": "trial",
       "label": "Supreme Court — Statewide Directory",
       "counties": [],
-      "fetchMethod": "browser",
+      "fetchMethod": "scrapling",
       "notes": "Java web app with A-Z pagination — requires headless browser. NY Supreme Court is a trial court. ~62 counties."
     },
     {
@@ -142,7 +142,7 @@
       "level": "trial",
       "label": "County Courts — Statewide Directory",
       "counties": [],
-      "fetchMethod": "browser",
+      "fetchMethod": "scrapling",
       "notes": "Same Java directory app — County Courts outside NYC. Requires headless browser."
     },
     {
@@ -151,7 +151,7 @@
       "level": "specialized",
       "label": "Family Courts — Statewide Directory",
       "counties": [],
-      "fetchMethod": "browser",
+      "fetchMethod": "scrapling",
       "notes": "Same Java directory app — Family Courts statewide. Requires headless browser."
     },
     {
@@ -160,7 +160,7 @@
       "level": "specialized",
       "label": "Surrogate's Courts — Statewide Directory",
       "counties": [],
-      "fetchMethod": "browser",
+      "fetchMethod": "scrapling",
       "notes": "Same Java directory app — Surrogate's Courts (probate). Requires headless browser."
     },
     {
@@ -169,7 +169,7 @@
       "level": "specialized",
       "label": "NYC Civil Court",
       "counties": ["New York", "Bronx", "Kings", "Queens", "Richmond"],
-      "fetchMethod": "browser",
+      "fetchMethod": "scrapling",
       "notes": "NYC-only court. Cloudflare protected."
     },
     {
@@ -178,7 +178,7 @@
       "level": "specialized",
       "label": "NYC Criminal Court",
       "counties": ["New York", "Bronx", "Kings", "Queens", "Richmond"],
-      "fetchMethod": "browser",
+      "fetchMethod": "scrapling",
       "notes": "NYC-only court. Cloudflare protected."
     }
   ]
