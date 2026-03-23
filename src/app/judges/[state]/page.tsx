@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { SITE_URL } from "@/lib/constants";
-import { countyListTitle, buildItemListJsonLd } from "@/lib/seo";
+import { countyListTitle, buildItemListJsonLd, buildOpenGraph, buildTwitterCard } from "@/lib/seo";
 import JsonLd from "@/components/seo/JsonLd";
 import JudgeGrid from "@/components/JudgeGrid";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -25,11 +25,16 @@ export async function generateMetadata({
 
   if (!state) return {};
 
+  const title = countyListTitle(state.name);
+  const description = `Browse all verified judges in ${state.name} by county. Find circuit court, county court, and district court judges.`;
+  const url = `${SITE_URL}/judges/${state.slug}/`;
+
   return {
-    title: countyListTitle(state.name),
-    alternates: {
-      canonical: `${SITE_URL}/judges/${state.slug}/`,
-    },
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: buildOpenGraph({ title, description, url }),
+    twitter: buildTwitterCard({ title, description }),
   };
 }
 
