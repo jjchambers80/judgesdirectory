@@ -378,24 +378,25 @@ async function main() {
 
   for (let i = 0; i < counties.length; i += batchSize) {
     const batch = counties.slice(i, i + batchSize);
-    const operations = batch
+    const data = batch
       .map((county) => {
         const stateId = stateMap.get(county.stateFips);
         if (!stateId) return null;
         const cleanName = stripCountySuffix(county.name);
-        return prisma.county.create({
-          data: {
-            stateId,
-            name: cleanName,
-            slug: slugify(cleanName),
-            fipsCode: county.countyFips,
-          },
-        });
+        return {
+          stateId,
+          name: cleanName,
+          slug: slugify(cleanName),
+          fipsCode: county.countyFips,
+        };
       })
-      .filter(Boolean);
+      .filter((d): d is NonNullable<typeof d> => d !== null);
 
-    await Promise.all(operations);
-    countyCount += operations.length;
+    const result = await prisma.county.createMany({
+      data,
+      skipDuplicates: true,
+    });
+    countyCount += result.count;
 
     if (countyCount % 500 === 0 || i + batchSize >= counties.length) {
       console.log(`   Seeded ${countyCount} counties...`);
