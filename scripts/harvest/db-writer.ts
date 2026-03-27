@@ -7,8 +7,10 @@
  * @module scripts/harvest/db-writer
  */
 
-import { PrismaClient, Court, County, State } from "@prisma/client";
+import { PrismaClient, Court, County, State, CourtLevel } from "@prisma/client";
 import type { EnrichedJudgeRecord } from "./config";
+import { loadStateConfig } from "./config";
+import type { CourtEntry } from "./state-config-schema";
 
 const prisma = new PrismaClient();
 
@@ -45,6 +47,48 @@ async function getState(abbreviation: string): Promise<State | null> {
   const state = await prisma.state.findUnique({ where: { abbreviation: key } });
   stateCache.set(key, state);
   return state;
+}
+
+// State config cache for HQ county lookups
+const stateConfigCache = new Map<string, CourtEntry[]>();
+
+function getCourtEntriesForState(stateName: string): CourtEntry[] {
+  const key = stateName.toLowerCase();
+  if (stateConfigCache.has(key)) return stateConfigCache.get(key)!;
+  try {
+    const config = loadStateConfig(stateName);
+    stateConfigCache.set(key, config.courts);
+    return config.courts;
+  } catch {
+    stateConfigCache.set(key, []);
+    return [];
+  }
+}
+
+function findHqCountyFromConfig(
+  stateName: string,
+  courtType: string,
+): string | null {
+  const courts = getCourtEntriesForState(stateName);
+  const courtTypeLower = courtType.toLowerCase();
+  const match = courts.find(
+    (c) =>
+      c.courtType.toLowerCase() === courtTypeLower ||
+      c.label.toLowerCase().includes(courtTypeLower),
+  );
+  return match?.headquartersCounty ?? null;
+}
+
+function toCourtLevel(courtType: string): CourtLevel | null {
+  const lower = courtType.toLowerCase();
+  if (lower.includes("supreme")) return CourtLevel.SUPREME;
+  if (
+    lower.includes("district court of appeal") ||
+    lower.includes("court of appeals") ||
+    lower.includes("appellate")
+  )
+    return CourtLevel.APPELLATE;
+  return null;
 }
 
 async function getOrCreateStatewideCounty(state: State): Promise<County> {
@@ -121,6 +165,8 @@ function isAppellateCourt(courtType: string): boolean {
 
 /**
  * Resolve a court from state abbreviation, county name, and court type.
+ * For appellate/supreme courts, uses headquartersCounty from state config
+ * instead of "Statewide" placeholder.
  */
 async function resolveCourt(
   stateAbbr: string,
@@ -132,7 +178,20 @@ async function resolveCourt(
 
   let county: County;
   if (isAppellateCourt(courtType) || !countyName) {
-    county = await getOrCreateStatewideCounty(state);
+    // Try to find HQ county from state config first
+    const hqCountyName = findHqCountyFromConfig(state.name, courtType);
+    if (hqCountyName) {
+      const found = await getCounty(hqCountyName, state.id);
+      if (found) {
+        county = found;
+      } else {
+        // HQ county not in DB — fall back to Statewide
+        county = await getOrCreateStatewideCounty(state);
+      }
+    } else {
+      // No HQ county in config — fall back to Statewide
+      county = await getOrCreateStatewideCounty(state);
+    }
   } else {
     const found = await getCounty(countyName, state.id);
     if (!found)
@@ -141,6 +200,16 @@ async function resolveCourt(
   }
 
   const court = await getOrCreateCourt(county.id, courtType);
+
+  // Backfill court level if missing
+  const level = toCourtLevel(courtType);
+  if (level && !court.level) {
+    await prisma.court.update({
+      where: { id: court.id },
+      data: { level },
+    });
+  }
+
   return { courtId: court.id };
 }
 

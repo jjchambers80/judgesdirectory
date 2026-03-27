@@ -7,7 +7,7 @@
  * @module scripts/harvest/court-seeder
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, CourtLevel } from "@prisma/client";
 import slugify from "slugify";
 import type { StateConfig, CourtEntry } from "./state-config-schema";
 import { resolveCountyAlias } from "./normalizer";
@@ -20,6 +20,16 @@ function makeSlug(input: string): string {
     0,
     100,
   );
+}
+
+function toCourtLevel(level: string): CourtLevel {
+  const map: Record<string, CourtLevel> = {
+    supreme: CourtLevel.SUPREME,
+    appellate: CourtLevel.APPELLATE,
+    trial: CourtLevel.TRIAL,
+    specialized: CourtLevel.SPECIALIZED,
+  };
+  return map[level] ?? CourtLevel.TRIAL;
 }
 
 /**
@@ -97,6 +107,8 @@ export async function seedStateCourts(config: StateConfig): Promise<void> {
     const isTrialLevel =
       court.level === "trial" || court.level === "specialized";
 
+    const courtLevel = toCourtLevel(court.level);
+
     if (isTrialLevel && court.counties.length > 0) {
       // Trial/specialized courts: one court record per county
       for (const countyName of court.counties) {
@@ -117,23 +129,35 @@ export async function seedStateCourts(config: StateConfig): Promise<void> {
               countyId: county.id,
               type: court.courtType,
               slug,
+              level: courtLevel,
             },
           });
           created++;
+        } else if (!exists.level) {
+          // Backfill level on existing courts
+          await prisma.court.update({
+            where: { id: exists.id },
+            data: { level: courtLevel },
+          });
+          skipped++;
         } else {
           skipped++;
         }
       }
     } else {
-      // Supreme/appellate/statewide courts: single record linked to home county
+      // Supreme/appellate/statewide courts: single record linked to HQ county
       let homeCounty: (typeof state.counties)[0] | undefined;
 
-      if (court.counties.length > 0) {
-        // Use first county in list as home county (after alias resolution)
+      if (court.headquartersCounty) {
+        // Use explicit headquartersCounty from config
+        const resolution = resolveCountyAlias(court.headquartersCounty, aliases);
+        homeCounty = countyMap.get(resolution.canonical.toLowerCase().trim());
+      } else if (court.counties.length > 0) {
+        // Fallback: use first county in list as home county
         const resolution = resolveCountyAlias(court.counties[0], aliases);
         homeCounty = countyMap.get(resolution.canonical.toLowerCase().trim());
       } else {
-        // Statewide court — use first county in state as admin home
+        // Statewide court with no HQ or counties — use first county in state
         homeCounty = state.counties[0];
       }
 
@@ -159,11 +183,18 @@ export async function seedStateCourts(config: StateConfig): Promise<void> {
             countyId: homeCounty.id,
             type: court.courtType,
             slug,
+            level: courtLevel,
           },
         });
         created++;
         console.log(`  Created: ${court.label} (${homeCounty.name})`);
       } else {
+        if (!exists.level) {
+          await prisma.court.update({
+            where: { id: exists.id },
+            data: { level: courtLevel },
+          });
+        }
         skipped++;
       }
     }

@@ -39,6 +39,7 @@ export const CourtEntrySchema = z.object({
   level: z.enum(["supreme", "appellate", "trial", "specialized"]),
   label: z.string().min(1),
   counties: z.array(z.string()),
+  headquartersCounty: z.string().nullable().optional().default(null),
   district: z.number().int().nullable().optional().default(null),
   circuit: z.number().int().nullable().optional().default(null),
   department: z.number().int().nullable().optional().default(null),

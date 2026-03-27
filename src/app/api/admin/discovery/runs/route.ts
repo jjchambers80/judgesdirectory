@@ -143,9 +143,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Check for active run (409) — includes CANCELLED transitional state
+  // Check for active run (409) — only RUNNING blocks new runs
   const activeRun = await prisma.discoveryRun.findFirst({
-    where: { status: { in: ["RUNNING", "CANCELLED"] } },
+    where: { status: "RUNNING" },
   });
 
   if (activeRun) {

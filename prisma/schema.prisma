@@ -39,15 +39,23 @@ model County {
   @@map("counties")
 }
 
+enum CourtLevel {
+  SUPREME
+  APPELLATE
+  TRIAL
+  SPECIALIZED
+}
+
 model Court {
-  id        String   @id @default(uuid())
+  id        String      @id @default(uuid())
   countyId  String
-  county    County   @relation(fields: [countyId], references: [id], onDelete: Cascade)
+  county    County      @relation(fields: [countyId], references: [id], onDelete: Cascade)
   type      String
   slug      String
+  level     CourtLevel?
   judges    Judge[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   @@unique([countyId, slug])
   @@index([countyId])

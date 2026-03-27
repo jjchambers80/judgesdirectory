@@ -3,6 +3,14 @@
     "exa": {
       "type": "sse",
       "url": "https://mcp.exa.ai/mcp"
+    },
+    "vercel": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "vercel-mcp@latest"],
+      "env": {
+        "VERCEL_TOKEN": "${env:VERCEL_TOKEN}"
+      }
     }
   }
 }

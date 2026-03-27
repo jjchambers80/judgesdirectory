@@ -7,6 +7,7 @@
       "courtType": "Supreme Court",
       "level": "supreme",
       "label": "Florida Supreme Court",
+      "headquartersCounty": "Leon",
       "counties": []
     },
     {
@@ -14,6 +15,7 @@
       "courtType": "District Court of Appeal",
       "level": "appellate",
       "label": "1st District Court of Appeal",
+      "headquartersCounty": "Leon",
       "district": 1,
       "counties": [
         "Escambia",
@@ -52,6 +54,7 @@
       "courtType": "District Court of Appeal",
       "level": "appellate",
       "label": "2nd District Court of Appeal",
+      "headquartersCounty": "Polk",
       "district": 2,
       "counties": [
         "Pasco",
@@ -67,6 +70,7 @@
       "courtType": "District Court of Appeal",
       "level": "appellate",
       "label": "3rd District Court of Appeal",
+      "headquartersCounty": "Miami-Dade",
       "district": 3,
       "counties": ["Miami-Dade", "Monroe"]
     },
@@ -75,6 +79,7 @@
       "courtType": "District Court of Appeal",
       "level": "appellate",
       "label": "4th District Court of Appeal",
+      "headquartersCounty": "Palm Beach",
       "district": 4,
       "counties": [
         "Palm Beach",
@@ -90,6 +95,7 @@
       "courtType": "District Court of Appeal",
       "level": "appellate",
       "label": "5th District Court of Appeal",
+      "headquartersCounty": "Volusia",
       "district": 5,
       "counties": [
         "Clay",
@@ -113,6 +119,7 @@
       "courtType": "District Court of Appeal",
       "level": "appellate",
       "label": "6th District Court of Appeal",
+      "headquartersCounty": "Polk",
       "district": 6,
       "counties": [
         "Orange",
